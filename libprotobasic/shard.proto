@@ -102,6 +102,7 @@ message BlockRequest {
 }
 */
 
+/*
 // ADD BY THB
 message SubCrossShardTx
 {
@@ -110,4 +111,22 @@ message SubCrossShardTx
     uint64 sourceShardId = 3;
     uint64 destinShardId = 4;
     bytes signeddata = 5;
+}
+*/
+
+// ADD BY ZH
+message SubCrossShardTx
+{
+    bytes stateAddress = 1;
+    uint64 sourceShardId = 2;
+    uint64 destinShardId = 3;
+    bytes signeddata = 4;
+}
+
+message SubCrossShardTxRes
+{
+    uint64 status = 1;
+    uint64 sourceShardId = 2;
+    uint64 destinShardId = 3;
+    bytes signeddata = 4;
 }

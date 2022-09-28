@@ -47,7 +47,7 @@ struct TableStruct_shard_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxillaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[12]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[13]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -82,6 +82,9 @@ extern RLPWithReadSetDefaultTypeInternal _RLPWithReadSet_default_instance_;
 class ReadSet;
 class ReadSetDefaultTypeInternal;
 extern ReadSetDefaultTypeInternal _ReadSet_default_instance_;
+class SubCrossShardTx;
+class SubCrossShardTxDefaultTypeInternal;
+extern SubCrossShardTxDefaultTypeInternal _SubCrossShardTx_default_instance_;
 class SubPreCommitedDisTx;
 class SubPreCommitedDisTxDefaultTypeInternal;
 extern SubPreCommitedDisTxDefaultTypeInternal _SubPreCommitedDisTx_default_instance_;
@@ -102,6 +105,7 @@ template<> ::protos::DAGWithReadSet* Arena::CreateMaybeMessage<::protos::DAGWith
 template<> ::protos::KV* Arena::CreateMaybeMessage<::protos::KV>(Arena*);
 template<> ::protos::RLPWithReadSet* Arena::CreateMaybeMessage<::protos::RLPWithReadSet>(Arena*);
 template<> ::protos::ReadSet* Arena::CreateMaybeMessage<::protos::ReadSet>(Arena*);
+template<> ::protos::SubCrossShardTx* Arena::CreateMaybeMessage<::protos::SubCrossShardTx>(Arena*);
 template<> ::protos::SubPreCommitedDisTx* Arena::CreateMaybeMessage<::protos::SubPreCommitedDisTx>(Arena*);
 template<> ::protos::Transaction* Arena::CreateMaybeMessage<::protos::Transaction>(Arena*);
 template<> ::protos::TxWithReadSet* Arena::CreateMaybeMessage<::protos::TxWithReadSet>(Arena*);
@@ -2321,6 +2325,192 @@ class BlockHeader :
   ::PROTOBUF_NAMESPACE_ID::uint64 number_;
   ::PROTOBUF_NAMESPACE_ID::uint64 timestamp_;
   ::PROTOBUF_NAMESPACE_ID::uint64 shardid_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_shard_2eproto;
+};
+// -------------------------------------------------------------------
+
+class SubCrossShardTx :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:protos.SubCrossShardTx) */ {
+ public:
+  SubCrossShardTx();
+  virtual ~SubCrossShardTx();
+
+  SubCrossShardTx(const SubCrossShardTx& from);
+  SubCrossShardTx(SubCrossShardTx&& from) noexcept
+    : SubCrossShardTx() {
+    *this = ::std::move(from);
+  }
+
+  inline SubCrossShardTx& operator=(const SubCrossShardTx& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SubCrossShardTx& operator=(SubCrossShardTx&& from) noexcept {
+    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const SubCrossShardTx& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const SubCrossShardTx* internal_default_instance() {
+    return reinterpret_cast<const SubCrossShardTx*>(
+               &_SubCrossShardTx_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    12;
+
+  friend void swap(SubCrossShardTx& a, SubCrossShardTx& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(SubCrossShardTx* other) {
+    if (other == this) return;
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline SubCrossShardTx* New() const final {
+    return CreateMaybeMessage<SubCrossShardTx>(nullptr);
+  }
+
+  SubCrossShardTx* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<SubCrossShardTx>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const SubCrossShardTx& from);
+  void MergeFrom(const SubCrossShardTx& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(SubCrossShardTx* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "protos.SubCrossShardTx";
+  }
+  private:
+  inline ::PROTOBUF_NAMESPACE_ID::Arena* GetArenaNoVirtual() const {
+    return nullptr;
+  }
+  inline void* MaybeArenaPtr() const {
+    return nullptr;
+  }
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_shard_2eproto);
+    return ::descriptor_table_shard_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kSubTxRlpFieldNumber = 1,
+    kSigneddataFieldNumber = 5,
+    kMessageIdFieldNumber = 2,
+    kSourceShardIdFieldNumber = 3,
+    kDestinShardIdFieldNumber = 4,
+  };
+  // bytes subTxRlp = 1;
+  void clear_subtxrlp();
+  const std::string& subtxrlp() const;
+  void set_subtxrlp(const std::string& value);
+  void set_subtxrlp(std::string&& value);
+  void set_subtxrlp(const char* value);
+  void set_subtxrlp(const void* value, size_t size);
+  std::string* mutable_subtxrlp();
+  std::string* release_subtxrlp();
+  void set_allocated_subtxrlp(std::string* subtxrlp);
+  private:
+  const std::string& _internal_subtxrlp() const;
+  void _internal_set_subtxrlp(const std::string& value);
+  std::string* _internal_mutable_subtxrlp();
+  public:
+
+  // bytes signeddata = 5;
+  void clear_signeddata();
+  const std::string& signeddata() const;
+  void set_signeddata(const std::string& value);
+  void set_signeddata(std::string&& value);
+  void set_signeddata(const char* value);
+  void set_signeddata(const void* value, size_t size);
+  std::string* mutable_signeddata();
+  std::string* release_signeddata();
+  void set_allocated_signeddata(std::string* signeddata);
+  private:
+  const std::string& _internal_signeddata() const;
+  void _internal_set_signeddata(const std::string& value);
+  std::string* _internal_mutable_signeddata();
+  public:
+
+  // uint64 messageId = 2;
+  void clear_messageid();
+  ::PROTOBUF_NAMESPACE_ID::uint64 messageid() const;
+  void set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::uint64 _internal_messageid() const;
+  void _internal_set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  public:
+
+  // uint64 sourceShardId = 3;
+  void clear_sourceshardid();
+  ::PROTOBUF_NAMESPACE_ID::uint64 sourceshardid() const;
+  void set_sourceshardid(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::uint64 _internal_sourceshardid() const;
+  void _internal_set_sourceshardid(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  public:
+
+  // uint64 destinShardId = 4;
+  void clear_destinshardid();
+  ::PROTOBUF_NAMESPACE_ID::uint64 destinshardid() const;
+  void set_destinshardid(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::uint64 _internal_destinshardid() const;
+  void _internal_set_destinshardid(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:protos.SubCrossShardTx)
+ private:
+  class _Internal;
+
+  ::PROTOBUF_NAMESPACE_ID::internal::InternalMetadataWithArena _internal_metadata_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr subtxrlp_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr signeddata_;
+  ::PROTOBUF_NAMESPACE_ID::uint64 messageid_;
+  ::PROTOBUF_NAMESPACE_ID::uint64 sourceshardid_;
+  ::PROTOBUF_NAMESPACE_ID::uint64 destinshardid_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_shard_2eproto;
 };
@@ -4605,9 +4795,195 @@ inline void BlockHeader::set_shardid(::PROTOBUF_NAMESPACE_ID::uint64 value) {
   // @@protoc_insertion_point(field_set:protos.BlockHeader.shardId)
 }
 
+// -------------------------------------------------------------------
+
+// SubCrossShardTx
+
+// bytes subTxRlp = 1;
+inline void SubCrossShardTx::clear_subtxrlp() {
+  subtxrlp_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline const std::string& SubCrossShardTx::subtxrlp() const {
+  // @@protoc_insertion_point(field_get:protos.SubCrossShardTx.subTxRlp)
+  return _internal_subtxrlp();
+}
+inline void SubCrossShardTx::set_subtxrlp(const std::string& value) {
+  _internal_set_subtxrlp(value);
+  // @@protoc_insertion_point(field_set:protos.SubCrossShardTx.subTxRlp)
+}
+inline std::string* SubCrossShardTx::mutable_subtxrlp() {
+  // @@protoc_insertion_point(field_mutable:protos.SubCrossShardTx.subTxRlp)
+  return _internal_mutable_subtxrlp();
+}
+inline const std::string& SubCrossShardTx::_internal_subtxrlp() const {
+  return subtxrlp_.GetNoArena();
+}
+inline void SubCrossShardTx::_internal_set_subtxrlp(const std::string& value) {
+  
+  subtxrlp_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value);
+}
+inline void SubCrossShardTx::set_subtxrlp(std::string&& value) {
+  
+  subtxrlp_.SetNoArena(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:protos.SubCrossShardTx.subTxRlp)
+}
+inline void SubCrossShardTx::set_subtxrlp(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  
+  subtxrlp_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:protos.SubCrossShardTx.subTxRlp)
+}
+inline void SubCrossShardTx::set_subtxrlp(const void* value, size_t size) {
+  
+  subtxrlp_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:protos.SubCrossShardTx.subTxRlp)
+}
+inline std::string* SubCrossShardTx::_internal_mutable_subtxrlp() {
+  
+  return subtxrlp_.MutableNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline std::string* SubCrossShardTx::release_subtxrlp() {
+  // @@protoc_insertion_point(field_release:protos.SubCrossShardTx.subTxRlp)
+  
+  return subtxrlp_.ReleaseNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline void SubCrossShardTx::set_allocated_subtxrlp(std::string* subtxrlp) {
+  if (subtxrlp != nullptr) {
+    
+  } else {
+    
+  }
+  subtxrlp_.SetAllocatedNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), subtxrlp);
+  // @@protoc_insertion_point(field_set_allocated:protos.SubCrossShardTx.subTxRlp)
+}
+
+// uint64 messageId = 2;
+inline void SubCrossShardTx::clear_messageid() {
+  messageid_ = PROTOBUF_ULONGLONG(0);
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SubCrossShardTx::_internal_messageid() const {
+  return messageid_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SubCrossShardTx::messageid() const {
+  // @@protoc_insertion_point(field_get:protos.SubCrossShardTx.messageId)
+  return _internal_messageid();
+}
+inline void SubCrossShardTx::_internal_set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  
+  messageid_ = value;
+}
+inline void SubCrossShardTx::set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  _internal_set_messageid(value);
+  // @@protoc_insertion_point(field_set:protos.SubCrossShardTx.messageId)
+}
+
+// uint64 sourceShardId = 3;
+inline void SubCrossShardTx::clear_sourceshardid() {
+  sourceshardid_ = PROTOBUF_ULONGLONG(0);
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SubCrossShardTx::_internal_sourceshardid() const {
+  return sourceshardid_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SubCrossShardTx::sourceshardid() const {
+  // @@protoc_insertion_point(field_get:protos.SubCrossShardTx.sourceShardId)
+  return _internal_sourceshardid();
+}
+inline void SubCrossShardTx::_internal_set_sourceshardid(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  
+  sourceshardid_ = value;
+}
+inline void SubCrossShardTx::set_sourceshardid(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  _internal_set_sourceshardid(value);
+  // @@protoc_insertion_point(field_set:protos.SubCrossShardTx.sourceShardId)
+}
+
+// uint64 destinShardId = 4;
+inline void SubCrossShardTx::clear_destinshardid() {
+  destinshardid_ = PROTOBUF_ULONGLONG(0);
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SubCrossShardTx::_internal_destinshardid() const {
+  return destinshardid_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SubCrossShardTx::destinshardid() const {
+  // @@protoc_insertion_point(field_get:protos.SubCrossShardTx.destinShardId)
+  return _internal_destinshardid();
+}
+inline void SubCrossShardTx::_internal_set_destinshardid(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  
+  destinshardid_ = value;
+}
+inline void SubCrossShardTx::set_destinshardid(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  _internal_set_destinshardid(value);
+  // @@protoc_insertion_point(field_set:protos.SubCrossShardTx.destinShardId)
+}
+
+// bytes signeddata = 5;
+inline void SubCrossShardTx::clear_signeddata() {
+  signeddata_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline const std::string& SubCrossShardTx::signeddata() const {
+  // @@protoc_insertion_point(field_get:protos.SubCrossShardTx.signeddata)
+  return _internal_signeddata();
+}
+inline void SubCrossShardTx::set_signeddata(const std::string& value) {
+  _internal_set_signeddata(value);
+  // @@protoc_insertion_point(field_set:protos.SubCrossShardTx.signeddata)
+}
+inline std::string* SubCrossShardTx::mutable_signeddata() {
+  // @@protoc_insertion_point(field_mutable:protos.SubCrossShardTx.signeddata)
+  return _internal_mutable_signeddata();
+}
+inline const std::string& SubCrossShardTx::_internal_signeddata() const {
+  return signeddata_.GetNoArena();
+}
+inline void SubCrossShardTx::_internal_set_signeddata(const std::string& value) {
+  
+  signeddata_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value);
+}
+inline void SubCrossShardTx::set_signeddata(std::string&& value) {
+  
+  signeddata_.SetNoArena(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:protos.SubCrossShardTx.signeddata)
+}
+inline void SubCrossShardTx::set_signeddata(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  
+  signeddata_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:protos.SubCrossShardTx.signeddata)
+}
+inline void SubCrossShardTx::set_signeddata(const void* value, size_t size) {
+  
+  signeddata_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:protos.SubCrossShardTx.signeddata)
+}
+inline std::string* SubCrossShardTx::_internal_mutable_signeddata() {
+  
+  return signeddata_.MutableNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline std::string* SubCrossShardTx::release_signeddata() {
+  // @@protoc_insertion_point(field_release:protos.SubCrossShardTx.signeddata)
+  
+  return signeddata_.ReleaseNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline void SubCrossShardTx::set_allocated_signeddata(std::string* signeddata) {
+  if (signeddata != nullptr) {
+    
+  } else {
+    
+  }
+  signeddata_.SetAllocatedNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), signeddata);
+  // @@protoc_insertion_point(field_set_allocated:protos.SubCrossShardTx.signeddata)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
