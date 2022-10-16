@@ -66,7 +66,7 @@ void LedgerInitializer::initConfig(boost::property_tree::ptree const& _pt, std::
 void LedgerInitializer::initConfig(boost::property_tree::ptree const& _pt, std::shared_ptr<Service> _p2pService, PROTOCOL_ID _group_protocolID)
 {
     m_groupDataDir = _pt.get<string>("group.group_data_path", "data/");
-    m_groupConfigPath = _pt.get<string>("group.group_config_path", "conf/");
+    m_groupConfigPath = _pt.get<string>("group.group_config_path", "conf/"); // 获取节点配置文件地址
     m_ledgerManager = make_shared<LedgerManager>();
     assert(m_p2pService);
     assert(m_groupConfigPath.length() != 0);
@@ -250,6 +250,7 @@ vector<dev::GROUP_ID> LedgerInitializer::initLedgers(std::shared_ptr<Service> _p
     vector<dev::GROUP_ID> newGroupIDList;
     try
     {
+        // 根据地址从conf文件夹下解析节点的groupID
         newGroupIDList = foreachLedgerConfigure(m_groupConfigPath, [&](dev::GROUP_ID const&
                                                                            _groupID,
                                                                        const string&

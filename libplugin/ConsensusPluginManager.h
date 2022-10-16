@@ -33,6 +33,12 @@ namespace dev {
 
                 void processReceivedCommitedTx(protos::CommittedRLPWithReadSet _txrlp);
 
+                // ADD BY ZH
+                void processReceivedCrossTx(protos::SubCrossShardTx _txrlp);
+                void processReceivedCrossTxReply(protos::SubCrossShardTxReply _txrlp);
+                void processReceivedCrossTxCommit(protos::SubCrossShardTxCommit _txrlp);
+                void processReceivedCrossTxCommitReply(protos::SubCrossShardTxCommitReply _txrlp);
+
                 int numOfNotFinishedDAGs();
                 int addNotFinishedDAGs(int _num);
 

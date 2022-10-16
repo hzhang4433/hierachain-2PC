@@ -121,12 +121,30 @@ message SubCrossShardTx
     uint64 sourceShardId = 2;
     uint64 destinShardId = 3;
     bytes signeddata = 4;
+    uint64 messageId = 5;
+    bytes crossTxHash = 6;
 }
 
-message SubCrossShardTxRes
+message SubCrossShardTxReply
 {
     uint64 status = 1;
     uint64 sourceShardId = 2;
     uint64 destinShardId = 3;
-    bytes signeddata = 4;
+    bytes crossTxHash = 4;
+}
+
+message SubCrossShardTxCommit
+{
+    uint64 commit = 1;
+    bytes crossTxHash = 2;
+    int64 sourceShardId = 3;
+    int64 destinShardId = 4;
+}
+
+message SubCrossShardTxCommitReply
+{
+    uint64 status = 1;
+    uint64 sourceShardId = 2;
+    uint64 destinShardId = 3;
+    bytes crossTxHash = 4;
 }

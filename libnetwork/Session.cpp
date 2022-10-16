@@ -512,7 +512,7 @@ void Session::onMessage(NetworkException const& e, Message::Ptr message)
             }
         }
         else
-        {
+        { // 走这个
             if (m_messageHandler)
             {
                 SESSION_LOG(TRACE) << "onMessage can't find callback, call default messageHandler"

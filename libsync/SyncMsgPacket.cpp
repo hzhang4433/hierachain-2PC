@@ -222,3 +222,32 @@ void SyncCommittedTxPacket::encode(dev::bytes const& _blockRLP)
     prep(m_rlpStream, CommittedTxPacket, 1);
     m_rlpStream.append(_blockRLP);
 }
+
+// ADD BY ZH
+void SyncCrossTxPacket::encode(dev::bytes const& _blockRLP)
+{
+    m_rlpStream.clear();
+    prep(m_rlpStream, CrossTxPacket, 1);
+    m_rlpStream.append(_blockRLP);
+}
+
+void SyncCrossTxReplyPacket::encode(dev::bytes const& _blockRLP)
+{
+    m_rlpStream.clear();
+    prep(m_rlpStream, CrossTxReplyPacket, 1);
+    m_rlpStream.append(_blockRLP);
+}
+
+void SyncCrossTxCommitPacket::encode(dev::bytes const& _blockRLP)
+{
+    m_rlpStream.clear();
+    prep(m_rlpStream, CrossTxCommitPacket, 1);
+    m_rlpStream.append(_blockRLP);
+}
+
+void SyncCrossTxCommitReplyPacket::encode(dev::bytes const& _blockRLP)
+{
+    m_rlpStream.clear();
+    prep(m_rlpStream, CrossTxCommitReplyPacket, 1);
+    m_rlpStream.append(_blockRLP);
+}

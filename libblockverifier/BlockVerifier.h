@@ -37,6 +37,10 @@
 #include <algorithm>
 #include <memory>
 #include <thread>
+#include <libprotobasic/shard.pb.h>
+#include <libplugin/Common.h>
+
+#include <libconsensus/pbft/PBFTEngine.h>
 
 namespace dev
 {
@@ -65,8 +69,26 @@ public:
     virtual ~BlockVerifier() {}
 
     ExecutiveContext::Ptr executeBlock(dev::eth::Block& block, BlockInfo const& parentBlockInfo);
+
+    // ExecutiveContext::Ptr executeBlock(dev::eth::Block& block, BlockInfo const& parentBlockInfo, 
+    //     dev::PROTOCOL_ID& m_group_protocolID, std::shared_ptr<dev::p2p::Service> m_group_service);
+
+    void executeCrossTx(std::string keyReadwriteSet);
+
+    void executeCandidateTx();
+    
     ExecutiveContext::Ptr serialExecuteBlock(
         dev::eth::Block& block, BlockInfo const& parentBlockInfo);
+    
+    // ExecutiveContext::Ptr serialExecuteBlock(
+    //     dev::eth::Block& block, BlockInfo const& parentBlockInfo,
+    //     dev::PROTOCOL_ID& m_group_protocolID, std::shared_ptr<dev::p2p::Service> m_group_service);
+
+    void replyToCoordinator(dev::plugin::transaction txInfo, 
+        dev::PROTOCOL_ID& m_group_protocolID, std::shared_ptr<dev::p2p::Service> m_group_service);
+
+    void replyToCoordinatorCommitOK(dev::plugin::transaction txInfo);
+
     ExecutiveContext::Ptr parallelExecuteBlock(
         dev::eth::Block& block, BlockInfo const& parentBlockInfo);
 
@@ -93,6 +115,10 @@ public:
         std::shared_ptr<executive::StateFace> _s, dev::executive::EnvInfo const& _envInfo);
     void setEvmFlags(VMFlagType const& _evmFlags) { m_evmFlags = _evmFlags; }
 
+    // ADD BY ZH
+    void loopCommitTx(dev::eth::Block& block, dev::eth::Transaction::Ptr tx, 
+                    dev::blockverifier::ExecutiveContext::Ptr executiveContext, 
+                    dev::executive::Executive::Ptr executive);
 private:
     ExecutiveContextFactory::Ptr m_executiveContextFactory;
     NumberHashCallBackFunction m_pNumberHash;
@@ -104,7 +130,10 @@ private:
 
     VMFlagType m_evmFlags = 0;
 
-    
+    // ADD BY ZH
+    // int m_stateMutex = 0;
+    // std::vector<dev::eth::Transaction::Ptr> m_waitTxs;
+    std::string readwriteset = "state";
 
 };
 

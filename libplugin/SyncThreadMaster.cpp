@@ -247,15 +247,15 @@ void SyncThreadMaster::receiveWorker()
         if(got_message == true)
         { 
             std::cout << "接收到协调者发来跨片交易请求..." << std::endl;
-            auto rlp = msg_txWithReadset.subtxrlp();
-            auto readset = msg_txWithReadset.messageid();
+            // auto rlp = msg_txWithReadset.subtxrlp();
+            // auto readset = msg_txWithReadset.messageid();
             auto sourceShardId = msg_txWithReadset.sourceshardid();
             auto destinshardid = msg_txWithReadset.destinshardid();
             auto signeddata = msg_txWithReadset.signeddata();
 
             PLUGIN_LOG(INFO) << LOG_DESC("交易解析完毕")
                                 << LOG_KV("signeddata", signeddata)
-                                << LOG_KV("readset", readset)
+                                // << LOG_KV("readset", readset)
                                 << LOG_KV("sourceShardId", sourceShardId)
                                 << LOG_KV("destinshardid", destinshardid);
 

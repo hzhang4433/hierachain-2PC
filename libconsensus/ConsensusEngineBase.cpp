@@ -70,6 +70,7 @@ dev::blockverifier::ExecutiveContext::Ptr ConsensusEngineBase::executeBlock(Bloc
         parentBlock->header().stateRoot()};
     /// reset execute context
     // std::cout << "准备执行区块" << std::endl;
+    // return m_blockVerifier->executeBlock(block, parentBlockInfo, m_group_protocolID, m_group_service);
     return m_blockVerifier->executeBlock(block, parentBlockInfo);
 }
 

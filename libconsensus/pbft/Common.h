@@ -41,7 +41,7 @@ namespace consensus
     extern int NODENUM; // 所有节点数目
     extern std::vector<dev::h512>forwardNodeId;
     extern std::vector<dev::h512>shardNodeId;
-    extern std::map<int, int> messageIDs;
+    extern std::map<unsigned long, unsigned long> messageIDs;
 
 // for bip152: packetType for partiallyBlock
 enum P2PPacketType : uint32_t

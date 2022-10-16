@@ -1245,7 +1245,7 @@ std::string Rpc::sendRawTransaction(int _groupID, const std::string& _rlp)
             boost::placeholders::_3, boost::placeholders::_4));
 }
 
-// ADD BY THB
+// ADD BY THB —— 子分片收到协调者的跨片交易后调用该接口发起跨片交易的片内共识
 std::string Rpc::sendSubCsRawTransaction(int _groupID, const std::string& _rlp, int _iscrosstx)
 {
     // RPC_LOG(INFO) << LOG_DESC("进入函数Rpc::sendSubCsRawTransaction")
@@ -1319,7 +1319,7 @@ std::string Rpc::sendRawTransaction(int _groupID, const std::string& _rlp, int _
             << LOG_KV("signedData", _rlp)
             << LOG_KV("txhash", tx->hash());
 
-        subCrossTxsHash.push_back(tx->hash());
+        // subCrossTxsHash.push_back(tx->hash());
 
         std::pair<h256, Address> ret;
         switch (clientProtocolversion)

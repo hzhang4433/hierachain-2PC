@@ -253,6 +253,112 @@ void ex_SyncMsgEngine::messageHandler(dev::p2p::NetworkException _e, std::shared
 
             }
         }
+        
+        // ADD BY ZH
+        else if(packet->packetType == CrossTxPacket){ // 若是跨片交易包
+            RLP const& rlps = (*packet).rlp();
+            bool size = rlps.isNull();
+            // std::cout << "DistributedTxPacket" << std::endl;
+            if(size)
+            {
+                std::cout << "data is null" << std::endl;
+            }
+            else
+            {
+                try
+                {
+                    PLUGIN_LOG(INFO) << LOG_DESC("开始对收到的 CrossTxPacket 消息进行处理");
+                    std::string str = rlps[0].toString();
+                    
+                    protos::SubCrossShardTx msg_rs;
+                    msg_rs.ParseFromString(str);
+
+                    m_pluginManager->processReceivedCrossTx(msg_rs); // 存交易
+                }
+                catch(const std::exception& e)
+                {
+                    std::cerr << e.what() << '\n';
+                }
+            }
+        }
+        else if(packet->packetType == CrossTxReplyPacket) { // 若是跨片交易回执包
+            RLP const& rlps = (*packet).rlp();
+            bool size = rlps.isNull();
+            // std::cout << "DistributedTxPacket" << std::endl;
+            if(size)
+            {
+                std::cout << "data is null" << std::endl;
+            }
+            else
+            {
+                try
+                {
+                    PLUGIN_LOG(INFO) << LOG_DESC("开始对收到的 CrossTxReplyPacket 消息进行处理");
+                    std::string str = rlps[0].toString();
+                    
+                    protos::SubCrossShardTxReply msg_rs;
+                    msg_rs.ParseFromString(str);
+
+                    m_pluginManager->processReceivedCrossTxReply(msg_rs); // 收集并检查包的数量
+                }
+                catch(const std::exception& e)
+                {
+                    std::cerr << e.what() << '\n';
+                }
+            }
+        }
+        else if(packet->packetType == CrossTxCommitPacket) { // 若是跨片交易提交包
+            RLP const& rlps = (*packet).rlp();
+            bool size = rlps.isNull();
+            // std::cout << "DistributedTxPacket" << std::endl;
+            if(size)
+            {
+                std::cout << "data is null" << std::endl;
+            }
+            else
+            {
+                try
+                {
+                    PLUGIN_LOG(INFO) << LOG_DESC("开始对收到的 CrossTxCommitPacket 消息进行处理");
+                    std::string str = rlps[0].toString();
+                    
+                    protos::SubCrossShardTxCommit msg_rs;
+                    msg_rs.ParseFromString(str);
+
+                    m_pluginManager->processReceivedCrossTxCommit(msg_rs); // 收集并检查包的数量
+                }
+                catch(const std::exception& e)
+                {
+                    std::cerr << e.what() << '\n';
+                }
+            }
+        }
+        else if(packet->packetType == CrossTxCommitReplyPacket) { // 若是跨片交易执行完成消息包
+            RLP const& rlps = (*packet).rlp();
+            bool size = rlps.isNull();
+            // std::cout << "DistributedTxPacket" << std::endl;
+            if(size)
+            {
+                std::cout << "data is null" << std::endl;
+            }
+            else
+            {
+                try
+                {
+                    PLUGIN_LOG(INFO) << LOG_DESC("开始对收到的 CrossTxCommitReplyPacket 消息进行处理");
+                    std::string str = rlps[0].toString();
+                    
+                    protos::SubCrossShardTxCommitReply msg_rs;
+                    msg_rs.ParseFromString(str);
+
+                    m_pluginManager->processReceivedCrossTxCommitReply(msg_rs); // 收集并检查包的数量
+                }
+                catch(const std::exception& e)
+                {
+                    std::cerr << e.what() << '\n';
+                }
+            }
+        }
     }
     catch(std::exception const& e)
     {

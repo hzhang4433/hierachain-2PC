@@ -337,6 +337,7 @@ void Block::calReceiptRoot(bool update) const
     if (m_tReceiptsCache == bytes())
     {
         RLPStream txReceipts;
+        std::cout << m_transactionReceipts->size() << std::endl;
         txReceipts.appendList(m_transactionReceipts->size());
         BytesMap mapCache;
         for (size_t i = 0; i < m_transactionReceipts->size(); i++)
@@ -344,11 +345,15 @@ void Block::calReceiptRoot(bool update) const
             RLPStream s;
             s << i;
             bytes tranReceipts_data;
+            if ((*m_transactionReceipts)[i] == nullptr) {
+                continue;
+            }
             (*m_transactionReceipts)[i]->encode(tranReceipts_data);
             // BLOCK_LOG(DEBUG) << LOG_KV("index", i) << "receipt=" << *(*m_transactionReceipts)[i];
             txReceipts.appendRaw(tranReceipts_data);
             mapCache.insert(std::make_pair(s.out(), tranReceipts_data));
         }
+        std::cout << "111" << std::endl;
         txReceipts.swapOut(m_tReceiptsCache);
         m_receiptRootCache = hash256(mapCache);
     }

@@ -70,10 +70,18 @@ class SubCrossShardTxDefaultTypeInternal {
  public:
   ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SubCrossShardTx> _instance;
 } _SubCrossShardTx_default_instance_;
-class SubCrossShardTxResDefaultTypeInternal {
+class SubCrossShardTxReplyDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SubCrossShardTxRes> _instance;
-} _SubCrossShardTxRes_default_instance_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SubCrossShardTxReply> _instance;
+} _SubCrossShardTxReply_default_instance_;
+class SubCrossShardTxCommitDefaultTypeInternal {
+ public:
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SubCrossShardTxCommit> _instance;
+} _SubCrossShardTxCommit_default_instance_;
+class SubCrossShardTxCommitReplyDefaultTypeInternal {
+ public:
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SubCrossShardTxCommitReply> _instance;
+} _SubCrossShardTxCommitReply_default_instance_;
 }  // namespace protos
 static void InitDefaultsscc_info_Block_shard_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -219,19 +227,47 @@ static void InitDefaultsscc_info_SubCrossShardTx_shard_2eproto() {
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SubCrossShardTx_shard_2eproto =
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SubCrossShardTx_shard_2eproto}, {}};
 
-static void InitDefaultsscc_info_SubCrossShardTxRes_shard_2eproto() {
+static void InitDefaultsscc_info_SubCrossShardTxCommit_shard_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::protos::_SubCrossShardTxRes_default_instance_;
-    new (ptr) ::protos::SubCrossShardTxRes();
+    void* ptr = &::protos::_SubCrossShardTxCommit_default_instance_;
+    new (ptr) ::protos::SubCrossShardTxCommit();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::protos::SubCrossShardTxRes::InitAsDefaultInstance();
+  ::protos::SubCrossShardTxCommit::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SubCrossShardTxRes_shard_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SubCrossShardTxRes_shard_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SubCrossShardTxCommit_shard_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SubCrossShardTxCommit_shard_2eproto}, {}};
+
+static void InitDefaultsscc_info_SubCrossShardTxCommitReply_shard_2eproto() {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+  {
+    void* ptr = &::protos::_SubCrossShardTxCommitReply_default_instance_;
+    new (ptr) ::protos::SubCrossShardTxCommitReply();
+    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
+  }
+  ::protos::SubCrossShardTxCommitReply::InitAsDefaultInstance();
+}
+
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SubCrossShardTxCommitReply_shard_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SubCrossShardTxCommitReply_shard_2eproto}, {}};
+
+static void InitDefaultsscc_info_SubCrossShardTxReply_shard_2eproto() {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+  {
+    void* ptr = &::protos::_SubCrossShardTxReply_default_instance_;
+    new (ptr) ::protos::SubCrossShardTxReply();
+    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
+  }
+  ::protos::SubCrossShardTxReply::InitAsDefaultInstance();
+}
+
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SubCrossShardTxReply_shard_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SubCrossShardTxReply_shard_2eproto}, {}};
 
 static void InitDefaultsscc_info_SubPreCommitedDisTx_shard_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -276,7 +312,7 @@ static void InitDefaultsscc_info_TxWithReadSet_shard_2eproto() {
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_TxWithReadSet_shard_2eproto}, {
       &scc_info_KV_shard_2eproto.base,}};
 
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_shard_2eproto[14];
+static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_shard_2eproto[16];
 static constexpr ::PROTOBUF_NAMESPACE_ID::EnumDescriptor const** file_level_enum_descriptors_shard_2eproto = nullptr;
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_shard_2eproto = nullptr;
 
@@ -398,15 +434,35 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_shard_2eproto::offsets[] PROTO
   PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTx, sourceshardid_),
   PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTx, destinshardid_),
   PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTx, signeddata_),
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTx, messageid_),
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTx, crosstxhash_),
   ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxRes, _internal_metadata_),
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxReply, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxRes, status_),
-  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxRes, sourceshardid_),
-  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxRes, destinshardid_),
-  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxRes, signeddata_),
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxReply, status_),
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxReply, sourceshardid_),
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxReply, destinshardid_),
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxReply, crosstxhash_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxCommit, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxCommit, commit_),
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxCommit, crosstxhash_),
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxCommit, sourceshardid_),
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxCommit, destinshardid_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxCommitReply, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxCommitReply, status_),
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxCommitReply, sourceshardid_),
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxCommitReply, destinshardid_),
+  PROTOBUF_FIELD_OFFSET(::protos::SubCrossShardTxCommitReply, crosstxhash_),
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, sizeof(::protos::SubPreCommitedDisTx)},
@@ -422,7 +478,9 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 88, -1, sizeof(::protos::CommitState)},
   { 94, -1, sizeof(::protos::BlockHeader)},
   { 108, -1, sizeof(::protos::SubCrossShardTx)},
-  { 117, -1, sizeof(::protos::SubCrossShardTxRes)},
+  { 119, -1, sizeof(::protos::SubCrossShardTxReply)},
+  { 128, -1, sizeof(::protos::SubCrossShardTxCommit)},
+  { 137, -1, sizeof(::protos::SubCrossShardTxCommitReply)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -439,7 +497,9 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::protos::_CommitState_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::protos::_BlockHeader_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::protos::_SubCrossShardTx_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::protos::_SubCrossShardTxRes_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::protos::_SubCrossShardTxReply_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::protos::_SubCrossShardTxCommit_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::protos::_SubCrossShardTxCommitReply_default_instance_),
 };
 
 const char descriptor_table_protodef_shard_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
@@ -472,16 +532,23 @@ const char descriptor_table_protodef_shard_2eproto[] PROTOBUF_SECTION_VARIABLE(p
   "\n\020transactionsRoot\030\003 \001(\014\022\016\n\006number\030\004 \001(\004"
   "\022\020\n\010gasLimit\030\005 \001(\014\022\017\n\007gasUsed\030\006 \001(\014\022\021\n\tt"
   "imestamp\030\007 \001(\004\022\021\n\tsignature\030\010 \001(\014\022\017\n\007sha"
-  "rdId\030\t \001(\004\"i\n\017SubCrossShardTx\022\024\n\014stateAd"
-  "dress\030\001 \001(\014\022\025\n\rsourceShardId\030\002 \001(\004\022\025\n\rde"
-  "stinShardId\030\003 \001(\004\022\022\n\nsigneddata\030\004 \001(\014\"f\n"
-  "\022SubCrossShardTxRes\022\016\n\006status\030\001 \001(\004\022\025\n\rs"
-  "ourceShardId\030\002 \001(\004\022\025\n\rdestinShardId\030\003 \001("
-  "\004\022\022\n\nsigneddata\030\004 \001(\014b\006proto3"
+  "rdId\030\t \001(\004\"\221\001\n\017SubCrossShardTx\022\024\n\014stateA"
+  "ddress\030\001 \001(\014\022\025\n\rsourceShardId\030\002 \001(\004\022\025\n\rd"
+  "estinShardId\030\003 \001(\004\022\022\n\nsigneddata\030\004 \001(\014\022\021"
+  "\n\tmessageId\030\005 \001(\004\022\023\n\013crossTxHash\030\006 \001(\014\"i"
+  "\n\024SubCrossShardTxReply\022\016\n\006status\030\001 \001(\004\022\025"
+  "\n\rsourceShardId\030\002 \001(\004\022\025\n\rdestinShardId\030\003"
+  " \001(\004\022\023\n\013crossTxHash\030\004 \001(\014\"j\n\025SubCrossSha"
+  "rdTxCommit\022\016\n\006commit\030\001 \001(\004\022\023\n\013crossTxHas"
+  "h\030\002 \001(\014\022\025\n\rsourceShardId\030\003 \001(\003\022\025\n\rdestin"
+  "ShardId\030\004 \001(\003\"o\n\032SubCrossShardTxCommitRe"
+  "ply\022\016\n\006status\030\001 \001(\004\022\025\n\rsourceShardId\030\002 \001"
+  "(\004\022\025\n\rdestinShardId\030\003 \001(\004\022\023\n\013crossTxHash"
+  "\030\004 \001(\014b\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_shard_2eproto_deps[1] = {
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_shard_2eproto_sccs[14] = {
+static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_shard_2eproto_sccs[16] = {
   &scc_info_Block_shard_2eproto.base,
   &scc_info_BlockHeader_shard_2eproto.base,
   &scc_info_CheckPoint_shard_2eproto.base,
@@ -492,7 +559,9 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_sha
   &scc_info_RLPWithReadSet_shard_2eproto.base,
   &scc_info_ReadSet_shard_2eproto.base,
   &scc_info_SubCrossShardTx_shard_2eproto.base,
-  &scc_info_SubCrossShardTxRes_shard_2eproto.base,
+  &scc_info_SubCrossShardTxCommit_shard_2eproto.base,
+  &scc_info_SubCrossShardTxCommitReply_shard_2eproto.base,
+  &scc_info_SubCrossShardTxReply_shard_2eproto.base,
   &scc_info_SubPreCommitedDisTx_shard_2eproto.base,
   &scc_info_Transaction_shard_2eproto.base,
   &scc_info_TxWithReadSet_shard_2eproto.base,
@@ -500,10 +569,10 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_sha
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_shard_2eproto_once;
 static bool descriptor_table_shard_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_shard_2eproto = {
-  &descriptor_table_shard_2eproto_initialized, descriptor_table_protodef_shard_2eproto, "shard.proto", 1389,
-  &descriptor_table_shard_2eproto_once, descriptor_table_shard_2eproto_sccs, descriptor_table_shard_2eproto_deps, 14, 0,
+  &descriptor_table_shard_2eproto_initialized, descriptor_table_protodef_shard_2eproto, "shard.proto", 1654,
+  &descriptor_table_shard_2eproto_once, descriptor_table_shard_2eproto_sccs, descriptor_table_shard_2eproto_deps, 16, 0,
   schemas, file_default_instances, TableStruct_shard_2eproto::offsets,
-  file_level_metadata_shard_2eproto, 14, file_level_enum_descriptors_shard_2eproto, file_level_service_descriptors_shard_2eproto,
+  file_level_metadata_shard_2eproto, 16, file_level_enum_descriptors_shard_2eproto, file_level_service_descriptors_shard_2eproto,
 };
 
 // Force running AddDescriptors() at dynamic initialization time.
@@ -3975,9 +4044,13 @@ SubCrossShardTx::SubCrossShardTx(const SubCrossShardTx& from)
   if (!from._internal_signeddata().empty()) {
     signeddata_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.signeddata_);
   }
+  crosstxhash_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (!from._internal_crosstxhash().empty()) {
+    crosstxhash_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.crosstxhash_);
+  }
   ::memcpy(&sourceshardid_, &from.sourceshardid_,
-    static_cast<size_t>(reinterpret_cast<char*>(&destinshardid_) -
-    reinterpret_cast<char*>(&sourceshardid_)) + sizeof(destinshardid_));
+    static_cast<size_t>(reinterpret_cast<char*>(&messageid_) -
+    reinterpret_cast<char*>(&sourceshardid_)) + sizeof(messageid_));
   // @@protoc_insertion_point(copy_constructor:protos.SubCrossShardTx)
 }
 
@@ -3985,9 +4058,10 @@ void SubCrossShardTx::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_SubCrossShardTx_shard_2eproto.base);
   stateaddress_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   signeddata_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  crosstxhash_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   ::memset(&sourceshardid_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&destinshardid_) -
-      reinterpret_cast<char*>(&sourceshardid_)) + sizeof(destinshardid_));
+      reinterpret_cast<char*>(&messageid_) -
+      reinterpret_cast<char*>(&sourceshardid_)) + sizeof(messageid_));
 }
 
 SubCrossShardTx::~SubCrossShardTx() {
@@ -3998,6 +4072,7 @@ SubCrossShardTx::~SubCrossShardTx() {
 void SubCrossShardTx::SharedDtor() {
   stateaddress_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   signeddata_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  crosstxhash_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void SubCrossShardTx::SetCachedSize(int size) const {
@@ -4017,9 +4092,10 @@ void SubCrossShardTx::Clear() {
 
   stateaddress_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   signeddata_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  crosstxhash_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   ::memset(&sourceshardid_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&destinshardid_) -
-      reinterpret_cast<char*>(&sourceshardid_)) + sizeof(destinshardid_));
+      reinterpret_cast<char*>(&messageid_) -
+      reinterpret_cast<char*>(&sourceshardid_)) + sizeof(messageid_));
   _internal_metadata_.Clear();
 }
 
@@ -4056,6 +4132,21 @@ const char* SubCrossShardTx::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPAC
       case 4:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
           auto str = _internal_mutable_signeddata();
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // uint64 messageId = 5;
+      case 5:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
+          messageid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // bytes crossTxHash = 6;
+      case 6:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 50)) {
+          auto str = _internal_mutable_crosstxhash();
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
         } else goto handle_unusual;
@@ -4110,6 +4201,18 @@ failure:
         4, this->_internal_signeddata(), target);
   }
 
+  // uint64 messageId = 5;
+  if (this->messageid() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(5, this->_internal_messageid(), target);
+  }
+
+  // bytes crossTxHash = 6;
+  if (this->crosstxhash().size() > 0) {
+    target = stream->WriteBytesMaybeAliased(
+        6, this->_internal_crosstxhash(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields(), target, stream);
@@ -4140,6 +4243,13 @@ size_t SubCrossShardTx::ByteSizeLong() const {
         this->_internal_signeddata());
   }
 
+  // bytes crossTxHash = 6;
+  if (this->crosstxhash().size() > 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+        this->_internal_crosstxhash());
+  }
+
   // uint64 sourceShardId = 2;
   if (this->sourceshardid() != 0) {
     total_size += 1 +
@@ -4152,6 +4262,13 @@ size_t SubCrossShardTx::ByteSizeLong() const {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
         this->_internal_destinshardid());
+  }
+
+  // uint64 messageId = 5;
+  if (this->messageid() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+        this->_internal_messageid());
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -4193,11 +4310,18 @@ void SubCrossShardTx::MergeFrom(const SubCrossShardTx& from) {
 
     signeddata_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.signeddata_);
   }
+  if (from.crosstxhash().size() > 0) {
+
+    crosstxhash_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.crosstxhash_);
+  }
   if (from.sourceshardid() != 0) {
     _internal_set_sourceshardid(from._internal_sourceshardid());
   }
   if (from.destinshardid() != 0) {
     _internal_set_destinshardid(from._internal_destinshardid());
+  }
+  if (from.messageid() != 0) {
+    _internal_set_messageid(from._internal_messageid());
   }
 }
 
@@ -4226,8 +4350,11 @@ void SubCrossShardTx::InternalSwap(SubCrossShardTx* other) {
     GetArenaNoVirtual());
   signeddata_.Swap(&other->signeddata_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
     GetArenaNoVirtual());
+  crosstxhash_.Swap(&other->crosstxhash_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+    GetArenaNoVirtual());
   swap(sourceshardid_, other->sourceshardid_);
   swap(destinshardid_, other->destinshardid_);
+  swap(messageid_, other->messageid_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata SubCrossShardTx::GetMetadata() const {
@@ -4237,71 +4364,71 @@ void SubCrossShardTx::InternalSwap(SubCrossShardTx* other) {
 
 // ===================================================================
 
-void SubCrossShardTxRes::InitAsDefaultInstance() {
+void SubCrossShardTxReply::InitAsDefaultInstance() {
 }
-class SubCrossShardTxRes::_Internal {
+class SubCrossShardTxReply::_Internal {
  public:
 };
 
-SubCrossShardTxRes::SubCrossShardTxRes()
+SubCrossShardTxReply::SubCrossShardTxReply()
   : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:protos.SubCrossShardTxRes)
+  // @@protoc_insertion_point(constructor:protos.SubCrossShardTxReply)
 }
-SubCrossShardTxRes::SubCrossShardTxRes(const SubCrossShardTxRes& from)
+SubCrossShardTxReply::SubCrossShardTxReply(const SubCrossShardTxReply& from)
   : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  signeddata_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  if (!from._internal_signeddata().empty()) {
-    signeddata_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.signeddata_);
+  crosstxhash_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (!from._internal_crosstxhash().empty()) {
+    crosstxhash_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.crosstxhash_);
   }
   ::memcpy(&status_, &from.status_,
     static_cast<size_t>(reinterpret_cast<char*>(&destinshardid_) -
     reinterpret_cast<char*>(&status_)) + sizeof(destinshardid_));
-  // @@protoc_insertion_point(copy_constructor:protos.SubCrossShardTxRes)
+  // @@protoc_insertion_point(copy_constructor:protos.SubCrossShardTxReply)
 }
 
-void SubCrossShardTxRes::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_SubCrossShardTxRes_shard_2eproto.base);
-  signeddata_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+void SubCrossShardTxReply::SharedCtor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_SubCrossShardTxReply_shard_2eproto.base);
+  crosstxhash_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   ::memset(&status_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&destinshardid_) -
       reinterpret_cast<char*>(&status_)) + sizeof(destinshardid_));
 }
 
-SubCrossShardTxRes::~SubCrossShardTxRes() {
-  // @@protoc_insertion_point(destructor:protos.SubCrossShardTxRes)
+SubCrossShardTxReply::~SubCrossShardTxReply() {
+  // @@protoc_insertion_point(destructor:protos.SubCrossShardTxReply)
   SharedDtor();
 }
 
-void SubCrossShardTxRes::SharedDtor() {
-  signeddata_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+void SubCrossShardTxReply::SharedDtor() {
+  crosstxhash_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
-void SubCrossShardTxRes::SetCachedSize(int size) const {
+void SubCrossShardTxReply::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SubCrossShardTxRes& SubCrossShardTxRes::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SubCrossShardTxRes_shard_2eproto.base);
+const SubCrossShardTxReply& SubCrossShardTxReply::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SubCrossShardTxReply_shard_2eproto.base);
   return *internal_default_instance();
 }
 
 
-void SubCrossShardTxRes::Clear() {
-// @@protoc_insertion_point(message_clear_start:protos.SubCrossShardTxRes)
+void SubCrossShardTxReply::Clear() {
+// @@protoc_insertion_point(message_clear_start:protos.SubCrossShardTxReply)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  signeddata_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  crosstxhash_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   ::memset(&status_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&destinshardid_) -
       reinterpret_cast<char*>(&status_)) + sizeof(destinshardid_));
   _internal_metadata_.Clear();
 }
 
-const char* SubCrossShardTxRes::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+const char* SubCrossShardTxReply::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -4329,10 +4456,10 @@ const char* SubCrossShardTxRes::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
-      // bytes signeddata = 4;
+      // bytes crossTxHash = 4;
       case 4:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
-          auto str = _internal_mutable_signeddata();
+          auto str = _internal_mutable_crosstxhash();
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
         } else goto handle_unusual;
@@ -4357,9 +4484,9 @@ failure:
 #undef CHK_
 }
 
-::PROTOBUF_NAMESPACE_ID::uint8* SubCrossShardTxRes::_InternalSerialize(
+::PROTOBUF_NAMESPACE_ID::uint8* SubCrossShardTxReply::_InternalSerialize(
     ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:protos.SubCrossShardTxRes)
+  // @@protoc_insertion_point(serialize_to_array_start:protos.SubCrossShardTxReply)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -4381,33 +4508,33 @@ failure:
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(3, this->_internal_destinshardid(), target);
   }
 
-  // bytes signeddata = 4;
-  if (this->signeddata().size() > 0) {
+  // bytes crossTxHash = 4;
+  if (this->crosstxhash().size() > 0) {
     target = stream->WriteBytesMaybeAliased(
-        4, this->_internal_signeddata(), target);
+        4, this->_internal_crosstxhash(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields(), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:protos.SubCrossShardTxRes)
+  // @@protoc_insertion_point(serialize_to_array_end:protos.SubCrossShardTxReply)
   return target;
 }
 
-size_t SubCrossShardTxRes::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:protos.SubCrossShardTxRes)
+size_t SubCrossShardTxReply::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protos.SubCrossShardTxReply)
   size_t total_size = 0;
 
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // bytes signeddata = 4;
-  if (this->signeddata().size() > 0) {
+  // bytes crossTxHash = 4;
+  if (this->crosstxhash().size() > 0) {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_signeddata());
+        this->_internal_crosstxhash());
   }
 
   // uint64 status = 1;
@@ -4440,31 +4567,31 @@ size_t SubCrossShardTxRes::ByteSizeLong() const {
   return total_size;
 }
 
-void SubCrossShardTxRes::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:protos.SubCrossShardTxRes)
+void SubCrossShardTxReply::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:protos.SubCrossShardTxReply)
   GOOGLE_DCHECK_NE(&from, this);
-  const SubCrossShardTxRes* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<SubCrossShardTxRes>(
+  const SubCrossShardTxReply* source =
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<SubCrossShardTxReply>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:protos.SubCrossShardTxRes)
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:protos.SubCrossShardTxReply)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:protos.SubCrossShardTxRes)
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:protos.SubCrossShardTxReply)
     MergeFrom(*source);
   }
 }
 
-void SubCrossShardTxRes::MergeFrom(const SubCrossShardTxRes& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:protos.SubCrossShardTxRes)
+void SubCrossShardTxReply::MergeFrom(const SubCrossShardTxReply& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:protos.SubCrossShardTxReply)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from.signeddata().size() > 0) {
+  if (from.crosstxhash().size() > 0) {
 
-    signeddata_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.signeddata_);
+    crosstxhash_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.crosstxhash_);
   }
   if (from.status() != 0) {
     _internal_set_status(from._internal_status());
@@ -4477,35 +4604,585 @@ void SubCrossShardTxRes::MergeFrom(const SubCrossShardTxRes& from) {
   }
 }
 
-void SubCrossShardTxRes::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:protos.SubCrossShardTxRes)
+void SubCrossShardTxReply::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:protos.SubCrossShardTxReply)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void SubCrossShardTxRes::CopyFrom(const SubCrossShardTxRes& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:protos.SubCrossShardTxRes)
+void SubCrossShardTxReply::CopyFrom(const SubCrossShardTxReply& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protos.SubCrossShardTxReply)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool SubCrossShardTxRes::IsInitialized() const {
+bool SubCrossShardTxReply::IsInitialized() const {
   return true;
 }
 
-void SubCrossShardTxRes::InternalSwap(SubCrossShardTxRes* other) {
+void SubCrossShardTxReply::InternalSwap(SubCrossShardTxReply* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
-  signeddata_.Swap(&other->signeddata_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+  crosstxhash_.Swap(&other->crosstxhash_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
     GetArenaNoVirtual());
   swap(status_, other->status_);
   swap(sourceshardid_, other->sourceshardid_);
   swap(destinshardid_, other->destinshardid_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata SubCrossShardTxRes::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata SubCrossShardTxReply::GetMetadata() const {
+  return GetMetadataStatic();
+}
+
+
+// ===================================================================
+
+void SubCrossShardTxCommit::InitAsDefaultInstance() {
+}
+class SubCrossShardTxCommit::_Internal {
+ public:
+};
+
+SubCrossShardTxCommit::SubCrossShardTxCommit()
+  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+  SharedCtor();
+  // @@protoc_insertion_point(constructor:protos.SubCrossShardTxCommit)
+}
+SubCrossShardTxCommit::SubCrossShardTxCommit(const SubCrossShardTxCommit& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message(),
+      _internal_metadata_(nullptr) {
+  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  crosstxhash_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (!from._internal_crosstxhash().empty()) {
+    crosstxhash_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.crosstxhash_);
+  }
+  ::memcpy(&commit_, &from.commit_,
+    static_cast<size_t>(reinterpret_cast<char*>(&destinshardid_) -
+    reinterpret_cast<char*>(&commit_)) + sizeof(destinshardid_));
+  // @@protoc_insertion_point(copy_constructor:protos.SubCrossShardTxCommit)
+}
+
+void SubCrossShardTxCommit::SharedCtor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_SubCrossShardTxCommit_shard_2eproto.base);
+  crosstxhash_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&commit_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&destinshardid_) -
+      reinterpret_cast<char*>(&commit_)) + sizeof(destinshardid_));
+}
+
+SubCrossShardTxCommit::~SubCrossShardTxCommit() {
+  // @@protoc_insertion_point(destructor:protos.SubCrossShardTxCommit)
+  SharedDtor();
+}
+
+void SubCrossShardTxCommit::SharedDtor() {
+  crosstxhash_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+
+void SubCrossShardTxCommit::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+const SubCrossShardTxCommit& SubCrossShardTxCommit::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SubCrossShardTxCommit_shard_2eproto.base);
+  return *internal_default_instance();
+}
+
+
+void SubCrossShardTxCommit::Clear() {
+// @@protoc_insertion_point(message_clear_start:protos.SubCrossShardTxCommit)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  crosstxhash_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&commit_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&destinshardid_) -
+      reinterpret_cast<char*>(&commit_)) + sizeof(destinshardid_));
+  _internal_metadata_.Clear();
+}
+
+const char* SubCrossShardTxCommit::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    ::PROTOBUF_NAMESPACE_ID::uint32 tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    CHK_(ptr);
+    switch (tag >> 3) {
+      // uint64 commit = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+          commit_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // bytes crossTxHash = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+          auto str = _internal_mutable_crosstxhash();
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // int64 sourceShardId = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+          sourceshardid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // int64 destinShardId = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
+          destinshardid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      default: {
+      handle_unusual:
+        if ((tag & 7) == 4 || tag == 0) {
+          ctx->SetLastTag(tag);
+          goto success;
+        }
+        ptr = UnknownFieldParse(tag, &_internal_metadata_, ptr, ctx);
+        CHK_(ptr != nullptr);
+        continue;
+      }
+    }  // switch
+  }  // while
+success:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto success;
+#undef CHK_
+}
+
+::PROTOBUF_NAMESPACE_ID::uint8* SubCrossShardTxCommit::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:protos.SubCrossShardTxCommit)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // uint64 commit = 1;
+  if (this->commit() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(1, this->_internal_commit(), target);
+  }
+
+  // bytes crossTxHash = 2;
+  if (this->crosstxhash().size() > 0) {
+    target = stream->WriteBytesMaybeAliased(
+        2, this->_internal_crosstxhash(), target);
+  }
+
+  // int64 sourceShardId = 3;
+  if (this->sourceshardid() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt64ToArray(3, this->_internal_sourceshardid(), target);
+  }
+
+  // int64 destinShardId = 4;
+  if (this->destinshardid() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt64ToArray(4, this->_internal_destinshardid(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields(), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:protos.SubCrossShardTxCommit)
+  return target;
+}
+
+size_t SubCrossShardTxCommit::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protos.SubCrossShardTxCommit)
+  size_t total_size = 0;
+
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // bytes crossTxHash = 2;
+  if (this->crosstxhash().size() > 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+        this->_internal_crosstxhash());
+  }
+
+  // uint64 commit = 1;
+  if (this->commit() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+        this->_internal_commit());
+  }
+
+  // int64 sourceShardId = 3;
+  if (this->sourceshardid() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int64Size(
+        this->_internal_sourceshardid());
+  }
+
+  // int64 destinShardId = 4;
+  if (this->destinshardid() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int64Size(
+        this->_internal_destinshardid());
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
+        _internal_metadata_, total_size, &_cached_size_);
+  }
+  int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
+}
+
+void SubCrossShardTxCommit::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:protos.SubCrossShardTxCommit)
+  GOOGLE_DCHECK_NE(&from, this);
+  const SubCrossShardTxCommit* source =
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<SubCrossShardTxCommit>(
+          &from);
+  if (source == nullptr) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:protos.SubCrossShardTxCommit)
+    ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
+  } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:protos.SubCrossShardTxCommit)
+    MergeFrom(*source);
+  }
+}
+
+void SubCrossShardTxCommit::MergeFrom(const SubCrossShardTxCommit& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:protos.SubCrossShardTxCommit)
+  GOOGLE_DCHECK_NE(&from, this);
+  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from.crosstxhash().size() > 0) {
+
+    crosstxhash_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.crosstxhash_);
+  }
+  if (from.commit() != 0) {
+    _internal_set_commit(from._internal_commit());
+  }
+  if (from.sourceshardid() != 0) {
+    _internal_set_sourceshardid(from._internal_sourceshardid());
+  }
+  if (from.destinshardid() != 0) {
+    _internal_set_destinshardid(from._internal_destinshardid());
+  }
+}
+
+void SubCrossShardTxCommit::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:protos.SubCrossShardTxCommit)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void SubCrossShardTxCommit::CopyFrom(const SubCrossShardTxCommit& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protos.SubCrossShardTxCommit)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool SubCrossShardTxCommit::IsInitialized() const {
+  return true;
+}
+
+void SubCrossShardTxCommit::InternalSwap(SubCrossShardTxCommit* other) {
+  using std::swap;
+  _internal_metadata_.Swap(&other->_internal_metadata_);
+  crosstxhash_.Swap(&other->crosstxhash_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+    GetArenaNoVirtual());
+  swap(commit_, other->commit_);
+  swap(sourceshardid_, other->sourceshardid_);
+  swap(destinshardid_, other->destinshardid_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata SubCrossShardTxCommit::GetMetadata() const {
+  return GetMetadataStatic();
+}
+
+
+// ===================================================================
+
+void SubCrossShardTxCommitReply::InitAsDefaultInstance() {
+}
+class SubCrossShardTxCommitReply::_Internal {
+ public:
+};
+
+SubCrossShardTxCommitReply::SubCrossShardTxCommitReply()
+  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+  SharedCtor();
+  // @@protoc_insertion_point(constructor:protos.SubCrossShardTxCommitReply)
+}
+SubCrossShardTxCommitReply::SubCrossShardTxCommitReply(const SubCrossShardTxCommitReply& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message(),
+      _internal_metadata_(nullptr) {
+  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  crosstxhash_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (!from._internal_crosstxhash().empty()) {
+    crosstxhash_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.crosstxhash_);
+  }
+  ::memcpy(&status_, &from.status_,
+    static_cast<size_t>(reinterpret_cast<char*>(&destinshardid_) -
+    reinterpret_cast<char*>(&status_)) + sizeof(destinshardid_));
+  // @@protoc_insertion_point(copy_constructor:protos.SubCrossShardTxCommitReply)
+}
+
+void SubCrossShardTxCommitReply::SharedCtor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_SubCrossShardTxCommitReply_shard_2eproto.base);
+  crosstxhash_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&status_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&destinshardid_) -
+      reinterpret_cast<char*>(&status_)) + sizeof(destinshardid_));
+}
+
+SubCrossShardTxCommitReply::~SubCrossShardTxCommitReply() {
+  // @@protoc_insertion_point(destructor:protos.SubCrossShardTxCommitReply)
+  SharedDtor();
+}
+
+void SubCrossShardTxCommitReply::SharedDtor() {
+  crosstxhash_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+
+void SubCrossShardTxCommitReply::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+const SubCrossShardTxCommitReply& SubCrossShardTxCommitReply::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SubCrossShardTxCommitReply_shard_2eproto.base);
+  return *internal_default_instance();
+}
+
+
+void SubCrossShardTxCommitReply::Clear() {
+// @@protoc_insertion_point(message_clear_start:protos.SubCrossShardTxCommitReply)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  crosstxhash_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&status_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&destinshardid_) -
+      reinterpret_cast<char*>(&status_)) + sizeof(destinshardid_));
+  _internal_metadata_.Clear();
+}
+
+const char* SubCrossShardTxCommitReply::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    ::PROTOBUF_NAMESPACE_ID::uint32 tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    CHK_(ptr);
+    switch (tag >> 3) {
+      // uint64 status = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+          status_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // uint64 sourceShardId = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+          sourceshardid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // uint64 destinShardId = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+          destinshardid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // bytes crossTxHash = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
+          auto str = _internal_mutable_crosstxhash();
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      default: {
+      handle_unusual:
+        if ((tag & 7) == 4 || tag == 0) {
+          ctx->SetLastTag(tag);
+          goto success;
+        }
+        ptr = UnknownFieldParse(tag, &_internal_metadata_, ptr, ctx);
+        CHK_(ptr != nullptr);
+        continue;
+      }
+    }  // switch
+  }  // while
+success:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto success;
+#undef CHK_
+}
+
+::PROTOBUF_NAMESPACE_ID::uint8* SubCrossShardTxCommitReply::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:protos.SubCrossShardTxCommitReply)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // uint64 status = 1;
+  if (this->status() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(1, this->_internal_status(), target);
+  }
+
+  // uint64 sourceShardId = 2;
+  if (this->sourceshardid() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(2, this->_internal_sourceshardid(), target);
+  }
+
+  // uint64 destinShardId = 3;
+  if (this->destinshardid() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(3, this->_internal_destinshardid(), target);
+  }
+
+  // bytes crossTxHash = 4;
+  if (this->crosstxhash().size() > 0) {
+    target = stream->WriteBytesMaybeAliased(
+        4, this->_internal_crosstxhash(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields(), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:protos.SubCrossShardTxCommitReply)
+  return target;
+}
+
+size_t SubCrossShardTxCommitReply::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protos.SubCrossShardTxCommitReply)
+  size_t total_size = 0;
+
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // bytes crossTxHash = 4;
+  if (this->crosstxhash().size() > 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+        this->_internal_crosstxhash());
+  }
+
+  // uint64 status = 1;
+  if (this->status() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+        this->_internal_status());
+  }
+
+  // uint64 sourceShardId = 2;
+  if (this->sourceshardid() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+        this->_internal_sourceshardid());
+  }
+
+  // uint64 destinShardId = 3;
+  if (this->destinshardid() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+        this->_internal_destinshardid());
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
+        _internal_metadata_, total_size, &_cached_size_);
+  }
+  int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
+}
+
+void SubCrossShardTxCommitReply::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:protos.SubCrossShardTxCommitReply)
+  GOOGLE_DCHECK_NE(&from, this);
+  const SubCrossShardTxCommitReply* source =
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<SubCrossShardTxCommitReply>(
+          &from);
+  if (source == nullptr) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:protos.SubCrossShardTxCommitReply)
+    ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
+  } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:protos.SubCrossShardTxCommitReply)
+    MergeFrom(*source);
+  }
+}
+
+void SubCrossShardTxCommitReply::MergeFrom(const SubCrossShardTxCommitReply& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:protos.SubCrossShardTxCommitReply)
+  GOOGLE_DCHECK_NE(&from, this);
+  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from.crosstxhash().size() > 0) {
+
+    crosstxhash_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.crosstxhash_);
+  }
+  if (from.status() != 0) {
+    _internal_set_status(from._internal_status());
+  }
+  if (from.sourceshardid() != 0) {
+    _internal_set_sourceshardid(from._internal_sourceshardid());
+  }
+  if (from.destinshardid() != 0) {
+    _internal_set_destinshardid(from._internal_destinshardid());
+  }
+}
+
+void SubCrossShardTxCommitReply::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:protos.SubCrossShardTxCommitReply)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void SubCrossShardTxCommitReply::CopyFrom(const SubCrossShardTxCommitReply& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protos.SubCrossShardTxCommitReply)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool SubCrossShardTxCommitReply::IsInitialized() const {
+  return true;
+}
+
+void SubCrossShardTxCommitReply::InternalSwap(SubCrossShardTxCommitReply* other) {
+  using std::swap;
+  _internal_metadata_.Swap(&other->_internal_metadata_);
+  crosstxhash_.Swap(&other->crosstxhash_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+    GetArenaNoVirtual());
+  swap(status_, other->status_);
+  swap(sourceshardid_, other->sourceshardid_);
+  swap(destinshardid_, other->destinshardid_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata SubCrossShardTxCommitReply::GetMetadata() const {
   return GetMetadataStatic();
 }
 
@@ -4552,8 +5229,14 @@ template<> PROTOBUF_NOINLINE ::protos::BlockHeader* Arena::CreateMaybeMessage< :
 template<> PROTOBUF_NOINLINE ::protos::SubCrossShardTx* Arena::CreateMaybeMessage< ::protos::SubCrossShardTx >(Arena* arena) {
   return Arena::CreateInternal< ::protos::SubCrossShardTx >(arena);
 }
-template<> PROTOBUF_NOINLINE ::protos::SubCrossShardTxRes* Arena::CreateMaybeMessage< ::protos::SubCrossShardTxRes >(Arena* arena) {
-  return Arena::CreateInternal< ::protos::SubCrossShardTxRes >(arena);
+template<> PROTOBUF_NOINLINE ::protos::SubCrossShardTxReply* Arena::CreateMaybeMessage< ::protos::SubCrossShardTxReply >(Arena* arena) {
+  return Arena::CreateInternal< ::protos::SubCrossShardTxReply >(arena);
+}
+template<> PROTOBUF_NOINLINE ::protos::SubCrossShardTxCommit* Arena::CreateMaybeMessage< ::protos::SubCrossShardTxCommit >(Arena* arena) {
+  return Arena::CreateInternal< ::protos::SubCrossShardTxCommit >(arena);
+}
+template<> PROTOBUF_NOINLINE ::protos::SubCrossShardTxCommitReply* Arena::CreateMaybeMessage< ::protos::SubCrossShardTxCommitReply >(Arena* arena) {
+  return Arena::CreateInternal< ::protos::SubCrossShardTxCommitReply >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

@@ -30,6 +30,7 @@
 #include <libethcore/TransactionReceipt.h>
 #include <libmptstate/State.h>
 #include <memory>
+#include <libp2p/Service.h>
 
 namespace dev
 {
@@ -53,6 +54,11 @@ public:
 
     virtual dev::eth::TransactionReceipt::Ptr executeTransaction(
         const dev::eth::BlockHeader& blockHeader, dev::eth::Transaction::Ptr _t) = 0;
+
+    // virtual ExecutiveContext::Ptr executeBlock(dev::eth::Block& block, BlockInfo const& parentBlockInfo, 
+    //     dev::PROTOCOL_ID& m_group_protocolID, std::shared_ptr<dev::p2p::Service> m_group_service) = 0;
+
+    virtual void executeCrossTx(std::string keyReadwriteSet) = 0;
 };
 }  // namespace blockverifier
 }  // namespace dev

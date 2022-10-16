@@ -242,6 +242,9 @@ public:
         u256 totalGas = 0;
         for (auto& receipt : *m_transactionReceipts)
         {
+            if (receipt == nullptr) {
+                continue;
+            }
             totalGas += receipt->gasUsed();
             receipt->setGasUsed(totalGas);
         }
@@ -249,8 +252,20 @@ public:
 
     void setStateRootToAllReceipt(h256 const& _stateRoot)
     {
+        if (m_transactionReceipts == nullptr) {
+            std::cout << "m_transactionReceipts is null " << std::endl;
+            return;
+        }
         for (auto& receipt : *m_transactionReceipts)
+        {
+            std::cout << "receipt is " << receipt << std::endl;
+            if (receipt == nullptr) {
+                std::cout << "receipt is null" << std::endl;
+                continue;
+            }
             receipt->setStateRoot(_stateRoot);
+        }
+        
         noteReceiptChange();
     }
 

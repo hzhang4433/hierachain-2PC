@@ -38,6 +38,7 @@
 #include <libsync/SyncMsgPacketFactory.h>
 #include <libtxpool/TxPool.h>
 #include <boost/property_tree/ini_parser.hpp>
+#include <libplugin/Common.h>
 
 using namespace boost::property_tree;
 using namespace dev::blockverifier;
@@ -388,6 +389,9 @@ bool Ledger::initBlockVerifier()
         boost::bind(&BlockChainImp::numberHash, blockChain, boost::placeholders::_1));
     blockVerifier->setEvmFlags(m_param->mutableGenesisParam().evmFlags);
 
+    // save m_blockVerifier ADD BY ZH
+    dev::plugin::groupVerifier = blockVerifier;
+    
     m_blockVerifier = blockVerifier;
     Ledger_LOG(INFO) << LOG_BADGE("initLedger") << LOG_BADGE("initBlockVerifier SUCC")
                      << LOG_KV("evmFlags", m_param->mutableGenesisParam().evmFlags);

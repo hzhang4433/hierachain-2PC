@@ -193,5 +193,36 @@ public:
     void encode(dev::bytes const& _blockRLP);
 };
 
+// ADD BY ZH
+// corssTx packet: from coordinator to subShards
+class SyncCrossTxPacket : public SyncMsgPacket
+{
+public:
+    SyncCrossTxPacket() { packetType = CrossTxPacket; }
+    void encode(dev::bytes const& _blockRLP);
+};
+
+// corssTx response packet: from subShards to coordinator
+class SyncCrossTxReplyPacket : public SyncMsgPacket
+{
+public:
+    SyncCrossTxReplyPacket() { packetType = CrossTxReplyPacket; }
+    void encode(dev::bytes const& _blockRLP);
+};
+// crossTx commit packet: from coordinator to subShards
+class SyncCrossTxCommitPacket : public SyncMsgPacket
+{
+public:
+    SyncCrossTxCommitPacket() { packetType = CrossTxCommitPacket; }
+    void encode(dev::bytes const& _blockRLP);
+};
+// crossTx commit reply packet: from subShards to coordinator
+class SyncCrossTxCommitReplyPacket : public SyncMsgPacket
+{
+public:
+    SyncCrossTxCommitReplyPacket() { packetType = CrossTxCommitReplyPacket; }
+    void encode(dev::bytes const& _blockRLP);
+};
+
 }  // namespace sync
 }  // namespace dev
