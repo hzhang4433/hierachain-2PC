@@ -42,6 +42,9 @@ public:
     using SigListPtrType =
         std::shared_ptr<std::vector<std::pair<u256, std::vector<unsigned char>>>>;
     using Ptr = std::shared_ptr<Block>;
+
+    size_t unExecutedTxNum; // 区块中还未处理的交易数目 ADD BY THB
+    bool isFirstExecute = true; // 标记区块是否第一次执，默认为true
     ///-----constructors of Block
     Block()
     {

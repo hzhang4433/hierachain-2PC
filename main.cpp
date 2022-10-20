@@ -40,6 +40,7 @@
 #include <string>
 #include <unistd.h>
 #include <thread>
+#include <libplugin/benchmark.h>
 
 using namespace std;
 using namespace dev;
@@ -102,6 +103,8 @@ namespace dev {
         // 协调者分片存储对应子分片执行跨片交易成功收集的消息包数量
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<int>>> crossTx2ReceivedCommitMsg = 
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, std::vector<int>>>();
+        // 具体类型需根据最终提交的方式确定？？？
+        std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<std::string>>> doneCrossTx;
         // 包含所有节点的protocol ID
 		dev::PROTOCOL_ID group_protocolID;
         // 所有节点的p2p通信服务
@@ -453,7 +456,7 @@ int main(){
     // 对latest_candidate_tx_messageids进行初始化
     latest_candidate_tx_messageids = std::make_shared<tbb::concurrent_vector<unsigned long>>(dev::consensus::SHARDNUM);
 
-    // 以下为测试
+    /* 以下为测试
     unsigned long message_id = 1;
     unsigned long source_shard_id = 3;
     for (unsigned long i = 1; i <= dev::consensus::SHARDNUM; i++) {
@@ -477,7 +480,8 @@ int main(){
     candidate_tx_queue _candidate_tx_queue { "readwriteset", queue };
     _candidate_tx_queue.queue.push(executableTransaction{i, tx, executiveContext, executive, block});
     candidate_tx_queues->insert(std::make_pair("readwriteset", _candidate_tx_queue));
-    // 测试结束
+
+    测试结束*/
 
     // 对dev::consensus::latest_commit_cs_tx进行初始化
     for(int i = 0; i < dev::consensus::SHARDNUM; i++)
@@ -523,6 +527,15 @@ int main(){
     syncs->setAttribute(blockchainManager);
     syncs->setAttribute(consensusPluginManager);
     // syncs->startThread(); // 不再启用轮循检查，通过回调函数异步通知
+
+    // 测试发送交易（分片3的头节点向本分片发送一笔跨片交易
+    if(dev::consensus::internal_groupId == 3 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(2)))
+    {
+        PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdstr", nodeid);
+        transactionInjectionTest _injectionTest(rpcService, dev::consensus::internal_groupId);
+        // _injectionTest.deployContractTransaction("./deploy.json", 1);
+        _injectionTest.injectionTransactions("./signedtxs.json", dev::consensus::internal_groupId);
+    }
 
     // // 启动后等待客户端部署合约，将合约贴在文件后，输入回车符，程序继续往下运行
     // int flag;

@@ -75,7 +75,7 @@ public:
 
     void executeCrossTx(std::string keyReadwriteSet);
 
-    void executeCandidateTx();
+    void executeCandidateTx(std::string keyReadwriteSet);
     
     ExecutiveContext::Ptr serialExecuteBlock(
         dev::eth::Block& block, BlockInfo const& parentBlockInfo);

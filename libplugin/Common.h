@@ -35,7 +35,7 @@ namespace plugin {
         dev::eth::Transaction::Ptr tx;
         dev::blockverifier::ExecutiveContext::Ptr executiveContext;
         dev::executive::Executive::Ptr executive; 
-        dev::eth::Block block;
+        dev::eth::Block::Ptr block;
     };
 
     struct candidate_tx_queue

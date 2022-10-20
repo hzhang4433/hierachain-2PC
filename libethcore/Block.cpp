@@ -124,8 +124,8 @@ void Block::encode(bytes& _out) const
 void Block::encodeRC2(bytes& _out) const
 {
     m_blockHeader.verify();
-    calTransactionRoot(false);
-    calReceiptRoot(false);
+    // calTransactionRoot(false);
+    // calReceiptRoot(false);
     bytes headerData;
     m_blockHeader.encode(headerData);
     /// get block RLPStream

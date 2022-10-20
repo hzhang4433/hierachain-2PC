@@ -2551,6 +2551,7 @@ bool PBFTEngine::handlePartiallyPrepare(PrepareReq::Ptr _prepareReq)
     /// update the view for given idx
     updateViewMap(_prepareReq->idx, _prepareReq->view);
 
+    // 创了个空块
     _prepareReq->pBlock = m_blockFactory->createBlock();
     assert(_prepareReq->pBlock);
 
@@ -2580,6 +2581,7 @@ bool PBFTEngine::handlePartiallyPrepare(PrepareReq::Ptr _prepareReq)
     }
     // decode the partiallyBlock
     _prepareReq->pBlock->decodeProposal(ref(*_prepareReq->block), true);
+    _prepareReq->pBlock->unExecutedTxNum = _prepareReq->pBlock->getTransactionSize();
     bool allHit = m_txPool->initPartiallyBlock(_prepareReq->pBlock);
     // hit all transactions
     if (allHit)
