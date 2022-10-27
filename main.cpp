@@ -146,6 +146,7 @@ namespace dev{
         std::vector<int>latest_commit_cs_tx;
         std::map<std::string, std::shared_ptr<dev::eth::Transaction>> blocked_txs;
         std::map<std::string, std::shared_ptr<dev::eth::Block>> blocked_blocks;
+        std::map<int, blockExecuteContent> cached_executeContents; // 缓存区块的执行变量
     }
 }
 
@@ -528,6 +529,7 @@ int main(){
     syncs->setAttribute(consensusPluginManager);
     // syncs->startThread(); // 不再启用轮循检查，通过回调函数异步通知
 
+    /*
     // 测试发送交易（分片3的头节点向本分片发送一笔跨片交易
     if(dev::consensus::internal_groupId == 3 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(2)))
     {
@@ -536,6 +538,7 @@ int main(){
         // _injectionTest.deployContractTransaction("./deploy.json", 1);
         _injectionTest.injectionTransactions("./signedtxs.json", dev::consensus::internal_groupId);
     }
+    */
 
     // // 启动后等待客户端部署合约，将合约贴在文件后，输入回车符，程序继续往下运行
     // int flag;

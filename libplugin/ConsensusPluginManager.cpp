@@ -214,7 +214,7 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
     if ((int)commit != 1) 
         return;
 
-    // 如果已经早已收到了足够的包就停止收取，防止重复执行
+    // 如果早已收到了足够的包就停止收取，防止重复执行
     if (crossTx2CommitMsg->count(crossTxHash) != 0 && crossTx2CommitMsg->at(crossTxHash) >= 3) {
         PLUGIN_LOG(INFO) << LOG_DESC("够了") << LOG_KV("crossTx", crossTxHash);
         return;

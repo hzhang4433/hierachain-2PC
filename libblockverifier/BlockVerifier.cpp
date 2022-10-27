@@ -324,6 +324,8 @@ void BlockVerifier::replyToCoordinatorCommitOK(dev::plugin::transaction txInfo) 
 
     // 发送完回执再删除相关变量，假设此时以收到了所有的commitMsg
     crossTx2CommitMsg->unsafe_erase(txInfo.cross_tx_hash);
+    // 将完成的跨片交易加入doneCrossTx
+    
 }
 
 
@@ -377,6 +379,11 @@ ExecutiveContext::Ptr BlockVerifier::serialExecuteBlock(Block& block, BlockInfo 
         EnvInfo envInfo(block.blockHeader(), m_pNumberHash, 0);
         envInfo.setPrecompiledEngine(executiveContext);
         auto executive = createAndInitExecutive(executiveContext->getState(), envInfo);
+        // BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("sleeping...");
+        // sleep(10000);
+        // BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("sleeping over...");
+
+        /*
         // 获取指向当前block的智能指针
         std::shared_ptr<dev::eth::Block> block_ptr = std::make_shared<dev::eth::Block>(block);
         for (size_t i = 0; i < block.transactions()->size(); i++)
@@ -385,6 +392,7 @@ ExecutiveContext::Ptr BlockVerifier::serialExecuteBlock(Block& block, BlockInfo 
             // 检查交易hash, 根据std::vector<h256> subCrossTxsHash判断是否为跨片子交易
             // std::vector<dev::h256>::iterator
             // auto it = find(subCrossTxsHash.begin(), subCrossTxsHash.end(), tx->hash());
+            //
             if (crossTx.find(tx->hash()) == crossTx.end()) { // 非跨片交易
                 BLOCKVERIFIER_LOG(INFO) << LOG_DESC("commiting state for nomarlTx")
                                         << LOG_KV("txhash", tx->hash());
@@ -515,7 +523,17 @@ ExecutiveContext::Ptr BlockVerifier::serialExecuteBlock(Block& block, BlockInfo 
 				}
                 
             }
+            
+            
+            // TransactionReceipt::Ptr resultReceipt = execute(tx, executiveContext, executive);
+            // block.setTransactionReceipt(i, resultReceipt);
+            // executiveContext->getState()->commit();
         }
+        */
+        
+        blockExecuteContent _blockExecuteContent{executiveContext, executive};
+        cached_executeContents.insert(std::make_pair(block.blockHeader().number(), _blockExecuteContent)); // 缓存区块执行变量
+        ENGINE_LOG(INFO) << LOG_KV("BlockVerifer.block->blockHeader().number()", block.blockHeader().number()); 
     }
     catch (exception& e)
     {
@@ -534,6 +552,7 @@ ExecutiveContext::Ptr BlockVerifier::serialExecuteBlock(Block& block, BlockInfo 
                              << LOG_KV("txNum", block.transactions()->size())
                              << LOG_KV("num", block.blockHeader().number());
 
+    /*
     if (flag) { // 若有交易被执行，则设置回执与状态根 ==> 后续改为只有等所有交易都执行并提交再设置？
         h256 stateRoot = executiveContext->getState()->rootHash();
 
@@ -543,18 +562,18 @@ ExecutiveContext::Ptr BlockVerifier::serialExecuteBlock(Block& block, BlockInfo 
         // set stateRoot in receipts
         if (g_BCOSConfig.version() >= V2_2_0)
         {
-            BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 1...");
+            // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 1...");
             // when support_version is lower than v2.2.0, doesn't setStateRootToAllReceipt
             // enable_parallel=true can't be run with enable_parallel=false
             block.setStateRootToAllReceipt(stateRoot);
         }
-        BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 2...");
+        // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 2...");
         block.updateSequenceReceiptGas();
-        BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 3...");
+        // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 3...");
         block.calReceiptRoot();
-        BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 4...");
+        // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 4...");
         block.header().setStateRoot(stateRoot);
-        BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 5...");
+        // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 5...");
         if (dynamic_pointer_cast<storagestate::StorageState>(executiveContext->getState()))
         {
             BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 6...");
@@ -565,7 +584,7 @@ ExecutiveContext::Ptr BlockVerifier::serialExecuteBlock(Block& block, BlockInfo 
             BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 7...");
             block.header().setDBhash(executiveContext->getMemoryTableFactory()->hash());
         }
-        BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 8...");
+        // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 8...");
 
         // if executeBlock is called by consensus module, no need to compare receiptRoot and stateRoot
         // since origin value is empty if executeBlock is called by sync module, need to compare
@@ -606,6 +625,7 @@ ExecutiveContext::Ptr BlockVerifier::serialExecuteBlock(Block& block, BlockInfo 
                              << LOG_KV("dbHash", block.header().dbHash())
                              << LOG_KV("transactionRoot", block.transactionRoot())
                              << LOG_KV("receiptRoot", block.receiptRoot());
+    */
     return executiveContext;
 }
 
@@ -785,11 +805,11 @@ ExecutiveContext::Ptr BlockVerifier::parallelExecuteBlock(
 
 void BlockVerifier::executeCrossTx(std::string keyReadwriteSet) {
     // 取出待执行的交易
-    BLOCKVERIFIER_LOG(INFO) << LOG_KV("size1", candidate_tx_queues->at(keyReadwriteSet).queue.size());
+    // BLOCKVERIFIER_LOG(INFO) << LOG_KV("size1", candidate_tx_queues->at(keyReadwriteSet).queue.size());
     auto executableTx = candidate_tx_queues->at(keyReadwriteSet).queue.front();
     // 删除执行后的交易
     candidate_tx_queues->at(keyReadwriteSet).queue.pop();
-    BLOCKVERIFIER_LOG(INFO) << LOG_KV("size2", candidate_tx_queues->at(keyReadwriteSet).queue.size());
+    // BLOCKVERIFIER_LOG(INFO) << LOG_KV("size2", candidate_tx_queues->at(keyReadwriteSet).queue.size());
 
     // 取变量
     auto index = executableTx.index;
@@ -802,6 +822,15 @@ void BlockVerifier::executeCrossTx(std::string keyReadwriteSet) {
     TransactionReceipt::Ptr resultReceipt = execute(tx, executiveContext, executive);
     block->setTransactionReceipt(index, resultReceipt);
     executiveContext->getState()->commit();
+    block->unExecutedTxNum = block->unExecutedTxNum - 1;
+    if (block->unExecutedTxNum == 0) {
+        auto block_height = block->blockHeader().number();
+        BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("区块中的数据全部执行完")
+                                << LOG_KV("block_height", block_height);
+        // 清除缓存的执行环境变量
+        cached_executeContents.erase(block_height);
+
+    }
 
     /* 解锁相应变量
        1. crossTx
@@ -817,7 +846,7 @@ void BlockVerifier::executeCrossTx(std::string keyReadwriteSet) {
     replyToCoordinatorCommitOK(txInfo);
 
     // 判断是否还有等待交易
-    BLOCKVERIFIER_LOG(INFO) << LOG_KV("size3", candidate_tx_queues->at(keyReadwriteSet).queue.size());
+    // BLOCKVERIFIER_LOG(INFO) << LOG_KV("size3", candidate_tx_queues->at(keyReadwriteSet).queue.size());
     if (candidate_tx_queues->at(keyReadwriteSet).queue.size() != 0) {
         BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("还有等待的交易");
         executeCandidateTx(keyReadwriteSet);
@@ -838,9 +867,14 @@ void BlockVerifier::executeCandidateTx(std::string keyReadwriteSet) {
         TransactionReceipt::Ptr resultReceipt = execute(tx, executiveContext, executive);
         block->setTransactionReceipt(index, resultReceipt);
         executiveContext->getState()->commit();
+        block->unExecutedTxNum = block->unExecutedTxNum - 1;
+        if (block->unExecutedTxNum == 0) {
+            auto block_height = block->blockHeader().number();
+            
+        }
         // 删除执行过的交易
         candidate_tx_queues->at(keyReadwriteSet).queue.pop();
-        if (candidate_tx_queues->at(keyReadwriteSet).queue.size() != 0) { // 判断语句y问题？
+        if (candidate_tx_queues->at(keyReadwriteSet).queue.size() != 0) {
             executeCandidateTx(keyReadwriteSet);
         }
     } else { // 跨片交易

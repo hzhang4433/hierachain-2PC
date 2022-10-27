@@ -28,6 +28,8 @@
 #include <libethcore/Transaction.h>
 #include <memory>
 
+#include <libexecutive/Executive.h>
+
 #define BLOCKVERIFIER_LOG(LEVEL) LOG(LEVEL) << LOG_BADGE("BLOCKVERIFIER")
 #define EXECUTIVECONTEXT_LOG(LEVEL) LOG(LEVEL) << LOG_BADGE("EXECUTIVECONTEXT")
 #define PARA_LOG(LEVEL) LOG(LEVEL) << LOG_BADGE("PARA") << LOG_BADGE(utcTime())
@@ -36,6 +38,12 @@ namespace dev
 {
 namespace blockverifier
 {
+    struct blockExecuteContent
+    {
+        std::shared_ptr<ExecutiveContext> executiveContext;
+        std::shared_ptr<dev::executive::Executive> executive;
+    };
+
     // 已经提交的来自不同分片的最新跨片交易编号
     extern std::vector<int>latest_commit_cs_tx; 
 
@@ -44,6 +52,9 @@ namespace blockverifier
 
     // 因前序交易未完成而被阻塞的区块 std::map<SHARDID_MESSAGEID, std::make_shared<Block>>
     extern std::map<std::string, std::shared_ptr<dev::eth::Block>> blocked_blocks;
+
+    // 缓存区块的执行变量
+    extern std::map<int, blockExecuteContent> cached_executeContents;
 
 struct BlockInfo
 {

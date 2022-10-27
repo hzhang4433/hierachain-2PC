@@ -57,8 +57,10 @@ evmc_bytes32 getStorage(
     assert(fromEvmC(*_addr) == env.myAddress());
     u256 key = fromEvmC(*_key);
 
-    std::cout << "getStorage u256 key = " << key << std::endl;
+    std::cout << "Storage u256 key = " << key << std::endl;
 
+    EXECUTIVE_LOG(INFO) << LOG_KV("Storage u256 key", key)
+                        << LOG_KV("env.store(key)", env.store(key));
     return toEvmC(env.store(key));
 }
 

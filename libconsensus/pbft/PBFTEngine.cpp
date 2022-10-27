@@ -1476,17 +1476,6 @@ void PBFTEngine::checkAndSave()
             std::shared_ptr<dev::eth::Block> p_block = m_reqCache->prepareCache().pBlock;
             m_reqCache->generateAndSetSigList(*p_block, minValidNodes());
 
-            //ADD BY THB, 开始解析区块中的交易 std::shared_ptr<Transactions> transactions() const { return m_transactions; }
-            // size_t txNum = p_block->
-
-            // std::shared_ptr<Transactions> transactions = p_block->transactions();
-            // size_t txSize = transactions->size();
-            // for(size_t i = 0; i < txSize; i++)
-            // {
-            //     // PBFTENGINE_LOG(DEBUG) << LOG_KV("transactions.data", (*transactions)[i]->get_data());
-            //     // std::cout << "-------------------- transactions.data = " << (*transactions)[i]->get_data() << std::endl;
-            // }
-
             auto genSig_time_cost = utcTime() - record_time;
             record_time = utcTime();
             /// callback block chain to commit block
@@ -1497,6 +1486,12 @@ void PBFTEngine::checkAndSave()
             /// drop handled transactions
             if (ret == CommitResult::OK)
             {
+                // /*
+                // 持久化结束，对区块内交易尝试第一次执行执行 ADD BY THB
+                PBFTENGINE_LOG(INFO) << LOG_DESC("区块数据持久化完毕，开始执行交易...");
+                auto executedNum = executeBlockTransactions(p_block);
+                // */
+
                 dropHandledTransactions(p_block);
                 auto dropTxs_time_cost = utcTime() - record_time;
                 record_time = utcTime();

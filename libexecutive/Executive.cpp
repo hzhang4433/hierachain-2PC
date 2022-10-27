@@ -100,6 +100,7 @@ void Executive::verifyTransaction(
 
 bool Executive::execute()
 {
+    EXECUTIVE_LOG(INFO) << LOG_DESC("在函数Executive::execute()中......");
     std::cout << "在函数Executive::execute()中" << std::endl;
     uint64_t txGasLimit = m_envInfo.precompiledEngine()->txGasLimit();
 
@@ -473,7 +474,7 @@ bool Executive::executeCreate(Address const& _sender, u256 const& _endowment, u2
 void Executive::grantContractStatusManager(TableFactory::Ptr memoryTableFactory,
     Address const& newAddress, Address const& sender, Address const& origin)
 {
-    EXECUTIVE_LOG(DEBUG) << LOG_DESC("grantContractStatusManager") << LOG_KV("contract", newAddress)
+    EXECUTIVE_LOG(INFO) << LOG_DESC("grantContractStatusManager") << LOG_KV("contract", newAddress)
                          << LOG_KV("sender", sender) << LOG_KV("origin", origin);
 
     std::string tableName = precompiled::getContractTableName(newAddress);

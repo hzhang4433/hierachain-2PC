@@ -36,6 +36,10 @@
 #include <libsync/SyncInterface.h>
 #include <libtxpool/TxPoolInterface.h>
 #include <libp2p/Service.h>
+#include <libprotobasic/shard.pb.h>
+#include <libplugin/Common.h>
+#include <libsync/SyncMsgPacket.h>
+#include <libconsensus/pbft/Common.h>
 
 namespace dev
 {
@@ -367,6 +371,11 @@ protected:
     }
 
     dev::blockverifier::ExecutiveContext::Ptr executeBlock(dev::eth::Block& block);
+    // ADD BY ZH
+    int executeBlockTransactions(std::shared_ptr<dev::eth::Block> block);
+    void replyToCoordinator(dev::plugin::transaction txInfo, 
+        dev::PROTOCOL_ID& m_group_protocolID, std::shared_ptr<dev::p2p::Service> m_group_service);
+    
     virtual void checkBlockValid(dev::eth::Block const& block);
     virtual void checkBlockTimeStamp(dev::eth::Block const& _block);
 
@@ -452,6 +461,9 @@ protected:
     dev::sync::NodeTimeMaintenance::Ptr m_nodeTimeMaintenance;
 
     int64_t m_maxBlockTimeOffset = 30 * 60 * 1000;
+
+    // ADD BY ZH
+    std::string readwriteset = "state";
 };
 }  // namespace consensus
 }  // namespace dev

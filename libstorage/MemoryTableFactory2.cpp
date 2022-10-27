@@ -76,6 +76,9 @@ void MemoryTableFactory2::init()
 
 Table::Ptr MemoryTableFactory2::openTable(const std::string& _tableName, bool _authorityFlag, bool)
 {
+    // STORAGE_LOG(INFO) << LOG_DESC("进入openTable2函数...")
+    //                   << LOG_KV("tableName", _tableName)
+    //                   << LOG_KV("authorityFlag", _authorityFlag);
     tbb::spin_mutex::scoped_lock l(x_name2Table);
     return openTableWithoutLock(_tableName, _authorityFlag);
 }
@@ -83,6 +86,9 @@ Table::Ptr MemoryTableFactory2::openTable(const std::string& _tableName, bool _a
 Table::Ptr MemoryTableFactory2::openTableWithoutLock(
     const std::string& tableName, bool authorityFlag, bool)
 {
+    // STORAGE_LOG(INFO) << LOG_DESC("In openTableWithoutLock...")
+    //                   << LOG_KV("tableName", tableName);
+
     auto it = m_name2Table.find(tableName);
     if (it != m_name2Table.end())
     {
@@ -96,6 +102,8 @@ Table::Ptr MemoryTableFactory2::openTableWithoutLock(
     }
     else
     {
+        // STORAGE_LOG(INFO) << LOG_DESC("not find in sysTables...")
+        //                   << LOG_KV("tableName", tableName);
         auto tempSysTable = openTableWithoutLock(SYS_TABLES);
         auto tableEntries = tempSysTable->select(tableName, tempSysTable->newCondition());
         if (tableEntries->size() == 0u)
@@ -123,6 +131,8 @@ Table::Ptr MemoryTableFactory2::openTableWithoutLock(
     // authority flag
     if (authorityFlag)
     {
+        // STORAGE_LOG(INFO) << LOG_DESC("In if()...")
+        //                   << LOG_KV("tableName", tableName);
         // set authorized address to memoryTable
         if (tableName != std::string(SYS_ACCESS_TABLE))
         {
@@ -142,6 +152,9 @@ Table::Ptr MemoryTableFactory2::openTableWithoutLock(
         }
     }
 
+    // STORAGE_LOG(INFO) << LOG_DESC("Out of if()...")
+    //                   << LOG_KV("tableName", tableName);
+
     memoryTable->setTableInfo(tableInfo);
     memoryTable->setRecorder([&](Table::Ptr _table, Change::Kind _kind, std::string const& _key,
                                  std::vector<Change::Record>& _records) {
@@ -150,6 +163,10 @@ Table::Ptr MemoryTableFactory2::openTableWithoutLock(
     });
 
     m_name2Table.insert({tableName, memoryTable});
+    // STORAGE_LOG(INFO) << LOG_DESC("End of openTableWithoutLock...")
+    //                   << LOG_KV("tableName", tableName)
+    //                   << LOG_KV("memoryTable", memoryTable);
+
     return memoryTable;
 }
 
