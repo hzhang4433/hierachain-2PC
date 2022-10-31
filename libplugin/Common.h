@@ -83,7 +83,8 @@ namespace plugin {
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<int>>> crossTx2ReceivedMsg;
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> crossTx2CommitMsg;
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<int>>> crossTx2ReceivedCommitMsg;
-	extern dev::PROTOCOL_ID group_protocolID;
+    extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> crossTx2StateAddress;
+    extern dev::PROTOCOL_ID group_protocolID;
     extern std::shared_ptr<dev::p2p::Service> group_p2p_service;
     extern dev::blockverifier::BlockVerifierInterface::Ptr groupVerifier;
     extern std::string nodeIdStr;

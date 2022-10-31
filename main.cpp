@@ -78,13 +78,13 @@ namespace dev {
         // };
         
         std::map<h256, transaction> crossTx; // 分片待处理的跨片子交易详细信息
-        // 缓冲队列跨片交易集合(用以应对网络传输下，收到的交易乱序)，(shardid_messageid-->subtx)，由执行模块代码触发
+        // 缓冲队列跨片交易集合(用以应对网络传输下，收到的交易乱序)，(shardid_messageid-->subtx)，由执行模块代码触发 —— 暂时用不到
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::map<unsigned long, transaction>>> cached_cs_tx = 
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, std::map<unsigned long, transaction>>>();
         // 执行队列池 readwriteset --> candidate_tx_queue
 		std::shared_ptr<tbb::concurrent_unordered_map<std::string, candidate_tx_queue>> candidate_tx_queues = 
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, candidate_tx_queue>>();
-        // 已经收到的来自不同协调者分片的最大messageid
+        // 已经收到的来自不同协调者分片的最大messageid —— 暂时用不到
         std::shared_ptr<tbb::concurrent_vector<unsigned long>> latest_candidate_tx_messageids;
         // 交易池交易因等待收齐状态而正在锁定的状态key
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> locking_key = 
@@ -105,6 +105,10 @@ namespace dev {
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, std::vector<int>>>();
         // 具体类型需根据最终提交的方式确定？？？
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<std::string>>> doneCrossTx;
+        // 根据crossTxHash获取状态地址信息
+        std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> crossTx2StateAddress = 
+                                std::make_shared<tbb::concurrent_unordered_map<std::string, std::string>>();
+
         // 包含所有节点的protocol ID
 		dev::PROTOCOL_ID group_protocolID;
         // 所有节点的p2p通信服务
@@ -528,14 +532,14 @@ int main(){
     syncs->setAttribute(consensusPluginManager);
     // syncs->startThread(); // 不再启用轮循检查，通过回调函数异步通知
 
-    // 测试发送交易（分片3的头节点向本分片发送一笔跨片交易
-    if(dev::consensus::internal_groupId == 3 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(2)))
-    {
-        PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdstr", nodeid);
-        transactionInjectionTest _injectionTest(rpcService, dev::consensus::internal_groupId);
-        // _injectionTest.deployContractTransaction("./deploy.json", 1);
-        _injectionTest.injectionTransactions("./signedtxs.json", dev::consensus::internal_groupId);
-    }
+    // // 测试发送交易（分片3的头节点向本分片发送一笔跨片交易
+    // if(dev::consensus::internal_groupId == 3 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(2)))
+    // {
+    //     PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdstr", nodeid);
+    //     transactionInjectionTest _injectionTest(rpcService, dev::consensus::internal_groupId);
+    //     // _injectionTest.deployContractTransaction("./deploy.json", 1);
+    //     _injectionTest.injectionTransactions("./signedtxs.json", dev::consensus::internal_groupId);
+    // }
 
     // // 启动后等待客户端部署合约，将合约贴在文件后，输入回车符，程序继续往下运行
     // int flag;

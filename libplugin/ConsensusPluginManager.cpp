@@ -231,7 +231,9 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
         // 执行交易
         // auto blockVerifier = groupId2Verifier.at(destinshardid);
         PLUGIN_LOG(INFO) << LOG_DESC("commit包集齐, 子分片开始执行并提交相关跨片交易...");
-        groupVerifier->executeCrossTx("state");
+        // 获取跨片交易相关状态
+        auto readwriteset = crossTx2StateAddress->at(crossTxHash);
+        groupVerifier->executeCrossTx(readwriteset);
     }
 }
 

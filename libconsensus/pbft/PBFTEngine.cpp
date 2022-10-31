@@ -1161,6 +1161,10 @@ bool PBFTEngine::handlePrepareMsg(PrepareReq::Ptr prepareReq, std::string const&
     /// add raw prepare request
     addRawPrepare(prepareReq);
 
+    prepareReq->pBlock->unExecutedTxNum = prepareReq->pBlock->getTransactionSize();
+    PBFTENGINE_LOG(DEBUG) << LOG_DESC("in handlePrepareMsg...")
+                          << LOG_KV("unExecutedTxNum", prepareReq->pBlock->unExecutedTxNum);
+
     return execPrepareAndGenerateSignMsg(prepareReq, oss);
 }
 
@@ -2582,6 +2586,9 @@ bool PBFTEngine::handlePartiallyPrepare(PrepareReq::Ptr _prepareReq)
     // decode the partiallyBlock
     _prepareReq->pBlock->decodeProposal(ref(*_prepareReq->block), true);
     _prepareReq->pBlock->unExecutedTxNum = _prepareReq->pBlock->getTransactionSize();
+    PBFTENGINE_LOG(DEBUG) << LOG_DESC("in handlePartiallyPrepare...")
+                          << LOG_KV("unExecutedTxNum", _prepareReq->pBlock->unExecutedTxNum);
+
     bool allHit = m_txPool->initPartiallyBlock(_prepareReq->pBlock);
     // hit all transactions
     if (allHit)
