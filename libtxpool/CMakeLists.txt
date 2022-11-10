@@ -3,5 +3,6 @@ file(GLOB SRC_LIST "*.cpp")
 file(GLOB HEADERS "*.h")
 
 add_library(txpool ${SRC_LIST} ${HEADERS})
+target_compile_options(txpool PRIVATE -Wno-unused-parameter)
 target_link_libraries(txpool PUBLIC ethcore devcore TBB)
 

@@ -67,7 +67,7 @@ void ConsensusPluginManager::processReceivedCrossTx(protos::SubCrossShardTx _txr
     protos::SubCrossShardTx msg_txWithReadset;
     msg_txWithReadset = _txrlp;
     
-    std::cout << "接收到协调者发来跨片交易请求..." << std::endl;
+    PLUGIN_LOG(INFO) << LOG_DESC("接收到协调者发来跨片交易请求...");
     auto stateAddress = msg_txWithReadset.stateaddress();
     auto sourceShardId = msg_txWithReadset.sourceshardid();
     auto destinshardid = msg_txWithReadset.destinshardid();
@@ -95,7 +95,8 @@ void ConsensusPluginManager::processReceivedCrossTx(protos::SubCrossShardTx _txr
         tx, 
         stateAddress}));
 
-    
+    crossTx2StateAddress->insert(std::make_pair(crossTxHash, stateAddress));
+
     // PLUGIN_LOG(INFO) << LOG_DESC(nodeIdStr);
     
     for(size_t i = 0; i < forwardNodeId.size(); i++)
@@ -122,19 +123,22 @@ void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTx
     auto crossTxHash = msg_status.crosstxhash();
 
     PLUGIN_LOG(INFO) << LOG_DESC("交易解析完毕")
-                        << LOG_KV("status", status)
-                        << LOG_KV("sourceShardId", sourceShardId)
-                        << LOG_KV("destinshardid", destinshardid)
-                        << LOG_KV("crossTxHash", crossTxHash);
+                     << LOG_KV("status", status)
+                     << LOG_KV("sourceShardId", sourceShardId)
+                     << LOG_KV("destinshardid", destinshardid)
+                     << LOG_KV("crossTxHash", crossTxHash);
 
     if ((int)status != 1) 
         return;
 
     // 已经收到了大多数包就直接收取而不执行后面的逻辑，防止重复执行
-    if (crossTx2ReceivedMsg->count(crossTxHash)!=0 && 
-        count(crossTx2ReceivedMsg->at(crossTxHash).begin(), crossTx2ReceivedMsg->at(crossTxHash).end(), (int)sourceShardId) >= 3) {
-        PLUGIN_LOG(INFO) << LOG_DESC("够了") << LOG_KV("id", (int)sourceShardId);
-        crossTx2ReceivedMsg->at(crossTxHash).push_back((int)sourceShardId);
+    // 待添加逻辑：若是对应交易hash已经完成2PC，则不再收取 ===> 是这么用吧
+    if ((crossTx2ReceivedMsg->count(crossTxHash) == 0 &&
+        (doneCrossTx->find(crossTxHash)) != doneCrossTx->end())
+        ||(crossTx2ReceivedMsg->count(crossTxHash)!=0 && 
+        count(crossTx2ReceivedMsg->at(crossTxHash).begin(), crossTx2ReceivedMsg->at(crossTxHash).end(), (int)sourceShardId) >= 3)) {
+        PLUGIN_LOG(INFO) << LOG_DESC("够了/晚了，对于:") << LOG_KV("id", (int)sourceShardId);
+        // crossTx2ReceivedMsg->at(crossTxHash).push_back((int)sourceShardId);
         return;
     }
 
@@ -143,7 +147,8 @@ void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTx
     if(crossTx2ReceivedMsg->count(crossTxHash)!=0)
     {
         for (int i = 0; i < crossTx2ReceivedMsg->at(crossTxHash).size(); i++) {
-            PLUGIN_LOG(INFO) << LOG_KV("id", crossTx2ReceivedMsg->at(crossTxHash)[i]);
+            PLUGIN_LOG(INFO) << LOG_DESC("目前收到的reply包的id有")
+                             << LOG_KV("id", crossTx2ReceivedMsg->at(crossTxHash)[i]);
         }
     }
 
@@ -215,7 +220,9 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
         return;
 
     // 如果早已收到了足够的包就停止收取，防止重复执行
-    if (crossTx2CommitMsg->count(crossTxHash) != 0 && crossTx2CommitMsg->at(crossTxHash) >= 3) {
+    if ((crossTx2CommitMsg->count(crossTxHash) == 0 && doneCrossTx->find(crossTxHash) != doneCrossTx->end())
+        ||
+        (crossTx2CommitMsg->count(crossTxHash) != 0 && crossTx2CommitMsg->at(crossTxHash) >= 3)) {
         PLUGIN_LOG(INFO) << LOG_DESC("够了") << LOG_KV("crossTx", crossTxHash);
         return;
     }
@@ -229,9 +236,12 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
     // 判断跨片交易是否满足提交条件
     if (crossTx2CommitMsg->at(crossTxHash) >= 3) {
         // 执行交易
-        // auto blockVerifier = groupId2Verifier.at(destinshardid);
         PLUGIN_LOG(INFO) << LOG_DESC("commit包集齐, 子分片开始执行并提交相关跨片交易...");
-        groupVerifier->executeCrossTx("state");
+        // crossTx2StateAddress? maybe later
+        auto readwriteset = crossTx2StateAddress->at(crossTxHash);
+        groupVerifier->executeCrossTx(readwriteset);
+        // groupVerifier->executeCrossTx("state");
+        crossTx2StateAddress->unsafe_erase(crossTxHash);
     }
 }
 
@@ -247,15 +257,19 @@ void ConsensusPluginManager::processReceivedCrossTxCommitReply(protos::SubCrossS
     auto destinshardid = msg_status.destinshardid();
 
     PLUGIN_LOG(INFO) << LOG_DESC("交易执行成功消息包解析完毕")
-                        << LOG_KV("status", status)
-                        << LOG_KV("crossTxHash", crossTxHash);
+                     << LOG_KV("status", status)
+                     << LOG_KV("crossTxHash", crossTxHash);
 
     if ((int)status != 1) 
         return;
 
     // 已经收到了大多数包就停止收取，防止重复执行
-    if (crossTx2ReceivedCommitMsg->count(crossTxHash) != 0 && 
-            count(crossTx2ReceivedCommitMsg->at(crossTxHash).begin(), crossTx2ReceivedCommitMsg->at(crossTxHash).end(), (int)sourceShardId) >= 3) {
+    // 历史交易包也不会收——22.11.6
+    if ((crossTx2ReceivedCommitMsg->count(crossTxHash) == 0 &&
+        doneCrossTx->find(crossTxHash) != doneCrossTx->end())
+        ||
+        (crossTx2ReceivedCommitMsg->count(crossTxHash) != 0 && 
+        count(crossTx2ReceivedCommitMsg->at(crossTxHash).begin(), crossTx2ReceivedCommitMsg->at(crossTxHash).end(), (int)sourceShardId) >= 3)) {
         return;
     }
 
@@ -276,6 +290,7 @@ void ConsensusPluginManager::processReceivedCrossTxCommitReply(protos::SubCrossS
             break;
         }
     }
+
     /*
       集齐 ==> 删除相关变量
         1. crossTx2ShardID
@@ -287,6 +302,8 @@ void ConsensusPluginManager::processReceivedCrossTxCommitReply(protos::SubCrossS
         crossTx2ShardID->unsafe_erase(crossTxHash);
         crossTx2ReceivedMsg->unsafe_erase(crossTxHash);
         crossTx2ReceivedCommitMsg->unsafe_erase(crossTxHash);
+        // 添加doneCrossTx，防止收到历史交易包——22.11.6
+        doneCrossTx->insert(crossTxHash);
         PLUGIN_LOG(INFO) << LOG_DESC("跨片交易流程完成...");
     }
 }

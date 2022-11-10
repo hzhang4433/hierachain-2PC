@@ -32,6 +32,8 @@
 #include <thread>
 #include <librpc/Common.h>
 #include <libsync/SyncMsgPacket.h>
+#include <libplugin/deterministExecute.h>
+#include <libplugin/Common.h>
 
 
 using namespace dev;
@@ -325,7 +327,7 @@ void BlockVerifier::replyToCoordinatorCommitOK(dev::plugin::transaction txInfo) 
     // 发送完回执再删除相关变量，假设此时以收到了所有的commitMsg
     crossTx2CommitMsg->unsafe_erase(txInfo.cross_tx_hash);
     // 将完成的跨片交易加入doneCrossTx
-    
+    doneCrossTx->insert(crossTxHash);
 }
 
 
@@ -530,10 +532,11 @@ ExecutiveContext::Ptr BlockVerifier::serialExecuteBlock(Block& block, BlockInfo 
             // executiveContext->getState()->commit();
         }
         */
-        
+        /*用不上了 找时间给删除了
         blockExecuteContent _blockExecuteContent{executiveContext, executive};
         cached_executeContents.insert(std::make_pair(block.blockHeader().number(), _blockExecuteContent)); // 缓存区块执行变量
-        ENGINE_LOG(INFO) << LOG_KV("BlockVerifer.block->blockHeader().number()", block.blockHeader().number()); 
+        ENGINE_LOG(INFO) << LOG_KV("BlockVerifer.block->blockHeader().number()", block.blockHeader().number());
+        */
     }
     catch (exception& e)
     {
@@ -804,21 +807,25 @@ ExecutiveContext::Ptr BlockVerifier::parallelExecuteBlock(
 }
 
 void BlockVerifier::executeCrossTx(std::string keyReadwriteSet) {
-    // 取出待执行的交易
-    // BLOCKVERIFIER_LOG(INFO) << LOG_KV("size1", candidate_tx_queues->at(keyReadwriteSet).queue.size());
+    BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("in executeCrossTx...");
+
+    BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("in executeCrossTx...") 
+                            << LOG_KV("size1", candidate_tx_queues->at(keyReadwriteSet).queue.size());
     auto executableTx = candidate_tx_queues->at(keyReadwriteSet).queue.front();
     // 删除执行后的交易
     candidate_tx_queues->at(keyReadwriteSet).queue.pop();
-    // BLOCKVERIFIER_LOG(INFO) << LOG_KV("size2", candidate_tx_queues->at(keyReadwriteSet).queue.size());
+    BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("in executeCrossTx...")
+                            << LOG_KV("size2", candidate_tx_queues->at(keyReadwriteSet).queue.size());
 
     // 取变量
-    auto index = executableTx.index;
+    // auto index = executableTx.index;
     auto tx = executableTx.tx;
-    auto executiveContext = executableTx.executiveContext;
-    auto executive = executableTx.executive;
-    auto block = executableTx.block;
+    // auto executiveContext = executableTx.executiveContext;
+    // auto executive = executableTx.executive;
+    // auto block = executableTx.block;
 
     // 执行交易
+    /*
     TransactionReceipt::Ptr resultReceipt = execute(tx, executiveContext, executive);
     block->setTransactionReceipt(index, resultReceipt);
     executiveContext->getState()->commit();
@@ -831,6 +838,57 @@ void BlockVerifier::executeCrossTx(std::string keyReadwriteSet) {
         cached_executeContents.erase(block_height);
 
     }
+    */
+    
+    // EDIT BY ZH 22.11.2
+    auto exec = dev::plugin::executiveContext->getExecutive();
+    auto vm = dev::plugin::executiveContext->getExecutiveInstance();
+    exec->setVM(vm);
+    dev::plugin::executiveContext->executeTransaction(exec, tx);
+    dev::plugin::executiveContext->m_vminstance_pool.push(vm);
+
+    auto blockHeight = txHash2BlockHeight->at(tx->hash().abridged());
+    PLUGIN_LOG(INFO) << LOG_DESC("in executeCrossTx... 该笔交易对应的区块高度")
+                     << LOG_KV("blockHeight", blockHeight);
+    auto unExecutedTxNum = block2UnExecutedTxNum->at(blockHeight);
+    PLUGIN_LOG(INFO) << LOG_DESC("in executeCrossTx...")
+                     << LOG_KV("区块未完成交易before_num", unExecutedTxNum);
+    unExecutedTxNum = unExecutedTxNum - 1;
+    block2UnExecutedTxNum->at(blockHeight) = unExecutedTxNum;
+    txHash2BlockHeight->unsafe_erase(tx->hash().abridged());
+    // 判断剩余交易数并删除相关变量
+    if (unExecutedTxNum == 0) {
+        PLUGIN_LOG(INFO) << LOG_BADGE("区块中的数据全部执行完")
+                         << LOG_KV("block_height", blockHeight);
+        /*  删除相关变量
+            1. block2ExecutedTxNum -- 已完成
+            2. 2PC流程中的变量: doneCrossTx —- 完成ing...
+        */ 
+        if (m_block2UnExecMutex.try_lock()) {
+            block2UnExecutedTxNum->unsafe_erase(blockHeight);
+            m_block2UnExecMutex.unlock();
+        }
+        for (auto i : blockHeight2CrossTxHash->at(blockHeight)) {
+            PLUGIN_LOG(INFO) << LOG_DESC("正在删除doneCrossTx...该区块高度存在的跨片交易有：")
+                             << LOG_KV("crossTxHash", i);
+            // maybe 要加锁
+            if (m_doneCrossTxMutex.try_lock()) {
+                doneCrossTx->unsafe_erase(i);
+                m_doneCrossTxMutex.unlock();
+            }
+        }
+        if (m_height2TxHashMutex.try_lock()) {
+            blockHeight2CrossTxHash->unsafe_erase(blockHeight);
+            m_height2TxHashMutex.unlock();
+        }
+
+    }
+
+    if (block2UnExecutedTxNum->count(blockHeight) != 0) {
+        PLUGIN_LOG(INFO) << LOG_DESC("in executeCrossTx...")  
+                            << LOG_KV("区块未完成交易now_num", block2UnExecutedTxNum->at(blockHeight));
+    }
+
 
     /* 解锁相应变量
        1. crossTx
@@ -846,7 +904,7 @@ void BlockVerifier::executeCrossTx(std::string keyReadwriteSet) {
     replyToCoordinatorCommitOK(txInfo);
 
     // 判断是否还有等待交易
-    // BLOCKVERIFIER_LOG(INFO) << LOG_KV("size3", candidate_tx_queues->at(keyReadwriteSet).queue.size());
+    BLOCKVERIFIER_LOG(INFO) << LOG_KV("size3", candidate_tx_queues->at(keyReadwriteSet).queue.size());
     if (candidate_tx_queues->at(keyReadwriteSet).queue.size() != 0) {
         BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("还有等待的交易");
         executeCandidateTx(keyReadwriteSet);
@@ -857,13 +915,14 @@ void BlockVerifier::executeCandidateTx(std::string keyReadwriteSet) {
     // 取出下一笔交易
     auto executableTx = candidate_tx_queues->at(keyReadwriteSet).queue.front();
     auto tx = executableTx.tx;
-    auto index = executableTx.index;
-    auto executiveContext = executableTx.executiveContext;
-    auto executive = executableTx.executive;
-    auto block = executableTx.block;
+    // auto index = executableTx.index;
+    // auto executiveContext = executableTx.executiveContext;
+    // auto executive = executableTx.executive;
+    // auto block = executableTx.block;
     
     //判断是否为跨片交易
     if (crossTx.find(tx->hash()) == crossTx.end()) { // 非跨片交易 => 直接执行
+        /*
         TransactionReceipt::Ptr resultReceipt = execute(tx, executiveContext, executive);
         block->setTransactionReceipt(index, resultReceipt);
         executiveContext->getState()->commit();
@@ -872,6 +931,55 @@ void BlockVerifier::executeCandidateTx(std::string keyReadwriteSet) {
             auto block_height = block->blockHeader().number();
             
         }
+        */
+
+        // EDIT BY ZH 22.11.3
+        auto exec = dev::plugin::executiveContext->getExecutive();
+        auto vm = dev::plugin::executiveContext->getExecutiveInstance();
+        exec->setVM(vm);
+        dev::plugin::executiveContext->executeTransaction(exec, tx);
+        dev::plugin::executiveContext->m_vminstance_pool.push(vm);
+
+        auto blockHeight = txHash2BlockHeight->at(tx->hash().abridged());
+        PLUGIN_LOG(INFO) << LOG_DESC("该笔交易对应的区块高度") << LOG_KV("blockHeight", blockHeight);
+        auto unExecutedTxNum = block2UnExecutedTxNum->at(blockHeight);
+        PLUGIN_LOG(INFO) << LOG_DESC("in executeCandidateTx...")
+                         << LOG_KV("区块未完成交易before", unExecutedTxNum);
+        
+        unExecutedTxNum = unExecutedTxNum - 1;
+        block2UnExecutedTxNum->at(blockHeight) = unExecutedTxNum;
+
+        // 判断剩余交易数并删除相关变量
+        if (unExecutedTxNum == 0) {
+            PLUGIN_LOG(INFO) << LOG_BADGE("区块中的数据全部执行完")
+                             << LOG_KV("block_height", blockHeight);
+            /*  删除相关变量
+                1. block2ExecutedTxNum -- 已完成
+                2. 2PC流程中的变量: doneCrossTx —- 完成ing...
+            */ 
+            if (m_block2UnExecMutex.try_lock()) {
+                block2UnExecutedTxNum->unsafe_erase(blockHeight);
+                m_block2UnExecMutex.unlock();
+            }
+            for (auto i : blockHeight2CrossTxHash->at(blockHeight)) {
+                PLUGIN_LOG(INFO) << LOG_DESC("正在删除doneCrossTx...该区块高度存在的跨片交易有：")
+                                 << LOG_KV("crossTxHash", i);
+                if (m_doneCrossTxMutex.try_lock()) {
+                    doneCrossTx->unsafe_erase(i);
+                    m_doneCrossTxMutex.unlock();
+                }
+            }
+            if (m_height2TxHashMutex.try_lock()) {
+                blockHeight2CrossTxHash->unsafe_erase(blockHeight);
+                m_height2TxHashMutex.unlock();
+            }
+        }
+
+        if (block2UnExecutedTxNum->count(blockHeight) != 0) {
+            PLUGIN_LOG(INFO) << LOG_DESC("in executeCandidateTx...")  
+                             << LOG_KV("区块未完成交易now_num", block2UnExecutedTxNum->at(blockHeight));
+        }
+
         // 删除执行过的交易
         candidate_tx_queues->at(keyReadwriteSet).queue.pop();
         if (candidate_tx_queues->at(keyReadwriteSet).queue.size() != 0) {

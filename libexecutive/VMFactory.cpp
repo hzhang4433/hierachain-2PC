@@ -167,31 +167,55 @@ po::options_description vmProgramOptions(unsigned _lineLength)
     return opts;
 }
 
-
-std::unique_ptr<EVMInterface> VMFactory::create()
+std::shared_ptr<EVMInterface> VMFactory::create()
 {
     return create(g_kind);
 }
 
-std::unique_ptr<EVMInterface> VMFactory::create(VMKind _kind)
+std::shared_ptr<EVMInterface> VMFactory::create(VMKind _kind)
 {
     switch (_kind)
     {
 #ifdef HERA
     case VMKind::Hera:
-        return std::unique_ptr<EVMInterface>(new EVMInstance{evmc_create_hera()});
+        return std::shared_ptr<EVMInterface>(new EVMInstance{evmc_create_hera()});
 #endif
     case VMKind::evmone:
-        return std::unique_ptr<EVMInterface>(new EVMInstance{evmc_create_evmone()});
+        return std::shared_ptr<EVMInterface>(new EVMInstance{evmc_create_evmone()});
     case VMKind::DLL:
-        return std::unique_ptr<EVMInterface>(new EVMInstance{g_evmcCreateFn()});
+        return std::shared_ptr<EVMInterface>(new EVMInstance{g_evmcCreateFn()});
 #if 0
     case VMKind::Interpreter:
-        return std::unique_ptr<EVMInterface>(new EVMInstance{evmc_create_interpreter()});
+        return std::shared_ptr<EVMInterface>(new EVMInstance{evmc_create_interpreter()});
 #endif
     default:
-        return std::unique_ptr<EVMInterface>(new EVMInstance{evmc_create_evmone()});
+        return std::shared_ptr<EVMInterface>(new EVMInstance{evmc_create_evmone()});
     }
 }
+// std::unique_ptr<EVMInterface> VMFactory::create()
+// {
+//     return create(g_kind);
+// }
+
+// std::unique_ptr<EVMInterface> VMFactory::create(VMKind _kind)
+// {
+//     switch (_kind)
+//     {
+// #ifdef HERA
+//     case VMKind::Hera:
+//         return std::unique_ptr<EVMInterface>(new EVMInstance{evmc_create_hera()});
+// #endif
+//     case VMKind::evmone:
+//         return std::unique_ptr<EVMInterface>(new EVMInstance{evmc_create_evmone()});
+//     case VMKind::DLL:
+//         return std::unique_ptr<EVMInterface>(new EVMInstance{g_evmcCreateFn()});
+// #if 0
+//     case VMKind::Interpreter:
+//         return std::unique_ptr<EVMInterface>(new EVMInstance{evmc_create_interpreter()});
+// #endif
+//     default:
+//         return std::unique_ptr<EVMInterface>(new EVMInstance{evmc_create_evmone()});
+//     }
+// }
 }  // namespace eth
 }  // namespace dev

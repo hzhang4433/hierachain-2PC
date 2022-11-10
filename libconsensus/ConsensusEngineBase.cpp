@@ -110,13 +110,25 @@ void ConsensusEngineBase::replyToCoordinator(dev::plugin::transaction txInfo,
 
 int ConsensusEngineBase::executeBlockTransactions(std::shared_ptr<dev::eth::Block> block)
 {
-    ENGINE_LOG(INFO) << "即将执行交易...";
+    ENGINE_LOG(INFO) << "放交易入队列...";
+    // 将区块高度映射到该区块内未执行的交易数  EDIT BY ZH -- 22.11.2
+    block2UnExecutedTxNum->insert(std::make_pair(block->blockHeader().number(), block->transactions()->size()));
+    BLOCKVERIFIER_LOG(INFO) << LOG_DESC("添加区块未完成交易数")
+                            << LOG_KV("height", block->blockHeader().number())
+                            << LOG_KV("num", block2UnExecutedTxNum->at(block->blockHeader().number()));
 
     for (size_t i = 0; i < block->transactions()->size(); i++)
     {
         auto& tx = (*block->transactions())[i];
+        // 将区块内的每一笔交易映射到具体区块高度  EDIT BY ZH -- 22.11.2
+        txHash2BlockHeight->insert(std::make_pair(tx->hash().abridged(), block->blockHeader().number()));
+        BLOCKVERIFIER_LOG(INFO) << LOG_DESC("添加未完成后变量数值")
+                                << LOG_KV("txHash", tx->hash().abridged())
+                                << LOG_KV("num", txHash2BlockHeight->at(tx->hash().abridged()));
+
         // auto transactionReceipt = m_blockVerifier->executeTransaction(block->blockHeader(), tx);
 
+        /* 2PC流程逻辑
         ENGINE_LOG(INFO) << LOG_KV("block->blockHeader().number()", block->blockHeader().number()); 
         auto cached_executeContent = dev::blockverifier::cached_executeContents.at(block->blockHeader().number());
         auto executiveContext = cached_executeContent.executiveContext;
@@ -259,11 +271,24 @@ int ConsensusEngineBase::executeBlockTransactions(std::shared_ptr<dev::eth::Bloc
             }
             
         }
-    
-        // auto transactionReceipt = m_blockVerifier->execute(tx, executiveContext, executive);
-        // executiveContext->getState()->commit(); // 状态写缓存
-        // ENGINE_LOG(INFO) << LOG_KV("transactionReceipt", transactionReceipt->status());
-        // block->setTransactionReceipt(i, transactionReceipt);
+        */
+
+        if (crossTx.find(tx->hash()) == crossTx.end()) { // 非跨片交易
+        } else { // 跨片交易
+            // 存储跨片交易对应的区块高度
+            auto txInfo = crossTx[tx->hash()];
+            auto crossTxHash = txInfo.cross_tx_hash;
+            auto blockHeight = block->blockHeader().number();
+            if (blockHeight2CrossTxHash->count(blockHeight) == 0) {
+                std::vector<std::string> temp;
+                temp.push_back(crossTxHash);
+                blockHeight2CrossTxHash->insert(std::make_pair(blockHeight, temp));
+            } else {
+                blockHeight2CrossTxHash->at(blockHeight).push_back(crossTxHash);
+            }
+        }
+        
+        dev::consensus::toExecute_transactions.push(tx); // 将共识完出块的交易逐个放入队列
     }
 }
 

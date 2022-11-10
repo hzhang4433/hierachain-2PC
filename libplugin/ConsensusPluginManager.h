@@ -8,6 +8,7 @@
 #include <libprotobasic/shard.pb.h>
 #include <libplugin/Common.h>
 #include <librpc/Rpc.h>
+#include <libplugin/deterministExecute.h>
 
 namespace dev {
     namespace plugin {
@@ -22,6 +23,7 @@ namespace dev {
                     commit_txs = new tbb::concurrent_queue<protos::CommittedRLPWithReadSet>();
                     notFinishedDAG = 0;
                     m_rpc_service = _service;
+                    m_deterministExecute = std::make_shared<dev::plugin::deterministExecute>();
                 }
                 void processReceivedWriteSet(protos::TxWithReadSet _rs);
                 void processReceivedTx(protos::Transaction _tx);
@@ -82,7 +84,8 @@ namespace dev {
                 std::mutex x_map_Mutex;
 
                 std::atomic<int> notFinishedDAG;
-                std::shared_ptr<dev::rpc::Rpc> m_rpc_service;;
+                std::shared_ptr<dev::rpc::Rpc> m_rpc_service;
+                std::shared_ptr<dev::plugin::deterministExecute> m_deterministExecute;
 
             private:
                 /// global set to record latest_state

@@ -39,6 +39,7 @@ namespace eth
 {
 class Block;
 class Result;
+class EVMInterface;
 }  // namespace eth
 namespace precompiled
 {
@@ -193,6 +194,8 @@ public:
         m_t.reset();
     }
 
+    void setVM(std::shared_ptr<dev::eth::EVMInterface> vm) { m_vminstance = vm; }
+
 private:
     void parseEVMCResult(std::shared_ptr<eth::Result> _result);
     /// @returns false iff go() must be called (and thus a VM execution in required).
@@ -239,6 +242,9 @@ private:
 
     // determine whether the freeStorageVMSchedule enabled or not
     bool m_enableFreeStorage = false;
+
+    std::shared_ptr<dev::eth::EVMInterface> m_vminstance;
+
 };
 
 }  // namespace executive

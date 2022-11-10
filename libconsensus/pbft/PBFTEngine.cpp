@@ -1350,6 +1350,12 @@ void PBFTEngine::checkAndSave()
             int n = hex_m_data_str.find("0x111222333", 0);
             int n2 = hex_m_data_str.find_last_of('|');
             int len = hex_m_data_str.length();
+            /*
+                添加判读片内交易的逻辑并设置交易信息（主要是stateAddress
+                注意：跨片交易的子交易不应该有0x444555666标志符
+            */
+            int m = hex_m_data_str.find("0x444555666", 0);
+            int m2 = hex_m_data_str.find_last_of('|');
 
             if( n != -1)
             {
@@ -1361,7 +1367,7 @@ void PBFTEngine::checkAndSave()
                                         << LOG_KV("subtxStr", subtxStr);
 
                 // 打印跨片交易 —— ADD BY ZH
-                std::cout << "CrossTx: " << hex_m_data_str << std::endl;
+                std::cout << "hexDataStr: " << hex_m_data_str << std::endl;
                 
                 std::vector<std::string> subSignedTx;
                 // EDIT BY ZH
@@ -1454,6 +1460,37 @@ void PBFTEngine::checkAndSave()
                     exit(1);
                 }
             }
+            if(m != -1) {
+                std::string subtxStr = hex_m_data_str.substr(m, m2 - m);
+                // std::string subtxStr = hex_m_data_str.substr(n, n2-n);
+                PBFTENGINE_LOG(INFO) << LOG_DESC("发现片内交易！")
+                                     << LOG_KV("m", m)
+                                     << LOG_KV("len", len)
+                                     << LOG_KV("subtxStr", subtxStr);
+
+                std::vector<std::string> subSignedTx;
+                try
+                {
+                    boost::split(subSignedTx, subtxStr, boost::is_any_of("|"), boost::token_compress_on);
+
+                    // 获得片内交易hash的字符串
+                    std::string tx_hash_str = tx->hash().abridged();
+                    std::string stateAddress = subSignedTx.at(1);
+                    innerTx.insert(std::make_pair(tx->hash(), transaction{
+                                    0, 
+                                    (unsigned long)0, 
+                                    (unsigned long)0, 
+                                    (unsigned long)0, 
+                                    tx_hash_str, 
+                                    tx, 
+                                    stateAddress}));
+                    
+                }
+                catch (std::exception& e)
+                {
+                    exit(1);
+                }
+            }
         }
         
         if (m_reqCache->prepareCache().view != m_view)
@@ -1488,7 +1525,7 @@ void PBFTEngine::checkAndSave()
             {
                 // /*
                 // 持久化结束，对区块内交易尝试第一次执行执行 ADD BY THB
-                PBFTENGINE_LOG(INFO) << LOG_DESC("区块数据持久化完毕，开始执行交易...");
+                PBFTENGINE_LOG(INFO) << LOG_DESC("区块数据持久化完毕，将交易放入队列...");
                 auto executedNum = executeBlockTransactions(p_block);
                 // */
 

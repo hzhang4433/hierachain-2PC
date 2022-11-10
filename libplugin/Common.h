@@ -13,6 +13,8 @@
 
 namespace dev {
 namespace plugin {
+    
+class ExecuteVMTestFixture;
 
 // #define PLUGIN_LOG(LEVEL) LOG(LEVEL) << LOG_BADGE("PLGIN")
 #define PLUGIN_LOG(LEVEL) LOG(LEVEL) << LOG_BADGE("PLUGIN") << LOG_BADGE("PLUGIN")
@@ -31,11 +33,11 @@ namespace plugin {
 
     struct executableTransaction
     {
-        unsigned long index;
+        // unsigned long index;
         dev::eth::Transaction::Ptr tx;
-        dev::blockverifier::ExecutiveContext::Ptr executiveContext;
-        dev::executive::Executive::Ptr executive; 
-        dev::eth::Block::Ptr block;
+        // dev::blockverifier::ExecutiveContext::Ptr executiveContext;
+        // dev::executive::Executive::Ptr executive; 
+        // dev::eth::Block::Ptr block;
     };
 
     struct candidate_tx_queue
@@ -70,7 +72,7 @@ namespace plugin {
     extern std::map<h256, transaction> crossTx; // 分片待处理的跨片子交易详细信息
     // 缓冲队列跨片交易集合(用以应对网络传输下，收到的交易乱序)，(shardid_messageid-->subtx)，由执行模块代码触发
     // extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> cached_cs_tx;
-    extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::map<unsigned long, transaction>>> cached_cs_tx;
+    extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> cached_cs_tx;
     // 执行队列池 readwriteset --> candidate_tx_queue
 	extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, candidate_tx_queue>> candidate_tx_queues;
     // 已经提交candidate_cs_tx的来自不同分片的最大 messageid[3,4]
@@ -87,6 +89,18 @@ namespace plugin {
     extern std::shared_ptr<dev::p2p::Service> group_p2p_service;
     extern dev::blockverifier::BlockVerifierInterface::Ptr groupVerifier;
     extern std::string nodeIdStr;
+    // 22.11.6
+    extern std::shared_ptr<tbb::concurrent_unordered_set<std::string>> doneCrossTx;
+    // 22.11.2
+    // 映射交易hash到其所在区块高度
+    extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> txHash2BlockHeight;
+    // 映射区块高度至未执行交易数
+    extern std::shared_ptr<tbb::concurrent_unordered_map<int, int>> block2UnExecutedTxNum;
+    // 22.11.7
+    extern std::shared_ptr<tbb::concurrent_unordered_map<int, std::vector<std::string>>> blockHeight2CrossTxHash;
+    // 22.11.8
+    extern std::map<h256, transaction> innerTx;
+    extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> crossTx2StateAddress;
 		
 
     extern std::map<std::string, std::string> txRWSet;
@@ -101,6 +115,8 @@ namespace plugin {
     extern std::vector<std::string> preCommittedDisTxRlp;
     extern std::map<std::string, std::string> txRlp2ConAddress;
     extern std::vector<std::string> coordinatorRlp;
+    extern std::shared_ptr<ExecuteVMTestFixture> executiveContext;
+
 
     extern int global_internal_groupId;
 

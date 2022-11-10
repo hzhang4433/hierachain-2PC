@@ -55,10 +55,14 @@ public:
     ~VMFactory() = delete;
 
     /// Creates a VM instance of the global kind (controlled by the --vm command line option).
-    static std::unique_ptr<EVMInterface> create();
+    // static std::unique_ptr<EVMInterface> create();
+    static std::shared_ptr<EVMInterface> create();
+
 
     /// Creates a VM instance of the kind provided.
-    static std::unique_ptr<EVMInterface> create(VMKind _kind);
+    // static std::unique_ptr<EVMInterface> create(VMKind _kind);
+    static std::shared_ptr<EVMInterface> create(VMKind _kind);
+
 };
 }  // namespace eth
 }  // namespace dev

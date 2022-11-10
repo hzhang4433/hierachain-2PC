@@ -49,7 +49,7 @@ MemoryTableFactory::MemoryTableFactory() {}
 Table::Ptr MemoryTableFactory::openTable(
     const std::string& tableName, bool authorityFlag, bool isPara)
 {
-    STORAGE_LOG(INFO) << LOG_DESC("进入openTable函数...");
+    // STORAGE_LOG(INFO) << LOG_DESC("进入openTable函数...");
     RecursiveGuard l(x_name2Table);
     auto it = m_name2Table.find(tableName);
     if (it != m_name2Table.end())

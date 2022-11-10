@@ -27,6 +27,7 @@
 #include <libdevcrypto/CryptoInterface.h>
 #include <libethcore/Block.h>
 #include <libethcore/Exceptions.h>
+#include <tbb/concurrent_queue.h>
 
 #define PBFTENGINE_LOG(LEVEL) LOG(LEVEL) << LOG_BADGE("CONSENSUS") << LOG_BADGE("PBFT")
 #define PBFTSEALER_LOG(LEVEL) LOG(LEVEL) << LOG_BADGE("CONSENSUS") << LOG_BADGE("SEALER")
@@ -42,6 +43,7 @@ namespace consensus
     extern std::vector<dev::h512>forwardNodeId;
     extern std::vector<dev::h512>shardNodeId;
     extern std::map<unsigned long, unsigned long> messageIDs;
+    extern tbb::concurrent_queue<dev::eth::Transaction::Ptr> toExecute_transactions; // 缓存共识完的交易，按顺序存放在队列中，等待执行
 
 // for bip152: packetType for partiallyBlock
 enum P2PPacketType : uint32_t

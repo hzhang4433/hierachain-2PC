@@ -79,8 +79,8 @@ namespace dev {
         
         std::map<h256, transaction> crossTx; // 分片待处理的跨片子交易详细信息
         // 缓冲队列跨片交易集合(用以应对网络传输下，收到的交易乱序)，(shardid_messageid-->subtx)，由执行模块代码触发
-        std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::map<unsigned long, transaction>>> cached_cs_tx = 
-                                std::make_shared<tbb::concurrent_unordered_map<std::string, std::map<unsigned long, transaction>>>();
+        std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> cached_cs_tx = 
+                                std::make_shared<tbb::concurrent_unordered_map<std::string, transaction>>();
         // 执行队列池 readwriteset --> candidate_tx_queue
 		std::shared_ptr<tbb::concurrent_unordered_map<std::string, candidate_tx_queue>> candidate_tx_queues = 
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, candidate_tx_queue>>();
@@ -103,8 +103,9 @@ namespace dev {
         // 协调者分片存储对应子分片执行跨片交易成功收集的消息包数量
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<int>>> crossTx2ReceivedCommitMsg = 
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, std::vector<int>>>();
-        // 具体类型需根据最终提交的方式确定？？？
-        std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<std::string>>> doneCrossTx;
+        // 存放已经完成的跨片交易hash
+        std::shared_ptr<tbb::concurrent_unordered_set<std::string>> doneCrossTx = 
+                                std::make_shared<tbb::concurrent_unordered_set<std::string>>();
         // 包含所有节点的protocol ID
 		dev::PROTOCOL_ID group_protocolID;
         // 所有节点的p2p通信服务
@@ -113,6 +114,27 @@ namespace dev {
         dev::blockverifier::BlockVerifierInterface::Ptr groupVerifier;
         // 节点nodeID
         std::string nodeIdStr;
+
+        // EDIT BY ZH 22.11.2
+        // 映射交易hash到其所在区块高度
+        std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> txHash2BlockHeight = 
+                                std::make_shared<tbb::concurrent_unordered_map<std::string, int>>();
+        // 映射区块高度至未执行交易数
+        std::shared_ptr<tbb::concurrent_unordered_map<int, int>> block2UnExecutedTxNum = 
+                                std::make_shared<tbb::concurrent_unordered_map<int, int>>();
+        // ADD ON 22.11.7
+        std::shared_ptr<tbb::concurrent_unordered_map<int, std::vector<std::string>>> blockHeight2CrossTxHash = 
+                                std::make_shared<tbb::concurrent_unordered_map<int, std::vector<std::string>>>();
+        std::mutex m_block2UnExecMutex;
+        std::mutex m_height2TxHashMutex;
+        std::mutex m_doneCrossTxMutex;
+
+        // ADD ON 22.11.8
+        // 片内交易映射至交易状态集
+        std::map<h256, transaction> innerTx;
+        // 跨片交易映射至对应状态集
+        std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> crossTx2StateAddress = 
+                                std::make_shared<tbb::concurrent_unordered_map<std::string, std::string>>();;
 
 
         std::map<std::string, std::string> txRWSet;
@@ -127,6 +149,7 @@ namespace dev {
         std::vector<std::string> preCommittedDisTxRlp;
         std::map<std::string, std::string>txRlp2ConAddress;
         std::vector<std::string> coordinatorRlp;
+        std::shared_ptr<ExecuteVMTestFixture> executiveContext;
     }
 }
 
@@ -138,6 +161,7 @@ namespace dev{
         std::vector<dev::h512>forwardNodeId; // 记录各分片主节点id
         std::vector<dev::h512>shardNodeId; // 记录所有节点id
         std::map<unsigned long, unsigned long> messageIDs; // 记录各分片已发送的最大messageID
+        tbb::concurrent_queue<dev::eth::Transaction::Ptr> toExecute_transactions; // 缓存共识完的交易，按顺序存放在队列中，等待执行
     }
 }
 
@@ -254,6 +278,37 @@ private:
     SecureInitializer::Ptr m_secureInitializer;
 };
 
+/*
+void executeTxs()
+{
+    while (true)
+    {
+        if(dev::consensus::toExecute_transactions.size() > 0)
+        {
+            auto tx = dev::consensus::toExecute_transactions.front();
+            auto tx_hash = tx->hash();
+            BLOCKVERIFIER_LOG(INFO) << LOG_DESC("缓存交易的hash") << LOG_KV("tx_hash", tx_hash);
+            /
+                添加交易逻辑
+            /
+
+
+            
+            dev::consensus::toExecute_transactions.pop();
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+}
+
+void startprocessThread()
+{
+    // 单独启动一个线程执行executeTxs()
+    BLOCKVERIFIER_LOG(INFO) << LOG_DESC("startprocessThread...");
+    std::thread executeTxs_Thread(executeTxs);
+    executeTxs_Thread.detach();
+    BLOCKVERIFIER_LOG(INFO) << LOG_DESC("startprocessThread...");;
+}
+*/
 class CrossShardTest
 {
     private:
@@ -525,9 +580,46 @@ int main(){
 
     shared_ptr<dev::plugin::SyncThreadMaster> syncs = std::make_shared<dev::plugin::SyncThreadMaster>(p2pService, syncId, nodeId, dev::consensus::internal_groupId, rpcService);
     std::shared_ptr<ConsensusPluginManager> consensusPluginManager = std::make_shared<ConsensusPluginManager>(rpcService);
+    // consensusPluginManager->m_deterministExecute->start(); // 启动交易处理线程
+    std::thread executetxsThread(&dev::plugin::deterministExecute::deterministExecuteTx, consensusPluginManager->m_deterministExecute);
+    executetxsThread.detach();
+
     syncs->setAttribute(blockchainManager);
     syncs->setAttribute(consensusPluginManager);
-    // syncs->startThread(); // 不再启用轮循检查，通过回调函数异步通知
+    
+    // startprocessThread();
+
+    // 测试发送交易（分片1的node1向本分片1发送一笔片内交易
+    if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0)))
+    {
+        PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
+        transactionInjectionTest _injectionTest(rpcService, 1);
+        _injectionTest.deployContractTransaction("./deploy.json", 1);
+        std::this_thread::sleep_for(std::chrono::milliseconds(4000));
+        _injectionTest.injectionTransactions("./signedtxs.json", 1);
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(4000));
+
+    if(dev::consensus::internal_groupId == 2 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(1)))
+    {
+        PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
+        transactionInjectionTest _injectionTest(rpcService, 2);
+        _injectionTest.deployContractTransaction("./deploy.json", 2);
+        std::this_thread::sleep_for(std::chrono::milliseconds(4000));
+        _injectionTest.injectionTransactions("./signedtxs.json", 2);
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(4000));
+
+    if(dev::consensus::internal_groupId == 3 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(2)))
+    {
+        PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
+        transactionInjectionTest _injectionTest(rpcService, 3);
+        _injectionTest.deployContractTransaction("./deploy.json", 3);
+        std::this_thread::sleep_for(std::chrono::milliseconds(4000));
+        _injectionTest.injectionTransactions("./signedtxs.json", 3);
+    }
 
     /*
     // 测试发送交易（分片3的头节点向本分片发送一笔跨片交易

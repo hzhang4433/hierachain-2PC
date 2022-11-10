@@ -29,6 +29,8 @@ namespace dev
 {
 namespace mptstate
 {
+#define MPTSTATE_LOG(LEVEL) LOG(LEVEL) << LOG_BADGE("MPTSTATE") << LOG_BADGE("MPTSTATE")
+
 OverlayDB MPTState::openDB(
     boost::filesystem::path const& _path, h256 const& _genesisHash, WithExisting _we)
 {
