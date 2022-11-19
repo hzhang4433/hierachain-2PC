@@ -923,8 +923,7 @@ void BlockVerifier::executeCrossTx(std::string keyReadwriteSet) {
     transaction txInfo = crossTx[tx->hash()];
     crossTx.erase(tx->hash());
     if (m_lockKeyMutex.try_lock()) {
-        int holding_tx_num = locking_key->at(keyReadwriteSet);
-        locking_key->at(keyReadwriteSet) = holding_tx_num - 1;
+        locking_key->at(keyReadwriteSet)--;
         m_lockKeyMutex.unlock();
     }
     
@@ -1016,8 +1015,7 @@ void BlockVerifier::executeCandidateTx(std::string keyReadwriteSet) {
         candidate_tx_queues->at(keyReadwriteSet).queue.pop();
         // 释放锁
         if (m_lockKeyMutex.try_lock()) {
-            int holding_tx_num = locking_key->at(keyReadwriteSet);
-            locking_key->at(keyReadwriteSet) = holding_tx_num - 1;
+            locking_key->at(keyReadwriteSet)--;
             m_lockKeyMutex.unlock();
         }
         

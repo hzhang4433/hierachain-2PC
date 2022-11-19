@@ -1483,6 +1483,7 @@ void PBFTEngine::checkAndSave()
                                     (unsigned long)0, 
                                     tx_hash_str, 
                                     tx, 
+                                    "",
                                     stateAddress}));
                     
                 }

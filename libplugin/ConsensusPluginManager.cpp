@@ -1,3 +1,4 @@
+#include "libplugin/Common.h"
 #include <libplugin/ConsensusPluginManager.h>
 #include <libethcore/CommonJS.h>
 #include <libconsensus/pbft/PBFTEngine.h>
@@ -76,39 +77,82 @@ void ConsensusPluginManager::processReceivedCrossTx(protos::SubCrossShardTx _txr
     auto crossTxHash = msg_txWithReadset.crosstxhash();
 
     PLUGIN_LOG(INFO) << LOG_DESC("交易解析完毕")
-                        << LOG_KV("signeddata", signeddata)
-                        << LOG_KV("stateAddress", stateAddress)
-                        << LOG_KV("sourceShardId", sourceShardId)
-                        << LOG_KV("destinshardid", destinshardid)
-                        << LOG_KV("messageid", messageID);
+                     << LOG_KV("signeddata", signeddata)
+                     << LOG_KV("stateAddress", stateAddress)
+                     << LOG_KV("sourceShardId", sourceShardId)
+                     << LOG_KV("destinshardid", destinshardid)
+                     << LOG_KV("messageid", messageID);
 
     // m_rpc_service->sendRawTransaction(destinshardid, signeddata); /hash2用本地的RPC接口发起新的共识
     // 存储跨片交易信息 用于发送res给coordinator
     Transaction::Ptr tx = std::make_shared<Transaction>(
             jsToBytes(signeddata, dev::OnFailed::Throw), CheckTransaction::Everything);
-    crossTx.insert(std::make_pair(tx->hash(), transaction{
-        1, 
-        (unsigned long)sourceShardId, 
-        (unsigned long)destinshardid, 
-        (unsigned long)messageID, 
-        crossTxHash, 
-        tx, 
-        stateAddress}));
+    auto trans = transaction{
+                1, 
+                (unsigned long)sourceShardId, 
+                (unsigned long)destinshardid, 
+                (unsigned long)messageID, 
+                crossTxHash, 
+                tx, 
+                signeddata,
+                stateAddress};
+
+    crossTx.insert(std::make_pair(tx->hash(), trans));
 
     crossTx2StateAddress->insert(std::make_pair(crossTxHash, stateAddress));
 
     // PLUGIN_LOG(INFO) << LOG_DESC(nodeIdStr);
-    
-    for(size_t i = 0; i < forwardNodeId.size(); i++)
-    {
-        // 判断当前节点是否为头节点
-        PLUGIN_LOG(INFO) << LOG_DESC("当前forwardNodeId为: ") << LOG_DESC(toHex(forwardNodeId.at(i)));
-        if(nodeIdStr == toHex(forwardNodeId.at(i))){
-            PLUGIN_LOG(INFO) << LOG_DESC("匹配成功，当前节点为头节点");
-            m_rpc_service->sendRawTransaction(destinshardid, signeddata); // 通过调用本地的RPC接口发起新的共识
-            break;
+    // 先根据messageID判断跨片交易是否为按序到达
+    if (messageID == latest_candidate_tx_messageids->at(sourceShardId - 1) + 1) {
+        for(size_t i = 0; i < forwardNodeId.size(); i++) {
+            // 判断当前节点是否为头节点
+            PLUGIN_LOG(INFO) << LOG_DESC("当前forwardNodeId为: ") << LOG_DESC(toHex(forwardNodeId.at(i)));
+            if(nodeIdStr == toHex(forwardNodeId.at(i))){
+                PLUGIN_LOG(INFO) << LOG_DESC("匹配成功，当前节点为头节点")
+                                 << LOG_KV("发送交易messageID", messageID);
+                m_rpc_service->sendRawTransaction(destinshardid, signeddata); // 通过调用本地的RPC接口发起新的共识
+                
+                // 更新已经收到的按序的最大的messageID
+                latest_candidate_tx_messageids->at(sourceShardId - 1) = messageID;
+
+                // 检查cached_cs_tx 中后继 _message_id + 1 的交易是否已经到达, 若已经到达，也插入到 candidate_cs_tx 中，更新上锁的读写集
+                PLUGIN_LOG(INFO) << LOG_DESC("检查cached_cs_tx中后继message_id + 1的交易是否已经到达");
+                messageID = messageID + 1;
+                std::string attempt_key = std::to_string(sourceShardId) + std::to_string(messageID);
+                while(cached_cs_tx->count(attempt_key) != 0) {// 若后继 key 的跨片交易也在，也放入 candidate_cs_tx
+                    PLUGIN_LOG(INFO) << LOG_DESC("存在之前乱序到达的满足条件的交易")
+                                     << LOG_KV("messageId", messageID);
+
+                    auto _subtx = cached_cs_tx->at(attempt_key);
+                    latest_candidate_tx_messageids->at(sourceShardId - 1) = messageID;
+                    m_rpc_service->sendRawTransaction(_subtx.destin_shard_id, _subtx.signeddata); // 通过调用本地的RPC接口发起新的共识
+
+                    // 从 cached_cs_tx 中将交易删除
+                    if (m_cachedTx.try_lock()) {
+                        cached_cs_tx->unsafe_erase(attempt_key);
+                        m_cachedTx.unlock();
+                    }
+
+                    messageID = messageID + 1;
+                    attempt_key = std::to_string(sourceShardId) + std::to_string(messageID);
+                    // PLUGIN_LOG(INFO) << LOG_DESC("插入成功后")
+                    //                  << LOG_KV("candidate_tx_queues.size", candidate_tx_queues->at(stateAddress).queue.size());
+                }
+                break;
+            }
         }
+    } else {
+        PLUGIN_LOG(INFO) << LOG_DESC("插入乱序到达的跨片交易")
+                         << LOG_KV("messageId", messageID)
+                         << LOG_KV("sourceShardId", sourceShardId)
+                         << LOG_KV("destinShardId", destinshardid)
+                         << LOG_KV("crossTxHash", crossTxHash);
+        // std::cout << "insert_cached_cs_tx" << std::endl;
+        std::string _key = std::to_string(sourceShardId) + std::to_string(messageID);
+        cached_cs_tx->insert(std::make_pair(_key, trans));
     }
+
+    
     // distxs->push(_txrlp);
 }
 

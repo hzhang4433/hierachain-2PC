@@ -85,8 +85,23 @@ void deterministExecute::deterministExecuteTx()
                                  << LOG_KV("stateAddress", readwriteset);
                 
                 if (locking_key->count(readwriteset) == 0 || locking_key->at(readwriteset) == 0) { // 执行片内交易
-                    if (txHash2BlockHeight->count(txHash) == 0) {
-                        // 该笔交易哈希已经完成过，避免重复执行
+                    if (locking_key->count(readwriteset) == 0) {
+                        if (m_lockKeyMutex.try_lock()) {
+                            locking_key->insert(std::make_pair(readwriteset, 1)); 
+                            m_lockKeyMutex.unlock();
+                        }
+                    } else if (locking_key->at(readwriteset) == 0) {
+                        if (m_lockKeyMutex.try_lock()) {
+                            locking_key->at(readwriteset) = 1;
+                            m_lockKeyMutex.unlock();
+                        }
+                    }
+                    
+                    // 删除txHash2BlockHeight变量，代表相关交易已被执行
+                    txHash2BlockHeight->unsafe_erase(txHash);
+
+                    if (block2UnExecutedTxNum->count(blockHeight) == 0) {
+                        // 该笔交易所在区块交易已全部完成过了
                         return;
                     }
 
@@ -96,14 +111,11 @@ void deterministExecute::deterministExecuteTx()
                     dev::plugin::executiveContext->executeTransaction(exec, tx);
                     dev::plugin::executiveContext->m_vminstance_pool.push(vm);
 
-                    // 删除txHash2BlockHeight变量，代表相关交易已被执行
-                    txHash2BlockHeight->unsafe_erase(txHash);
-
-                    if (block2UnExecutedTxNum->count(blockHeight) == 0) {
-                        // 该笔交易所在区块交易已全部完成过了
-                        return;
+                    if (m_lockKeyMutex.try_lock()) {
+                        locking_key->at(readwriteset)--;
+                        m_lockKeyMutex.unlock();
                     }
-                    
+
                     // 维护区块未完成交易
                     PLUGIN_LOG(INFO) << LOG_DESC("该笔交易对应的区块高度") << LOG_KV("blockHeight", blockHeight);
                     auto unExecutedTxNum = block2UnExecutedTxNum->at(blockHeight);
@@ -144,7 +156,6 @@ void deterministExecute::deterministExecuteTx()
                                          << LOG_KV("区块未完成交易now_num", block2UnExecutedTxNum->at(blockHeight));
                     }
                 } else { // 放入等待队列
-                    // m_waitTxs.push_back(tx);
                     if(candidate_tx_queues->count(readwriteset) == 0) {
                         std::queue<executableTransaction> queue = std::queue<executableTransaction>();
                         candidate_tx_queue _candidate_tx_queue { readwriteset, queue };
@@ -152,6 +163,10 @@ void deterministExecute::deterministExecuteTx()
                         candidate_tx_queues->insert(std::make_pair(readwriteset, _candidate_tx_queue));
                     } else {
                         candidate_tx_queues->at(readwriteset).queue.push(executableTransaction{tx});
+                    }
+                    if (m_lockKeyMutex.try_lock()) {
+                        locking_key->at(readwriteset)++;
+                        m_lockKeyMutex.unlock();
                     }
                 }
 
@@ -175,140 +190,58 @@ void deterministExecute::deterministExecuteTx()
                                  << LOG_KV("crossTxHash", crossTxHash)
                                  << LOG_KV("stateAddress", readwriteset);
 
-                // 有问题🤨
                 // 按序到达的交易未必能直接执行==>添加条件判断
-                if(message_id == latest_candidate_tx_messageids->at(source_shard_id - 1) + 1) { //按序到达
-                    // 将交易放入队列
-                    PLUGIN_LOG(INFO) << LOG_DESC("insert candidate_tx_queues...");
-                    
-                    if(candidate_tx_queues->count(readwriteset) == 0) {
-                        PLUGIN_LOG(INFO) << LOG_DESC("candidate_tx_queues->count == 0")
-                                         << LOG_KV("readwriteset", readwriteset);
-                        std::queue<executableTransaction> queue = std::queue<executableTransaction>();
-                        candidate_tx_queue _candidate_tx_queue { readwriteset, queue };
-                        _candidate_tx_queue.queue.push(executableTransaction{tx});
-                        candidate_tx_queues->insert(std::make_pair(readwriteset, _candidate_tx_queue));
-                        PLUGIN_LOG(INFO) << LOG_KV("candidate_tx_queue.size() first", candidate_tx_queues->at(readwriteset).queue.size());
-                    } else {
-                        PLUGIN_LOG(INFO) << LOG_DESC("candidate_tx_queues->count != 0")
-                                         << LOG_KV("readwriteset", readwriteset)
-                                         << LOG_KV("candidate_tx_queue.size() before", candidate_tx_queues->at(readwriteset).queue.size());
-                        // 当前片内交易的读写集（假设跨片交易的第一个读写集是当前片的读写集）, 定位读写集 readwrite_key 的交易缓存队列
-                        // auto candidate_tx_queue = candidate_tx_queues->at(readwriteset);
-                        // _subtx 插入到 candidate_cs_tx中，更新上锁的读写集
-                        // candidate_tx_queue.queue.push(executableTransaction{tx});
-                        candidate_tx_queues->at(readwriteset).queue.push(executableTransaction{tx});
-                        PLUGIN_LOG(INFO) << LOG_KV("candidate_tx_queue.size() after", candidate_tx_queues->at(readwriteset).queue.size());
-                    }
+                // 将交易放入队列
+                PLUGIN_LOG(INFO) << LOG_DESC("insert candidate_tx_queues...");
+                
+                if(candidate_tx_queues->count(readwriteset) == 0) {
+                    PLUGIN_LOG(INFO) << LOG_DESC("candidate_tx_queues->count == 0")
+                                     << LOG_KV("readwriteset", readwriteset);
+                    std::queue<executableTransaction> queue = std::queue<executableTransaction>();
+                    candidate_tx_queue _candidate_tx_queue { readwriteset, queue };
+                    _candidate_tx_queue.queue.push(executableTransaction{tx});
+                    candidate_tx_queues->insert(std::make_pair(readwriteset, _candidate_tx_queue));
+                    PLUGIN_LOG(INFO) << LOG_KV("candidate_tx_queue.size() first", candidate_tx_queues->at(readwriteset).queue.size());
+                } else {
+                    PLUGIN_LOG(INFO) << LOG_DESC("candidate_tx_queues->count != 0")
+                                     << LOG_KV("readwriteset", readwriteset)
+                                     << LOG_KV("candidate_tx_queue.size() before", candidate_tx_queues->at(readwriteset).queue.size());
+                    // 当前片内交易的读写集（假设跨片交易的第一个读写集是当前片的读写集）, 定位读写集 readwrite_key 的交易缓存队列
+                    candidate_tx_queues->at(readwriteset).queue.push(executableTransaction{tx});
+                    PLUGIN_LOG(INFO) << LOG_KV("candidate_tx_queue.size() after", candidate_tx_queues->at(readwriteset).queue.size());
+                }
 
-                    // insert_candidate_cs_tx(_tx);
-                    // 更新 locking_key
+                // insert_candidate_cs_tx(_tx);
+                // 更新 locking_key
+                if (m_lockKeyMutex.try_lock()) {
                     if(locking_key->count(readwriteset) == 0) {
                         PLUGIN_LOG(INFO) << LOG_DESC("locking_key->count == 0");
                         // 向coordinator发送成功消息
                         locking_key->insert(std::make_pair(readwriteset, 1)); 
-                        
+                        m_lockKeyMutex.unlock();
                         // 更新正在处理的最大messageID的跨片交易
                         current_candidate_tx_messageids->at(source_shard_id - 1) = message_id;
-
                         replyToCoordinator(txInfo, group_protocolID, group_p2p_service);
                     } else {
                         PLUGIN_LOG(INFO) << LOG_DESC("locking_key->count != 0");
-                        if (m_lockKeyMutex.try_lock()) {
-                            int holding_tx_num = locking_key->at(readwriteset);
-                            if (holding_tx_num == 0) { // 抢占锁成功
-                                // 向coordinator发送成功消息
-                                // PLUGIN_LOG(INFO) << LOG_DESC("holding_tx_num == 0")
-                                PLUGIN_LOG(INFO) << LOG_DESC("该笔交易为跨片交易...非队列")
-                                                << LOG_KV("messageId", message_id);
-                                locking_key->at(readwriteset) = 1;
-
-                                // 更新正在处理的最大messageID的跨片交易
-                                current_candidate_tx_messageids->at(source_shard_id - 1) = message_id;
-
-                                replyToCoordinator(txInfo, group_protocolID, group_p2p_service);
-                            } else {
-                                // 添加变量, 等待之前的交易完成
-                                locking_key->at(readwriteset) = holding_tx_num + 1;
-                            }
+                        if (locking_key->at(readwriteset) == 0) { // 抢占锁成功
+                            // 向coordinator发送成功消息
+                            PLUGIN_LOG(INFO) << LOG_DESC("该笔交易为跨片交易...非队列")
+                                             << LOG_KV("messageId", message_id);
+                            locking_key->at(readwriteset) = 1;
+                            m_lockKeyMutex.unlock();
+                            // 更新正在处理的最大messageID的跨片交易
+                            current_candidate_tx_messageids->at(source_shard_id - 1) = message_id;
+                            replyToCoordinator(txInfo, group_protocolID, group_p2p_service);
+                        } else {
+                            // 添加变量, 等待之前的交易完成
+                            locking_key->at(readwriteset)++;
                             m_lockKeyMutex.unlock();
                         }
-                        
                     }
-                    // 更新已经收到的按序的最大的messageID
-                    latest_candidate_tx_messageids->at(source_shard_id - 1) = message_id;
-
-                    // 检查cached_cs_tx 中后继 _message_id + 1 的交易是否已经到达, 若已经到达，也插入到 candidate_cs_tx 中，更新上锁的读写集
-                    PLUGIN_LOG(INFO) << LOG_DESC("检查cached_cs_tx中后继message_id + 1的交易是否已经到达");
-                    message_id = message_id + 1;
-                    std::string attempt_key = std::to_string(source_shard_id) + std::to_string(message_id);
-                    while(cached_cs_tx->count(attempt_key) != 0) {// 若后继 key 的跨片交易也在，也放入 candidate_cs_tx
-                        PLUGIN_LOG(INFO) << LOG_DESC("存在之前乱序到达的满足条件的交易")
-                                         << LOG_KV("messageId", message_id);
-
-                        auto _subtx = cached_cs_tx->at(attempt_key);
-                        // 定位读写集 readwrite_key 的交易缓存队列，先判断是否存在
-                        // 判断candidate_tx_queues中是否有readwrite_key的队列，因为之前可能没有
-                        if(candidate_tx_queues->count(readwriteset) == 0)
-                        {
-                            std::queue<executableTransaction> queue = std::queue<executableTransaction>();
-                            candidate_tx_queue _candidate_tx_queue { readwriteset, queue };
-                            _candidate_tx_queue.queue.push(executableTransaction{_subtx.tx});
-                            candidate_tx_queues->insert(std::make_pair(readwriteset, _candidate_tx_queue));
-                        }
-                        else
-                        {
-                            PLUGIN_LOG(INFO) << LOG_DESC("交易插入前")
-                                             << LOG_KV("candidate_tx_queues.size", candidate_tx_queues->at(readwriteset).queue.size());
-
-                            // auto candidate_tx_queue = candidate_tx_queues->at(readwriteset);
-                            // _subtx 插入到candidate_cs_tx中，更新上锁的读写集
-                            // candidate_tx_queue.queue.push(executableTransaction{_subtx.tx});
-                            candidate_tx_queues->at(readwriteset).queue.push(executableTransaction{_subtx.tx});
-                        }
-
-                        latest_candidate_tx_messageids->at(source_shard_id - 1) = message_id;
-
-                        if(locking_key->count(readwriteset) == 0) { 
-                            locking_key->insert(std::make_pair(readwriteset, 1)); 
-                        } else {
-                            if (m_lockKeyMutex.try_lock()) {
-                                int holding_tx_num = locking_key->at(readwriteset);
-                                locking_key->at(readwriteset) = holding_tx_num + 1;
-                                m_lockKeyMutex.unlock();
-                            }
-                        }
-
-                        // 从 cached_cs_tx 中将交易删除
-                        for(auto iter = cached_cs_tx->cbegin(); iter != cached_cs_tx->cend();)
-                        {
-                            if((*iter).first == attempt_key)
-                            {
-                                iter = cached_cs_tx->unsafe_erase(iter);
-                                break;
-                            }
-                            else
-                            {
-                                iter++;
-                            }
-                        }
-                        message_id = message_id + 1;
-                        attempt_key = std::to_string(source_shard_id) + std::to_string(message_id);
-                        PLUGIN_LOG(INFO) << LOG_DESC("插入成功后")
-                                         << LOG_KV("candidate_tx_queues.size", candidate_tx_queues->at(readwriteset).queue.size());
-                    }
-                    PLUGIN_LOG(INFO) << LOG_DESC("跨片交易-按序到达逻辑执行完成...");
                 }
-                else { // 乱序到达
-                    PLUGIN_LOG(INFO) << LOG_DESC("插入乱序到达的跨片交易")
-                                     << LOG_KV("message_id", message_id)
-                                     << LOG_KV("source_shard_id", source_shard_id)
-                                     << LOG_KV("destin_shard_id", destin_shard_id)
-                                     << LOG_KV("crossTxHash", crossTxHash);
-                    // std::cout << "insert_cached_cs_tx" << std::endl;
-                    std::string _key = std::to_string(source_shard_id) + std::to_string(message_id);
-                    cached_cs_tx->insert(std::make_pair(_key, txInfo));
-                }
+                
+                PLUGIN_LOG(INFO) << LOG_DESC("跨片交易-按序到达逻辑执行完成...");
             } else { // 部署交易/协调者的跨片交易/重复交易
                 PLUGIN_LOG(INFO) << LOG_DESC("发现合约部署交易/协调者的跨片交易/重复交易 in deterministExecuteTx...")
                                  << LOG_KV("txhash", tx->hash());

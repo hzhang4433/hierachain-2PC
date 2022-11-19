@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <atomic>
+#include <mutex>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_queue.h>
 #include <libdevcore/CommonData.h>
@@ -90,6 +91,7 @@ namespace dev {
             private:
                 /// global set to record latest_state
                 std::set<std::string> not_latest;
+                std::mutex m_cachedTx;
         };
     }
 }
