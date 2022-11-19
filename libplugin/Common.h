@@ -77,6 +77,9 @@ class ExecuteVMTestFixture;
 	extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, candidate_tx_queue>> candidate_tx_queues;
     // 已经提交candidate_cs_tx的来自不同分片的最大 messageid[3,4]
     extern std::shared_ptr<tbb::concurrent_vector<unsigned long>> latest_candidate_tx_messageids;
+    // ADD BY ZH -- 22.11.16
+    extern std::shared_ptr<tbb::concurrent_vector<unsigned long>> current_candidate_tx_messageids;
+
     // 交易池交易因等待收齐状态而正在锁定的状态key
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> locking_key;
 
@@ -91,6 +94,8 @@ class ExecuteVMTestFixture;
     extern std::string nodeIdStr;
     // 22.11.6
     extern std::shared_ptr<tbb::concurrent_unordered_set<std::string>> doneCrossTx;
+    // 22.11.16
+    extern std::shared_ptr<tbb::concurrent_unordered_set<int>> lateCrossTxMessageId;
     // 22.11.2
     // 映射交易hash到其所在区块高度
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> txHash2BlockHeight;

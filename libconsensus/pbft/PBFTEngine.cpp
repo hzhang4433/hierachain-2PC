@@ -1357,14 +1357,14 @@ void PBFTEngine::checkAndSave()
             int m = hex_m_data_str.find("0x444555666", 0);
             int m2 = hex_m_data_str.find_last_of('|');
 
-            if( n != -1)
+            if( n != -1 )
             {
                 // std::string subtxStr = hex_m_data_str.substr(n, len - n);
                 std::string subtxStr = hex_m_data_str.substr(n, n2-n);
                 PBFTENGINE_LOG(INFO) << LOG_DESC("发现跨片交易！")
-                                        << LOG_KV("n", n)
-                                        << LOG_KV("len", len)
-                                        << LOG_KV("subtxStr", subtxStr);
+                                     << LOG_KV("n", n)
+                                     << LOG_KV("len", len)
+                                     << LOG_KV("subtxStr", subtxStr);
 
                 // 打印跨片交易 —— ADD BY ZH
                 std::cout << "hexDataStr: " << hex_m_data_str << std::endl;
@@ -1460,7 +1460,7 @@ void PBFTEngine::checkAndSave()
                     exit(1);
                 }
             }
-            if(m != -1) {
+            if( m != -1 ) {
                 std::string subtxStr = hex_m_data_str.substr(m, m2 - m);
                 // std::string subtxStr = hex_m_data_str.substr(n, n2-n);
                 PBFTENGINE_LOG(INFO) << LOG_DESC("发现片内交易！")
@@ -1528,6 +1528,8 @@ void PBFTEngine::checkAndSave()
                 PBFTENGINE_LOG(INFO) << LOG_DESC("区块数据持久化完毕，将交易放入队列...");
                 auto executedNum = executeBlockTransactions(p_block);
                 // */
+                // ADD BY ZH —— 2022-11-16
+                // 可能上一步函数耗时太久，导致drop方法过慢，从而产生重复交易？
 
                 dropHandledTransactions(p_block);
                 auto dropTxs_time_cost = utcTime() - record_time;

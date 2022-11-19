@@ -2656,6 +2656,7 @@ class SubCrossShardTxReply :
     kStatusFieldNumber = 1,
     kSourceShardIdFieldNumber = 2,
     kDestinShardIdFieldNumber = 3,
+    kMessageIdFieldNumber = 5,
   };
   // bytes crossTxHash = 4;
   void clear_crosstxhash();
@@ -2700,6 +2701,15 @@ class SubCrossShardTxReply :
   void _internal_set_destinshardid(::PROTOBUF_NAMESPACE_ID::uint64 value);
   public:
 
+  // uint64 messageId = 5;
+  void clear_messageid();
+  ::PROTOBUF_NAMESPACE_ID::uint64 messageid() const;
+  void set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::uint64 _internal_messageid() const;
+  void _internal_set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  public:
+
   // @@protoc_insertion_point(class_scope:protos.SubCrossShardTxReply)
  private:
   class _Internal;
@@ -2709,6 +2719,7 @@ class SubCrossShardTxReply :
   ::PROTOBUF_NAMESPACE_ID::uint64 status_;
   ::PROTOBUF_NAMESPACE_ID::uint64 sourceshardid_;
   ::PROTOBUF_NAMESPACE_ID::uint64 destinshardid_;
+  ::PROTOBUF_NAMESPACE_ID::uint64 messageid_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_shard_2eproto;
 };
@@ -2824,6 +2835,7 @@ class SubCrossShardTxCommit :
     kCommitFieldNumber = 1,
     kSourceShardIdFieldNumber = 3,
     kDestinShardIdFieldNumber = 4,
+    kMessageIdFieldNumber = 5,
   };
   // bytes crossTxHash = 2;
   void clear_crosstxhash();
@@ -2868,6 +2880,15 @@ class SubCrossShardTxCommit :
   void _internal_set_destinshardid(::PROTOBUF_NAMESPACE_ID::int64 value);
   public:
 
+  // uint64 messageId = 5;
+  void clear_messageid();
+  ::PROTOBUF_NAMESPACE_ID::uint64 messageid() const;
+  void set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::uint64 _internal_messageid() const;
+  void _internal_set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  public:
+
   // @@protoc_insertion_point(class_scope:protos.SubCrossShardTxCommit)
  private:
   class _Internal;
@@ -2877,6 +2898,7 @@ class SubCrossShardTxCommit :
   ::PROTOBUF_NAMESPACE_ID::uint64 commit_;
   ::PROTOBUF_NAMESPACE_ID::int64 sourceshardid_;
   ::PROTOBUF_NAMESPACE_ID::int64 destinshardid_;
+  ::PROTOBUF_NAMESPACE_ID::uint64 messageid_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_shard_2eproto;
 };
@@ -2992,6 +3014,7 @@ class SubCrossShardTxCommitReply :
     kStatusFieldNumber = 1,
     kSourceShardIdFieldNumber = 2,
     kDestinShardIdFieldNumber = 3,
+    kMessageIdFieldNumber = 5,
   };
   // bytes crossTxHash = 4;
   void clear_crosstxhash();
@@ -3036,6 +3059,15 @@ class SubCrossShardTxCommitReply :
   void _internal_set_destinshardid(::PROTOBUF_NAMESPACE_ID::uint64 value);
   public:
 
+  // uint64 messageId = 5;
+  void clear_messageid();
+  ::PROTOBUF_NAMESPACE_ID::uint64 messageid() const;
+  void set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::uint64 _internal_messageid() const;
+  void _internal_set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  public:
+
   // @@protoc_insertion_point(class_scope:protos.SubCrossShardTxCommitReply)
  private:
   class _Internal;
@@ -3045,6 +3077,7 @@ class SubCrossShardTxCommitReply :
   ::PROTOBUF_NAMESPACE_ID::uint64 status_;
   ::PROTOBUF_NAMESPACE_ID::uint64 sourceshardid_;
   ::PROTOBUF_NAMESPACE_ID::uint64 destinshardid_;
+  ::PROTOBUF_NAMESPACE_ID::uint64 messageid_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_shard_2eproto;
 };
@@ -5697,6 +5730,26 @@ inline void SubCrossShardTxReply::set_allocated_crosstxhash(std::string* crosstx
   // @@protoc_insertion_point(field_set_allocated:protos.SubCrossShardTxReply.crossTxHash)
 }
 
+// uint64 messageId = 5;
+inline void SubCrossShardTxReply::clear_messageid() {
+  messageid_ = PROTOBUF_ULONGLONG(0);
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SubCrossShardTxReply::_internal_messageid() const {
+  return messageid_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SubCrossShardTxReply::messageid() const {
+  // @@protoc_insertion_point(field_get:protos.SubCrossShardTxReply.messageId)
+  return _internal_messageid();
+}
+inline void SubCrossShardTxReply::_internal_set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  
+  messageid_ = value;
+}
+inline void SubCrossShardTxReply::set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  _internal_set_messageid(value);
+  // @@protoc_insertion_point(field_set:protos.SubCrossShardTxReply.messageId)
+}
+
 // -------------------------------------------------------------------
 
 // SubCrossShardTxCommit
@@ -5821,6 +5874,26 @@ inline void SubCrossShardTxCommit::set_destinshardid(::PROTOBUF_NAMESPACE_ID::in
   // @@protoc_insertion_point(field_set:protos.SubCrossShardTxCommit.destinShardId)
 }
 
+// uint64 messageId = 5;
+inline void SubCrossShardTxCommit::clear_messageid() {
+  messageid_ = PROTOBUF_ULONGLONG(0);
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SubCrossShardTxCommit::_internal_messageid() const {
+  return messageid_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SubCrossShardTxCommit::messageid() const {
+  // @@protoc_insertion_point(field_get:protos.SubCrossShardTxCommit.messageId)
+  return _internal_messageid();
+}
+inline void SubCrossShardTxCommit::_internal_set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  
+  messageid_ = value;
+}
+inline void SubCrossShardTxCommit::set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  _internal_set_messageid(value);
+  // @@protoc_insertion_point(field_set:protos.SubCrossShardTxCommit.messageId)
+}
+
 // -------------------------------------------------------------------
 
 // SubCrossShardTxCommitReply
@@ -5943,6 +6016,26 @@ inline void SubCrossShardTxCommitReply::set_allocated_crosstxhash(std::string* c
   }
   crosstxhash_.SetAllocatedNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), crosstxhash);
   // @@protoc_insertion_point(field_set_allocated:protos.SubCrossShardTxCommitReply.crossTxHash)
+}
+
+// uint64 messageId = 5;
+inline void SubCrossShardTxCommitReply::clear_messageid() {
+  messageid_ = PROTOBUF_ULONGLONG(0);
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SubCrossShardTxCommitReply::_internal_messageid() const {
+  return messageid_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SubCrossShardTxCommitReply::messageid() const {
+  // @@protoc_insertion_point(field_get:protos.SubCrossShardTxCommitReply.messageId)
+  return _internal_messageid();
+}
+inline void SubCrossShardTxCommitReply::_internal_set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  
+  messageid_ = value;
+}
+inline void SubCrossShardTxCommitReply::set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  _internal_set_messageid(value);
+  // @@protoc_insertion_point(field_set:protos.SubCrossShardTxCommitReply.messageId)
 }
 
 #ifdef __GNUC__

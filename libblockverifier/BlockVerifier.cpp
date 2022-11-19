@@ -271,11 +271,24 @@ void BlockVerifier::replyToCoordinator(dev::plugin::transaction txInfo,
 	unsigned long source_shard_id = txInfo.source_shard_id; // 协调者id
     string crossTxHash = txInfo.cross_tx_hash;
     unsigned long destin_shard_id = txInfo.destin_shard_id; // 本分片id
+    unsigned long messageID = txInfo.message_id;
     
+    // 如果该笔交易早已收到了足够的commit包，则直接执行
+    if (lateCrossTxMessageId->find(messageID) != lateCrossTxMessageId->end()) {
+        PLUGIN_LOG(INFO) << LOG_DESC("commit包之前就已集齐, 直接执行交易...");
+        auto readwriteset = crossTx2StateAddress->at(crossTxHash);
+        groupVerifier->executeCrossTx(readwriteset);
+        // groupVerifier->executeCrossTx("state");
+        crossTx2StateAddress->unsafe_erase(crossTxHash);
+        lateCrossTxMessageId->unsafe_erase(messageID);
+        return;
+    }
+
     protos::SubCrossShardTxReply subCrossShardTxReply;
     subCrossShardTxReply.set_crosstxhash(crossTxHash);
     subCrossShardTxReply.set_destinshardid(source_shard_id);
     subCrossShardTxReply.set_sourceshardid(destin_shard_id);
+    subCrossShardTxReply.set_messageid(messageID);
     subCrossShardTxReply.set_status(1);
                         
     std::string serializedSubCrossShardTxReply_str;
@@ -286,8 +299,9 @@ void BlockVerifier::replyToCoordinator(dev::plugin::transaction txInfo,
     crossTxReplyPacket.encode(txByte);
     auto msg = crossTxReplyPacket.toMessage(m_group_protocolID);
 
-    BLOCKVERIFIER_LOG(INFO) << LOG_DESC("状态锁获得, 开始向协调者分片发送状态包....")
-                                                << LOG_KV("m_group_protocolID", m_group_protocolID);
+    BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("in blockVerifier.cpp replyToCoordinator")
+                            << LOG_DESC("状态锁获得, 开始向协调者分片发送状态包....")
+                            << LOG_KV("m_group_protocolID", m_group_protocolID);
     for(size_t j = 0; j < 4; j++)  // 给所有协调者分片所有节点发
     {
         BLOCKVERIFIER_LOG(INFO) << LOG_KV("正在发送给", shardNodeId.at((source_shard_id-1)*4 + j));
@@ -300,11 +314,13 @@ void BlockVerifier::replyToCoordinatorCommitOK(dev::plugin::transaction txInfo) 
 	unsigned long source_shard_id = txInfo.source_shard_id; // 协调者id
     string crossTxHash = txInfo.cross_tx_hash;
     unsigned long destin_shard_id = txInfo.destin_shard_id; // 本分片id
+    auto messageId = txInfo.message_id;
     
     protos::SubCrossShardTxCommitReply subCrossShardTxCommitReply;
     subCrossShardTxCommitReply.set_crosstxhash(crossTxHash);
     subCrossShardTxCommitReply.set_destinshardid(source_shard_id);
     subCrossShardTxCommitReply.set_sourceshardid(destin_shard_id);
+    subCrossShardTxCommitReply.set_messageid(messageId);
     subCrossShardTxCommitReply.set_status(1);
                         
     std::string serializedSubCrossShardTxCommitReply_str;
@@ -537,6 +553,14 @@ ExecutiveContext::Ptr BlockVerifier::serialExecuteBlock(Block& block, BlockInfo 
         cached_executeContents.insert(std::make_pair(block.blockHeader().number(), _blockExecuteContent)); // 缓存区块执行变量
         ENGINE_LOG(INFO) << LOG_KV("BlockVerifer.block->blockHeader().number()", block.blockHeader().number());
         */
+        
+        for (size_t i = 0; i < block.transactions()->size(); i++)
+        {
+            auto& tx = (*block.transactions())[i];
+            BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("in serialExecuteBlock")
+                                    << LOG_KV("height", block.header().number())
+                                    << LOG_KV("tx_hash", tx->hash());
+        }
     }
     catch (exception& e)
     {
@@ -807,14 +831,14 @@ ExecutiveContext::Ptr BlockVerifier::parallelExecuteBlock(
 }
 
 void BlockVerifier::executeCrossTx(std::string keyReadwriteSet) {
-    BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("in executeCrossTx...");
-
-    BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("in executeCrossTx...") 
+    BLOCKVERIFIER_LOG(INFO) << LOG_DESC("in executeCrossTx...")
+                            << LOG_KV("keyReadwriteSet", keyReadwriteSet)
                             << LOG_KV("size1", candidate_tx_queues->at(keyReadwriteSet).queue.size());
     auto executableTx = candidate_tx_queues->at(keyReadwriteSet).queue.front();
     // 删除执行后的交易
     candidate_tx_queues->at(keyReadwriteSet).queue.pop();
-    BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("in executeCrossTx...")
+    BLOCKVERIFIER_LOG(INFO) << LOG_DESC("in executeCrossTx...")
+                            << LOG_KV("keyReadwriteSet", keyReadwriteSet)
                             << LOG_KV("size2", candidate_tx_queues->at(keyReadwriteSet).queue.size());
 
     // 取变量
@@ -862,7 +886,7 @@ void BlockVerifier::executeCrossTx(std::string keyReadwriteSet) {
                          << LOG_KV("block_height", blockHeight);
         /*  删除相关变量
             1. block2ExecutedTxNum -- 已完成
-            2. 2PC流程中的变量: doneCrossTx —- 完成ing...
+            2. 2PC流程中的变量: doneCrossTx —- 已完成
         */ 
         if (m_block2UnExecMutex.try_lock()) {
             block2UnExecutedTxNum->unsafe_erase(blockHeight);
@@ -886,7 +910,8 @@ void BlockVerifier::executeCrossTx(std::string keyReadwriteSet) {
 
     if (block2UnExecutedTxNum->count(blockHeight) != 0) {
         PLUGIN_LOG(INFO) << LOG_DESC("in executeCrossTx...")  
-                            << LOG_KV("区块未完成交易now_num", block2UnExecutedTxNum->at(blockHeight));
+                         << LOG_KV("keyReadwriteSet", keyReadwriteSet)
+                         << LOG_KV("区块未完成交易now_num", block2UnExecutedTxNum->at(blockHeight));
     }
 
 
@@ -897,18 +922,25 @@ void BlockVerifier::executeCrossTx(std::string keyReadwriteSet) {
     */
     transaction txInfo = crossTx[tx->hash()];
     crossTx.erase(tx->hash());
-    int holding_tx_num = locking_key->at(keyReadwriteSet);
-    locking_key->at(keyReadwriteSet) = holding_tx_num - 1;
-
-    // 发送成功回执
-    replyToCoordinatorCommitOK(txInfo);
+    if (m_lockKeyMutex.try_lock()) {
+        int holding_tx_num = locking_key->at(keyReadwriteSet);
+        locking_key->at(keyReadwriteSet) = holding_tx_num - 1;
+        m_lockKeyMutex.unlock();
+    }
+    
 
     // 判断是否还有等待交易
     BLOCKVERIFIER_LOG(INFO) << LOG_KV("size3", candidate_tx_queues->at(keyReadwriteSet).queue.size());
     if (candidate_tx_queues->at(keyReadwriteSet).queue.size() != 0) {
-        BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("还有等待的交易");
+        BLOCKVERIFIER_LOG(INFO) << LOG_DESC("还有等待的交易");
         executeCandidateTx(keyReadwriteSet);
     }
+    
+    // 更新已完成交易id
+    // current_candidate_tx_messageids->at(txInfo.source_shard_id - 1) = txInfo.message_id;
+
+    // 发送成功回执
+    replyToCoordinatorCommitOK(txInfo);
 }
 
 void BlockVerifier::executeCandidateTx(std::string keyReadwriteSet) {
@@ -932,7 +964,7 @@ void BlockVerifier::executeCandidateTx(std::string keyReadwriteSet) {
             
         }
         */
-
+        BLOCKVERIFIER_LOG(INFO) << LOG_DESC("该笔交易为片内交易...");
         // EDIT BY ZH 22.11.3
         auto exec = dev::plugin::executiveContext->getExecutive();
         auto vm = dev::plugin::executiveContext->getExecutiveInstance();
@@ -955,7 +987,7 @@ void BlockVerifier::executeCandidateTx(std::string keyReadwriteSet) {
                              << LOG_KV("block_height", blockHeight);
             /*  删除相关变量
                 1. block2ExecutedTxNum -- 已完成
-                2. 2PC流程中的变量: doneCrossTx —- 完成ing...
+                2. 2PC流程中的变量: doneCrossTx —- 已完成
             */ 
             if (m_block2UnExecMutex.try_lock()) {
                 block2UnExecutedTxNum->unsafe_erase(blockHeight);
@@ -982,12 +1014,26 @@ void BlockVerifier::executeCandidateTx(std::string keyReadwriteSet) {
 
         // 删除执行过的交易
         candidate_tx_queues->at(keyReadwriteSet).queue.pop();
+        // 释放锁
+        if (m_lockKeyMutex.try_lock()) {
+            int holding_tx_num = locking_key->at(keyReadwriteSet);
+            locking_key->at(keyReadwriteSet) = holding_tx_num - 1;
+            m_lockKeyMutex.unlock();
+        }
+        
+
         if (candidate_tx_queues->at(keyReadwriteSet).queue.size() != 0) {
             executeCandidateTx(keyReadwriteSet);
         }
     } else { // 跨片交易
         // 获取跨片交易相关信息
         transaction txInfo = crossTx[tx->hash()];
+        BLOCKVERIFIER_LOG(INFO) << LOG_DESC("该笔交易为跨片交易...")
+                                << LOG_KV("messageId", txInfo.message_id);
+
+        // 更新正在处理的最大messageID的跨片交易
+        current_candidate_tx_messageids->at(txInfo.source_shard_id - 1) = txInfo.message_id;
+        
         // 向coordinator发送成功状态消息
         replyToCoordinator(txInfo, group_protocolID, group_p2p_service);
     }

@@ -86,6 +86,9 @@ namespace dev {
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, candidate_tx_queue>>();
         // 已经收到的来自不同协调者分片的最大messageid
         std::shared_ptr<tbb::concurrent_vector<unsigned long>> latest_candidate_tx_messageids;
+        // 已经收到的来自不同协调者分片的正在处理的messageid ——— 22.11.16
+        std::shared_ptr<tbb::concurrent_vector<unsigned long>> current_candidate_tx_messageids;
+
         // 交易池交易因等待收齐状态而正在锁定的状态key
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> locking_key = 
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, int>>();
@@ -128,13 +131,19 @@ namespace dev {
         std::mutex m_block2UnExecMutex;
         std::mutex m_height2TxHashMutex;
         std::mutex m_doneCrossTxMutex;
+        std::mutex m_lockKeyMutex;
 
         // ADD ON 22.11.8
         // 片内交易映射至交易状态集
         std::map<h256, transaction> innerTx;
         // 跨片交易映射至对应状态集
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> crossTx2StateAddress = 
-                                std::make_shared<tbb::concurrent_unordered_map<std::string, std::string>>();;
+                                std::make_shared<tbb::concurrent_unordered_map<std::string, std::string>>();
+        
+        // ADD ON 22.11.16
+        // 落后的跨片交易
+        std::shared_ptr<tbb::concurrent_unordered_set<int>> lateCrossTxMessageId = 
+                                std::make_shared<tbb::concurrent_unordered_set<int>>();
 
 
         std::map<std::string, std::string> txRWSet;
@@ -512,6 +521,9 @@ int main(){
     // 对latest_candidate_tx_messageids进行初始化
     latest_candidate_tx_messageids = std::make_shared<tbb::concurrent_vector<unsigned long>>(dev::consensus::SHARDNUM);
 
+    // ADD ON 22.11.16
+    current_candidate_tx_messageids = std::make_shared<tbb::concurrent_vector<unsigned long>>(dev::consensus::SHARDNUM);
+
     /* 以下为测试
     unsigned long message_id = 1;
     unsigned long source_shard_id = 3;
@@ -588,6 +600,8 @@ int main(){
     syncs->setAttribute(consensusPluginManager);
     
     // startprocessThread();
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
 
     // 测试发送交易（分片1的node1向本分片1发送一笔片内交易
     if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0)))
@@ -595,22 +609,60 @@ int main(){
         PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
         transactionInjectionTest _injectionTest(rpcService, 1);
         _injectionTest.deployContractTransaction("./deploy.json", 1);
-        std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        _injectionTest.injectionTransactions("./signedtxs.json", 1);
+        // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        // _injectionTest.injectionTransactions("./signedtxs.json", 1);
+
+        // std::this_thread::sleep_for(std::chrono::milliseconds(4000));
+        // _injectionTest.createInnerTransactions(1);
+
+        /* 批量生产跨片交易
+        std::string res;
+        for (int i =0 ; i < 100000; i++) {
+            auto tx = _injectionTest.createCrossTransactions_HB(1, 2, 3, i);
+            if (i % 1000 == 0) { // 100笔写一次文件
+                if (i == 0) {
+                    res = "[\"" + tx + "\"";
+                } else {
+                    ofstream out;
+                    out.open("crossTx_HB.json", ios::in|ios::out|ios::app);
+                    if (out.is_open()) {
+                        out << res;
+                        out.close();
+                        res = "";
+                    }
+                    res = ",\"" + tx + "\"";
+                }
+            } else {
+                res = res + ",\"" + tx + "\"";
+            }
+            // std::this_thread::sleep_for(std::chrono::milliseconds((500)));
+        }
+
+        ofstream out;
+        out.open("crossTx_HB.json", ios::in|ios::out|ios::app);
+        if (out.is_open()) {
+            res += "]";
+            out << res;
+            out.close();
+        }
+        */
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(4000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
     if(dev::consensus::internal_groupId == 2 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(1)))
     {
         PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
         transactionInjectionTest _injectionTest(rpcService, 2);
         _injectionTest.deployContractTransaction("./deploy.json", 2);
-        std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        _injectionTest.injectionTransactions("./signedtxs.json", 2);
+        // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        // _injectionTest.injectionTransactions("./signedtxs.json", 2);
+
+        // std::this_thread::sleep_for(std::chrono::milliseconds(4000));
+        // _injectionTest.createInnerTransactions(2);
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(4000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
     if(dev::consensus::internal_groupId == 3 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(2)))
     {
@@ -618,7 +670,44 @@ int main(){
         transactionInjectionTest _injectionTest(rpcService, 3);
         _injectionTest.deployContractTransaction("./deploy.json", 3);
         std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        _injectionTest.injectionTransactions("./signedtxs.json", 3);
+        // _injectionTest.injectionTransactions("./signedtxs.json", 3);
+        _injectionTest.injectionTransactions("./crossTx.json", 3);
+
+        // std::this_thread::sleep_for(std::chrono::milliseconds(4000));
+        // _injectionTest.createInnerTransactions(3);
+        // _injectionTest.createCrossTransactions(3, 1, 2);
+
+        /* 批量生产跨片交易
+        std::string res;
+        for (int i =0 ; i < 100; i++) {
+            auto tx = _injectionTest.createCrossTransactions(3, 1, 2);
+            if (i % 100 == 0) { // 10笔写一次文件
+                if (i == 0) {
+                    res = "[\"" + tx + "\"";
+                } else {
+                    ofstream out;
+                    out.open("crossTx.json", ios::in|ios::out|ios::app);
+                    if (out.is_open()) {
+                        out << res;
+                        out.close();
+                        res = "";
+                    }
+                    res = ",\"" + tx + "\"";
+                }
+            } else {
+                res = res + ",\"" + tx + "\"";
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds((1)));
+        }
+
+        ofstream out;
+        out.open("crossTx.json", ios::in|ios::out|ios::app);
+        if (out.is_open()) {
+            res += "]";
+            out << res;
+            out.close();
+        }
+        */
     }
 
     /*
@@ -671,11 +760,11 @@ int main(){
         std::cout<<"it's a leaf group" << std::endl;
     }
 
-    size_t duration = 0;
+    //size_t duration = 0;
     while (true)
     {
-        duration ++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        //duration ++;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000000));
     }
     return 0;
 }

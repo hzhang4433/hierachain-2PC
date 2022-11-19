@@ -112,19 +112,24 @@ int ConsensusEngineBase::executeBlockTransactions(std::shared_ptr<dev::eth::Bloc
 {
     ENGINE_LOG(INFO) << "放交易入队列...";
     // 将区块高度映射到该区块内未执行的交易数  EDIT BY ZH -- 22.11.2
-    block2UnExecutedTxNum->insert(std::make_pair(block->blockHeader().number(), block->transactions()->size()));
-    BLOCKVERIFIER_LOG(INFO) << LOG_DESC("添加区块未完成交易数")
-                            << LOG_KV("height", block->blockHeader().number())
-                            << LOG_KV("num", block2UnExecutedTxNum->at(block->blockHeader().number()));
+    auto height = block->blockHeader().number();
+    block2UnExecutedTxNum->insert(std::make_pair(height, block->transactions()->size()));
+    ENGINE_LOG(INFO) << LOG_DESC("添加区块交易数")
+                     << LOG_KV("height", height)
+                     << LOG_KV("num", block2UnExecutedTxNum->at(height));
 
     for (size_t i = 0; i < block->transactions()->size(); i++)
     {
         auto& tx = (*block->transactions())[i];
         // 将区块内的每一笔交易映射到具体区块高度  EDIT BY ZH -- 22.11.2
-        txHash2BlockHeight->insert(std::make_pair(tx->hash().abridged(), block->blockHeader().number()));
-        BLOCKVERIFIER_LOG(INFO) << LOG_DESC("添加未完成后变量数值")
-                                << LOG_KV("txHash", tx->hash().abridged())
-                                << LOG_KV("num", txHash2BlockHeight->at(tx->hash().abridged()));
+        //重复插入——待进一步解决？—— 22.11.16
+        if (txHash2BlockHeight->count(tx->hash().abridged()) != 0) { 
+            continue;
+        }
+        txHash2BlockHeight->insert(std::make_pair(tx->hash().abridged(), height));
+        PLUGIN_LOG(INFO) << LOG_DESC("添加新交易")
+                         << LOG_KV("txHash", tx->hash())
+                         << LOG_KV("height", txHash2BlockHeight->at(tx->hash().abridged()));
 
         // auto transactionReceipt = m_blockVerifier->executeTransaction(block->blockHeader(), tx);
 
@@ -278,7 +283,7 @@ int ConsensusEngineBase::executeBlockTransactions(std::shared_ptr<dev::eth::Bloc
             // 存储跨片交易对应的区块高度
             auto txInfo = crossTx[tx->hash()];
             auto crossTxHash = txInfo.cross_tx_hash;
-            auto blockHeight = block->blockHeader().number();
+            auto blockHeight = height;
             if (blockHeight2CrossTxHash->count(blockHeight) == 0) {
                 std::vector<std::string> temp;
                 temp.push_back(crossTxHash);

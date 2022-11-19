@@ -116,14 +116,16 @@ void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTx
     protos::SubCrossShardTxReply msg_status;
     msg_status = _txrlp;
     
-    std::cout << "接收到子分片发来的跨片交易状态消息包..." << std::endl;
+    PLUGIN_LOG(INFO) << "接收到子分片发来的跨片交易状态消息包...";
     auto sourceShardId = msg_status.sourceshardid();
     auto destinshardid = msg_status.destinshardid();
     auto status = msg_status.status();
     auto crossTxHash = msg_status.crosstxhash();
+    auto messageId = msg_status.messageid();
 
-    PLUGIN_LOG(INFO) << LOG_DESC("交易解析完毕")
+    PLUGIN_LOG(INFO) << LOG_DESC("跨片交易回执包解析完毕")
                      << LOG_KV("status", status)
+                     << LOG_KV("messageId", messageId)
                      << LOG_KV("sourceShardId", sourceShardId)
                      << LOG_KV("destinshardid", destinshardid)
                      << LOG_KV("crossTxHash", crossTxHash);
@@ -177,6 +179,7 @@ void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTx
         subCrossShardTxCommit.set_commit(1);
         subCrossShardTxCommit.set_sourceshardid(destinshardid);
         subCrossShardTxCommit.set_destinshardid(sourceShardId);
+        subCrossShardTxCommit.set_messageid(messageId);
 
         std::string serializedSubCrossShardTxCommit_str;
         subCrossShardTxCommit.SerializeToString(&serializedSubCrossShardTxCommit_str);
@@ -206,14 +209,17 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
     protos::SubCrossShardTxCommit msg_status;
     msg_status = _txrlp;
     
-    std::cout << "接收到协调者发来的跨片交易提交消息包..." << std::endl;
+    PLUGIN_LOG(INFO) << "接收到协调者发来的跨片交易提交消息包...";
     auto commit = msg_status.commit();
     auto crossTxHash = msg_status.crosstxhash();
     auto sourceShardId = msg_status.sourceshardid();
     auto destinshardid = msg_status.destinshardid();
+    auto messageId = msg_status.messageid();
 
-    PLUGIN_LOG(INFO) << LOG_DESC("交易解析完毕")
+    PLUGIN_LOG(INFO) << LOG_DESC("跨片交易提交包解析完毕")
                      << LOG_KV("commit", commit)
+                     << LOG_KV("messageId", messageId)
+                     << LOG_KV("sourceShardId", sourceShardId)
                      << LOG_KV("crossTxHash", crossTxHash);
 
     if ((int)commit != 1) 
@@ -235,6 +241,20 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
     }
     // 判断跨片交易是否满足提交条件
     if (crossTx2CommitMsg->at(crossTxHash) >= 3) {
+        // ADD BY ZH -- 22.11.16
+        // 考虑commit包集齐但跨片交易还没收到的情况：每个节点收到包的顺序不一致
+        // 解决方案：将集齐的相关交易先进行存储，待对应交易收到后立马执行
+        PLUGIN_LOG(INFO) << LOG_DESC("跨片交易提交包收齐")
+                         << LOG_KV("packet messageId", messageId)
+                         << LOG_KV("current messageId", current_candidate_tx_messageids->at(sourceShardId - 1));
+        
+        //  如果收到的commit包的messageId不是当前正在处理的messageId包，则存储
+        if (messageId > current_candidate_tx_messageids->at(sourceShardId - 1)) {
+            PLUGIN_LOG(INFO) << LOG_DESC("commit包集齐, 但相关跨片交易尚未收到, 存储");
+            lateCrossTxMessageId->insert(messageId);
+            return;
+        }
+
         // 执行交易
         PLUGIN_LOG(INFO) << LOG_DESC("commit包集齐, 子分片开始执行并提交相关跨片交易...");
         // crossTx2StateAddress? maybe later
@@ -250,14 +270,16 @@ void ConsensusPluginManager::processReceivedCrossTxCommitReply(protos::SubCrossS
     protos::SubCrossShardTxCommitReply msg_status;
     msg_status = _txrlp;
     
-    std::cout << "接收到协调者发来的跨片交易提交消息包..." << std::endl;
+    PLUGIN_LOG(INFO) << "接收到协调者发来的跨片交易提交消息包...";
     auto status = msg_status.status();
     auto crossTxHash = msg_status.crosstxhash();
     auto sourceShardId = msg_status.sourceshardid();
     auto destinshardid = msg_status.destinshardid();
+    auto messageId = msg_status.messageid();
 
     PLUGIN_LOG(INFO) << LOG_DESC("交易执行成功消息包解析完毕")
                      << LOG_KV("status", status)
+                     << LOG_KV("messageId", messageId)
                      << LOG_KV("crossTxHash", crossTxHash);
 
     if ((int)status != 1) 

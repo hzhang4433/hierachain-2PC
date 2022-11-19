@@ -131,6 +131,7 @@ message SubCrossShardTxReply
     uint64 sourceShardId = 2;
     uint64 destinShardId = 3;
     bytes crossTxHash = 4;
+    uint64 messageId = 5;
 }
 
 message SubCrossShardTxCommit
@@ -139,6 +140,7 @@ message SubCrossShardTxCommit
     bytes crossTxHash = 2;
     int64 sourceShardId = 3;
     int64 destinShardId = 4;
+    uint64 messageId = 5;
 }
 
 message SubCrossShardTxCommitReply
@@ -147,4 +149,5 @@ message SubCrossShardTxCommitReply
     uint64 sourceShardId = 2;
     uint64 destinShardId = 3;
     bytes crossTxHash = 4;
+    uint64 messageId = 5;
 }

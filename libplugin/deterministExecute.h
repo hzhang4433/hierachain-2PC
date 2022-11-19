@@ -22,10 +22,15 @@ namespace dev{
                 void deterministExecuteTx();
                 // void start();
                 void replyToCoordinator(dev::plugin::transaction txInfo, dev::PROTOCOL_ID& m_group_protocolID, std::shared_ptr<dev::p2p::Service> m_group_service);
+                void checkForDeterministExecuteTxWookLoop();
+                
+                int popedTxNum = 0;
+                int count = 0;
         };
 
         extern std::mutex m_block2UnExecMutex;
         extern std::mutex m_height2TxHashMutex;
         extern std::mutex m_doneCrossTxMutex;
+        extern std::mutex m_lockKeyMutex;
     }
 }
