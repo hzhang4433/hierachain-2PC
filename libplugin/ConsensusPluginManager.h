@@ -40,6 +40,10 @@ namespace dev {
                 void processReceivedCrossTxReply(protos::SubCrossShardTxReply _txrlp);
                 void processReceivedCrossTxCommit(protos::SubCrossShardTxCommit _txrlp);
                 void processReceivedCrossTxCommitReply(protos::SubCrossShardTxCommitReply _txrlp);
+                void sendCommitPacket(protos::SubCrossShardTxReply _txrlp);
+                void sendCommitPacketToShard(protos::SubCrossShardTxReply _txrlp, unsigned long shardID);
+
+
 
                 int numOfNotFinishedDAGs();
                 int addNotFinishedDAGs(int _num);

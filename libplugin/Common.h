@@ -77,8 +77,10 @@ class ExecuteVMTestFixture;
 	extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, candidate_tx_queue>> candidate_tx_queues;
     // 已经提交candidate_cs_tx的来自不同分片的最大 messageid[3,4]
     extern std::shared_ptr<tbb::concurrent_vector<unsigned long>> latest_candidate_tx_messageids;
-    // ADD BY ZH -- 22.11.16
+    // ADD BY ZH —— 22.11.16
     extern std::shared_ptr<tbb::concurrent_vector<unsigned long>> current_candidate_tx_messageids;
+    // ADD BY ZH ——— 22.11.20
+    extern std::shared_ptr<tbb::concurrent_vector<unsigned long>> complete_candidate_tx_messageids;
 
     // 交易池交易因等待收齐状态而正在锁定的状态key
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> locking_key;
@@ -124,6 +126,18 @@ class ExecuteVMTestFixture;
 
 
     extern int global_internal_groupId;
+
+    extern std::mutex m_crossTx2ShardIDMutex;
+    extern std::mutex m_crossTx2ReceivedMsgMutex;
+    extern std::mutex m_crossTx2CommitMsgMutex;
+    extern std::mutex m_crossTx2ReceivedCommitMsgMutex;
+    extern std::mutex m_block2UnExecMutex;
+    extern std::mutex m_height2TxHashMutex;
+    extern std::mutex m_doneCrossTxMutex;
+    extern std::mutex m_lockKeyMutex;
+    extern std::mutex m_lateCrossTxMutex;
+    extern std::mutex m_crossTx2AddressMutex;
+    extern std::mutex m_txHash2HeightMutex;
 
     // extern tbb::concurrent_queue<std::string> preCommTxRlps;
     // extern std::map<std::string, std::vector<std::string>> recePreCommTxRlps;

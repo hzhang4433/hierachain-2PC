@@ -1400,17 +1400,18 @@ void PBFTEngine::checkAndSave()
                         std::string subSignedData = subSignedTx.at(j+1); // 发向目标分片的跨片交易子交易
                         std::string stateAddress = subSignedTx.at(j+2); // 向目标分片发送目标状态地址
                         int messageID = messageIDs[destinShardID];
+                        messageID++;
+                        messageIDs[destinShardID] = messageID;
                         crossShardsID.push_back(destinShardID);
 
                         PBFTENGINE_LOG(INFO) << LOG_DESC("准备转发跨片子交易")
                                       << LOG_KV("destinShardID", destinShardID)
                                       << LOG_KV("subSignedData", subSignedData)
+                                      << LOG_KV("messageID", messageID)
                                       << LOG_KV("stateAddress", stateAddress)
                                       << LOG_KV("internal_groupId", internal_groupId)
                                       << LOG_KV("crossTxHash", cross_tx_hash_str);
-                        messageID++;
-                        messageIDs[destinShardID] = messageID;
-
+                        
                         // 将跨片子交易转发给相应的参与者分片
                         // 下面调用 void forwardTx(protos::SubCrossShardTx _subCrossShardTx) 对交易进行转发，转发到相应分片
                         protos::SubCrossShardTx subCrossShardTx;

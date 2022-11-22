@@ -1,4 +1,5 @@
 //#include <grpcpp/grpcpp.h>
+#include "libdevcore/Log.h"
 #include <json/json.h>
 #include <leveldb/db.h>
 #include <libblockchain/BlockChainImp.h>
@@ -37,6 +38,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <unistd.h>
 #include <thread>
@@ -86,29 +88,44 @@ namespace dev {
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, candidate_tx_queue>>();
         // 已经收到的来自不同协调者分片的最大messageid
         std::shared_ptr<tbb::concurrent_vector<unsigned long>> latest_candidate_tx_messageids;
-        // 已经收到的来自不同协调者分片的正在处理的messageid ——— 22.11.16
+        
+        // 已经收到的来自不同协调者分片的当前正在处理的交易messageid ——— 22.11.16
         std::shared_ptr<tbb::concurrent_vector<unsigned long>> current_candidate_tx_messageids;
+
+        // 已经收到的来自不同协调者分片的已完成处理的交易messageid ——— 22.11.20
+        std::shared_ptr<tbb::concurrent_vector<unsigned long>> complete_candidate_tx_messageids;
 
         // 交易池交易因等待收齐状态而正在锁定的状态key
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> locking_key = 
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, int>>();
+        std::mutex m_lockKeyMutex;
         
         // ADD BY ZH
         // 协调者分片存储跨片交易对应的分片ID
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<int>>> crossTx2ShardID = 
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, std::vector<int>>>();
+        std::mutex m_crossTx2ShardIDMutex;
+
         // 协调者分片存储对应跨片交易收集到的状态消息包
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<int>>> crossTx2ReceivedMsg = 
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, std::vector<int>>>();
+        std::mutex m_crossTx2ReceivedMsgMutex;
+            
         // 子分片存储对应跨片交易收集到的commit消息包数量
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> crossTx2CommitMsg = 
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, int>>();
+        std::mutex m_crossTx2CommitMsgMutex;
+
         // 协调者分片存储对应子分片执行跨片交易成功收集的消息包数量
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<int>>> crossTx2ReceivedCommitMsg = 
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, std::vector<int>>>();
+        std::mutex m_crossTx2ReceivedCommitMsgMutex;
+        
         // 存放已经完成的跨片交易hash
         std::shared_ptr<tbb::concurrent_unordered_set<std::string>> doneCrossTx = 
                                 std::make_shared<tbb::concurrent_unordered_set<std::string>>();
+        std::mutex m_doneCrossTxMutex;
+        
         // 包含所有节点的protocol ID
 		dev::PROTOCOL_ID group_protocolID;
         // 所有节点的p2p通信服务
@@ -122,16 +139,17 @@ namespace dev {
         // 映射交易hash到其所在区块高度
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> txHash2BlockHeight = 
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, int>>();
+        std::mutex m_txHash2HeightMutex;
+
         // 映射区块高度至未执行交易数
         std::shared_ptr<tbb::concurrent_unordered_map<int, int>> block2UnExecutedTxNum = 
                                 std::make_shared<tbb::concurrent_unordered_map<int, int>>();
+        std::mutex m_block2UnExecMutex;
+        
         // ADD ON 22.11.7
         std::shared_ptr<tbb::concurrent_unordered_map<int, std::vector<std::string>>> blockHeight2CrossTxHash = 
                                 std::make_shared<tbb::concurrent_unordered_map<int, std::vector<std::string>>>();
-        std::mutex m_block2UnExecMutex;
         std::mutex m_height2TxHashMutex;
-        std::mutex m_doneCrossTxMutex;
-        std::mutex m_lockKeyMutex;
 
         // ADD ON 22.11.8
         // 片内交易映射至交易状态集
@@ -139,11 +157,13 @@ namespace dev {
         // 跨片交易映射至对应状态集
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> crossTx2StateAddress = 
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, std::string>>();
+        std::mutex m_crossTx2AddressMutex;
         
         // ADD ON 22.11.16
         // 落后的跨片交易
         std::shared_ptr<tbb::concurrent_unordered_set<int>> lateCrossTxMessageId = 
                                 std::make_shared<tbb::concurrent_unordered_set<int>>();
+        std::mutex m_lateCrossTxMutex;
 
 
         std::map<std::string, std::string> txRWSet;
@@ -523,6 +543,13 @@ int main(){
 
     // ADD ON 22.11.16
     current_candidate_tx_messageids = std::make_shared<tbb::concurrent_vector<unsigned long>>(dev::consensus::SHARDNUM);
+    // for (unsigned long i = 0; i < dev::consensus::SHARDNUM; i++) {
+    //     current_candidate_tx_messageids->at(i) = 1;
+    //     // cout << i << "===>" << current_candidate_tx_messageids->at(i) << endl;
+    // }
+    
+    // ADD ON 22.11.20
+    complete_candidate_tx_messageids = std::make_shared<tbb::concurrent_vector<unsigned long>>(dev::consensus::SHARDNUM);
 
     /* 以下为测试
     unsigned long message_id = 1;

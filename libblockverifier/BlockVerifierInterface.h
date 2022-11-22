@@ -60,6 +60,8 @@ public:
 
     virtual void executeCrossTx(std::string keyReadwriteSet) = 0;
 
+    virtual void executeCandidateTx(std::string keyReadwriteSet) = 0;
+
     virtual dev::eth::TransactionReceipt::Ptr execute(dev::eth::Transaction::Ptr _t,
         dev::blockverifier::ExecutiveContext::Ptr executiveContext, dev::executive::Executive::Ptr executive) = 0;
 
