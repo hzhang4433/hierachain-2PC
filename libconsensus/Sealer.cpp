@@ -120,7 +120,11 @@ void Sealer::doWork(bool wait)
             auto maxTxsPerBlock = maxBlockCanSeal();
             /// load transaction from transaction queue
             if (maxTxsPerBlock > tx_num && m_syncTxPool == true && !reachBlockIntervalTime())
+            {
+                SEAL_LOG(INFO) << LOG_DESC("交易数不够,loading...");
                 loadTransactions(maxTxsPerBlock - tx_num);
+            }
+                
             /// check enough or reach block interval
             if (!checkTxsEnough(maxTxsPerBlock))
             {
@@ -131,8 +135,12 @@ void Sealer::doWork(bool wait)
             }
             if (shouldHandleBlock())
             {
-                
+                transactionNum += m_sealing.block->getTransactionSize();
+                SEAL_LOG(INFO) << LOG_KV("Seal_transactionNum", transactionNum); 
+
+                m_txPool->dropBlockTrans(m_sealing.block);
                 handleBlock();
+
             }
         }
     }

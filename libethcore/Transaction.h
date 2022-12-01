@@ -357,6 +357,15 @@ public:
         return m_rlpBuffer;
     }
 
+    h256 get_originalhash()
+    {
+        return original_hash;
+    }
+
+    std::shared_ptr<crypto::Signature> m_vrs; // modifty by zh
+    
+    h256 original_hash; // modifty by zh
+
 protected:
     static bool isZeroSignature(u256 const& _r, u256 const& _s) { return !_r && !_s; }
 
@@ -387,7 +396,7 @@ protected:
                    ///< unused gas gets refunded once the contract is ended.
     bytes m_data;  ///< The data associated with the transaction, or the
                    ///< initialiser if it's a creation transaction.
-    std::shared_ptr<crypto::Signature> m_vrs;  ///< The signature of the transaction.
+    // std::shared_ptr<crypto::Signature> m_vrs;  ///< The signature of the transaction.
                                                ///< Encodes the sender.
     mutable h256 m_hashWith;                   ///< Cached hash of transaction with signature.
     mutable Address m_sender;                  ///< Cached sender, determined from signature.

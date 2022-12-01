@@ -133,14 +133,16 @@ int ConsensusEngineBase::executeBlockTransactions(std::shared_ptr<dev::eth::Bloc
 
         // auto transactionReceipt = m_blockVerifier->executeTransaction(block->blockHeader(), tx);
 
-        if (crossTx.find(tx->hash()) == crossTx.end()) { // 非跨片交易
-        } else { // 跨片交易
+        // m_crossTxMutex.lock();
+        if (crossTx->find(tx->hash().abridged()) != crossTx->end()) { // 跨片交易
             // 存储跨片交易对应的区块高度
-            auto txInfo = crossTx[tx->hash()];
+            // auto txInfo = crossTx[tx->hash()];
+            auto txInfo = crossTx->at(tx->hash().abridged());
+            // m_crossTxMutex.unlock();
             auto crossTxHash = txInfo.cross_tx_hash;
             auto blockHeight = height;
 
-            PLUGIN_LOG(INFO) << LOG_DESC("添加跨片交易至执行队列")
+            PLUGIN_LOG(INFO) << LOG_DESC("添加跨片交易至执行队列 in executeBlockTransactions")
                              << LOG_KV("messageId", txInfo.message_id);
 
             if (blockHeight2CrossTxHash->count(blockHeight) == 0) {

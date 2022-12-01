@@ -49,7 +49,7 @@ std::pair<h256, Address> TxPool::submit(Transaction::Ptr _tx)
                 // check sync status failed
                 if (m_syncStatusChecker && !m_syncStatusChecker())
                 {
-                    TXPOOL_LOG(INFO) << LOG_DESC("1111");
+                    // TXPOOL_LOG(INFO) << LOG_DESC("1111");
 
                     TXPOOL_LOG(WARNING)
                         << LOG_DESC("submitTransaction async failed for checkSyncStatus failed")
@@ -59,11 +59,11 @@ std::pair<h256, Address> TxPool::submit(Transaction::Ptr _tx)
                 // check sync status succ
                 else
                 {
-                    TXPOOL_LOG(INFO) << LOG_DESC("2222");
+                    // TXPOOL_LOG(INFO) << LOG_DESC("2222");
                     verifyRet = import(_tx);
                     if (ImportResult::Success == verifyRet)
                     {
-                        TXPOOL_LOG(INFO) << LOG_DESC("33333");
+                        // TXPOOL_LOG(INFO) << LOG_DESC("33333");
                         return;
                     }
                 }
@@ -150,6 +150,7 @@ std::pair<h256, Address> TxPool::submitTransactions(dev::eth::Transaction::Ptr _
     ImportResult ret = import(_tx);
     if (ImportResult::Success == ret)
     {
+        TXPOOL_LOG(INFO) << LOG_DESC("交易提交成功");
         return std::make_pair(_tx->hash(), toAddress(_tx->from(), _tx->nonce()));
     }
 
@@ -244,6 +245,7 @@ ImportResult TxPool::import(Transaction::Ptr _tx, IfDropped)
         return ImportResult::TransactionPoolIsFull;
     }
     /// check the verify result(nonce && signature check)
+    // Edit by zh on 22.11.29
     ImportResult verify_ret = verify(_tx);
     if (verify_ret == ImportResult::Success)
     {
@@ -321,10 +323,16 @@ ImportResult TxPool::verify(Transaction::Ptr trans, IfDropped _drop_policy) // �
 {
     /// check whether this transaction has been existed
     h256 tx_hash = trans->hash();
+
+    // TXPOOL_LOG(INFO) << LOG_KV("Insert hash", tx_hash);
+    // TXPOOL_LOG(INFO) << LOG_DESC("in verify...")
+    //                  << LOG_KV("m_txsHash.count(tx_hash)", m_txsHash.count(tx_hash))
+    //                  << LOG_KV("m_txsHash.size()", m_txsHash.size());
+
     if (m_txsHash.count(tx_hash))
     {
-        TXPOOL_LOG(TRACE) << LOG_DESC("Verify: already known tx")
-                          << LOG_KV("hash", tx_hash.abridged());
+        TXPOOL_LOG(INFO) << LOG_DESC("Verify: already known tx")
+                         << LOG_KV("hash", tx_hash.abridged());
         return ImportResult::AlreadyKnown;
     }
     /// the transaction has been dropped before
@@ -444,10 +452,17 @@ bool TxPool::insert(Transaction::Ptr _tx)
     h256 tx_hash = _tx->hash();
     if (m_txsHash.count(tx_hash))
     {
+        // TXPOOL_LOG(INFO) << LOG_DESC("插入失败 in insert...");
         return false;
     }
     TransactionQueue::iterator p_tx = m_txsQueue.emplace(_tx).first;
     m_txsHash[tx_hash] = p_tx;
+
+    _tx->original_hash = tx_hash; // 池子中保存的原始hash
+
+    TXPOOL_LOG(INFO) << LOG_DESC("insert tx")
+                     << LOG_KV("txHash", _tx->original_hash);
+
     return true;
 }
 
@@ -493,11 +508,19 @@ bool TxPool::dropTransactions(std::shared_ptr<Block> block, bool)
         WriteGuard l(m_lock);
         for (size_t i = 0; i < block->transactions()->size(); i++)
         {
+            /*
             if (removeTrans((*(block->transactions()))[i]->hash(), true, block, i) == false)
                 succ = false;
             if (m_invalidTxs->count((*(block->transactions()))[i]->hash()))
             {
                 m_invalidTxs->erase((*(block->transactions()))[i]->hash());
+            }*/
+            
+            if (removeTrans((*(block->transactions()))[i]->get_originalhash(), true, block, i) == false)
+                succ = false;
+            if (m_invalidTxs->count((*(block->transactions()))[i]->get_originalhash()))
+            {
+                m_invalidTxs->erase((*(block->transactions()))[i]->get_originalhash());
             }
         }
     }
@@ -509,6 +532,7 @@ bool TxPool::dropTransactions(std::shared_ptr<Block> block, bool)
 
 void TxPool::dropBlockTxsFilter(std::shared_ptr<dev::eth::Block> _block)
 {
+    /*
     if (!_block)
     {
         return;
@@ -519,6 +543,20 @@ void TxPool::dropBlockTxsFilter(std::shared_ptr<dev::eth::Block> _block)
         if (m_txsHashFilter->count(tx->hash()))
         {
             m_txsHashFilter->erase(tx->hash());
+        }
+    }
+    */
+
+    if (!_block)
+    {
+        return;
+    }
+    WriteGuard l(x_txsHashFilter);
+    for (auto tx : (*_block->transactions()))
+    {
+        if (m_txsHashFilter->count(tx->get_originalhash()))
+        {
+            m_txsHashFilter->erase(tx->get_originalhash());
         }
     }
 }
@@ -580,6 +618,7 @@ bool TxPool::dropBlockTrans(std::shared_ptr<Block> block)
     dropTransactions(block, true);
     // delete the nonce cache
     m_txpoolNonceChecker->delCache(*(block->transactions()));
+    // TXPOOL_LOG(INFO) << LOG_DESC("hhh"); 
     return true;
 }
 
@@ -600,6 +639,9 @@ std::shared_ptr<dev::eth::Transactions> TxPool::topTransactions(uint64_t const& 
 std::shared_ptr<Transactions> TxPool::topTransactions(
     uint64_t const& _limit, h256Hash& _avoid, bool _updateAvoid)
 {
+    // TXPOOL_LOG(INFO) << LOG_DESC("取一些交易")
+    //                  << LOG_KV("数量", _limit);
+
     uint64_t limit = min(m_limit, _limit);
     uint64_t txCnt = 0;
     auto ret = std::make_shared<Transactions>();
@@ -621,6 +663,8 @@ std::shared_ptr<Transactions> TxPool::topTransactions(
             // dropped, so no need to insert the already-committed transaction into m_invalidTxs
             if (!m_txNonceCheck->isNonceOk(*(*it), false))
             {
+                // 发现并报告nonce值重复的交易
+                // 这里不需要将重复交易放入invalidTxs队列中吗？
                 TXPOOL_LOG(DEBUG) << LOG_DESC(
                                          "Duplicated nonce: transaction maybe already-committed")
                                   << LOG_KV("nonce", (*it)->nonce())
@@ -630,7 +674,9 @@ std::shared_ptr<Transactions> TxPool::topTransactions(
             // check block limit(only insert txs with invalid blockLimit into m_invalidTxs)
             if (!m_txNonceCheck->isBlockLimitOk(*(*it)))
             {
-                m_invalidTxs->insert(std::pair<h256, u256>((*it)->hash(), (*it)->nonce()));
+                // m_invalidTxs->insert(std::pair<h256, u256>((*it)->hash(), (*it)->nonce()));
+                // modify by zh on 22.11.26
+                m_invalidTxs->insert(std::pair<h256, u256>((*it)->get_originalhash(), (*it)->nonce()));
                 TXPOOL_LOG(WARNING)
                     << LOG_DESC("Invalid blocklimit") << LOG_KV("hash", (*it)->hash().abridged())
                     << LOG_KV("blockLimit", (*it)->blockLimit())

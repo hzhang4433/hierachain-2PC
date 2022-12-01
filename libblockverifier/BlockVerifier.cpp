@@ -276,7 +276,8 @@ void BlockVerifier::replyToCoordinator(dev::plugin::transaction txInfo,
     
     // 如果该笔交易早已收到了足够的commit包，则直接执行
     if (lateCrossTxMessageId->find(messageID) != lateCrossTxMessageId->end()) {
-        PLUGIN_LOG(INFO) << LOG_DESC("commit包之前就已集齐, 直接执行交易...");
+        PLUGIN_LOG(INFO) << LOG_DESC("commit包之前就已集齐, 直接执行交易... in blockVerifier")
+                         << LOG_KV("messageId", messageID);
         auto readwriteset = crossTx2StateAddress->at(crossTxHash);
         executeCrossTx(readwriteset);
         // crossTx2StateAddress->unsafe_erase(crossTxHash);
@@ -369,13 +370,16 @@ ExecutiveContext::Ptr BlockVerifier::serialExecuteBlock(Block& block, BlockInfo 
 
     uint64_t startTime = utcTime();
     // 标记是否有交易立即被执行 -- ADD BY ZH
-    bool flag = false;
+    // bool flag = false;
 
     ExecutiveContext::Ptr executiveContext = std::make_shared<ExecutiveContext>();
     try
     {
+        // m_executiveContextFactory->initExecutiveContext(
+        //     parentBlockInfo, parentBlockInfo.stateRoot, executiveContext);
         m_executiveContextFactory->initExecutiveContext(
-            parentBlockInfo, parentBlockInfo.stateRoot, executiveContext);
+            parentBlockInfo, h256(0), executiveContext);
+    
     }
     catch (exception& e)
     {
@@ -387,57 +391,59 @@ ExecutiveContext::Ptr BlockVerifier::serialExecuteBlock(Block& block, BlockInfo 
                               << errinfo_comment("Error during initExecutiveContext"));
     }
 
-    BlockHeader tmpHeader = block.blockHeader();
-    block.clearAllReceipts();
-    block.resizeTransactionReceipt(block.transactions()->size());
+    // BlockHeader tmpHeader = block.blockHeader();
+    // block.clearAllReceipts();
+    // block.resizeTransactionReceipt(block.transactions()->size());
 
 
-    BLOCKVERIFIER_LOG(DEBUG) << LOG_BADGE("executeBlock") << LOG_DESC("Init env takes")
-                             << LOG_KV("time(ms)", utcTime() - startTime)
-                             << LOG_KV("txNum", block.transactions()->size())
-                             << LOG_KV("num", block.blockHeader().number());
-    uint64_t pastTime = utcTime();
+    // BLOCKVERIFIER_LOG(DEBUG) << LOG_BADGE("executeBlock") << LOG_DESC("Init env takes")
+    //                          << LOG_KV("time(ms)", utcTime() - startTime)
+    //                          << LOG_KV("txNum", block.transactions()->size())
+    //                          << LOG_KV("num", block.blockHeader().number());
+    // uint64_t pastTime = utcTime();
 
-    try
-    {
-        EnvInfo envInfo(block.blockHeader(), m_pNumberHash, 0);
-        envInfo.setPrecompiledEngine(executiveContext);
-        auto executive = createAndInitExecutive(executiveContext->getState(), envInfo);
-        // BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("sleeping...");
-        // sleep(10000);
-        // BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("sleeping over...");
+    // try
+    // {
+    //     EnvInfo envInfo(block.blockHeader(), m_pNumberHash, 0);
+    //     envInfo.setPrecompiledEngine(executiveContext);
+    //     auto executive = createAndInitExecutive(executiveContext->getState(), envInfo);
+    //     // BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("sleeping...");
+    //     // sleep(10000);
+    //     // BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("sleeping over...");
 
         
-        /*
-        blockExecuteContent _blockExecuteContent{executiveContext, executive};
-        cached_executeContents.insert(std::make_pair(block.blockHeader().number(), _blockExecuteContent)); // 缓存区块执行变量
-        ENGINE_LOG(INFO) << LOG_KV("BlockVerifer.block->blockHeader().number()", block.blockHeader().number());
-        */
+    //     /*
+    //     blockExecuteContent _blockExecuteContent{executiveContext, executive};
+    //     cached_executeContents.insert(std::make_pair(block.blockHeader().number(), _blockExecuteContent)); // 缓存区块执行变量
+    //     ENGINE_LOG(INFO) << LOG_KV("BlockVerifer.block->blockHeader().number()", block.blockHeader().number());
+    //     */
         
-        for (size_t i = 0; i < block.transactions()->size(); i++)
-        {
-            auto& tx = (*block.transactions())[i];
-            BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("in serialExecuteBlock")
-                                    << LOG_KV("height", block.header().number())
-                                    << LOG_KV("tx_hash", tx->hash());
-        }
-    }
-    catch (exception& e)
-    {
-        BLOCKVERIFIER_LOG(ERROR) << LOG_BADGE("executeBlock")
-                                 << LOG_DESC("Error during serial block execution")
-                                 << LOG_KV("blkNum", block.blockHeader().number())
-                                 << LOG_KV("EINFO", boost::diagnostic_information(e));
+    //     for (size_t i = 0; i < block.transactions()->size(); i++)
+    //     {
+    //         auto& tx = (*block.transactions())[i];
+    //         // auto blockInfo = crossTx->at(tx->hash().abridged());
+    //         BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("in serialExecuteBlock")
+    //                                 << LOG_KV("height", block.header().number())
+    //                                 << LOG_KV("tx_hash", tx->hash());
+    //                                 // << LOG_KV("messageId", blockInfo.message_id);
+    //     }
+    // }
+    // catch (exception& e)
+    // {
+    //     BLOCKVERIFIER_LOG(ERROR) << LOG_BADGE("executeBlock")
+    //                              << LOG_DESC("Error during serial block execution")
+    //                              << LOG_KV("blkNum", block.blockHeader().number())
+    //                              << LOG_KV("EINFO", boost::diagnostic_information(e));
 
-        BOOST_THROW_EXCEPTION(
-            BlockExecutionFailed() << errinfo_comment("Error during serial block execution"));
-    }
+    //     BOOST_THROW_EXCEPTION(
+    //         BlockExecutionFailed() << errinfo_comment("Error during serial block execution"));
+    // }
 
 
-    BLOCKVERIFIER_LOG(DEBUG) << LOG_BADGE("executeBlock") << LOG_DESC("Run serial tx takes")
-                             << LOG_KV("time(ms)", utcTime() - pastTime)
-                             << LOG_KV("txNum", block.transactions()->size())
-                             << LOG_KV("num", block.blockHeader().number());
+    // BLOCKVERIFIER_LOG(DEBUG) << LOG_BADGE("executeBlock") << LOG_DESC("Run serial tx takes")
+    //                          << LOG_KV("time(ms)", utcTime() - pastTime)
+    //                          << LOG_KV("txNum", block.transactions()->size())
+    //                          << LOG_KV("num", block.blockHeader().number());
 
     /*
     if (flag) { // 若有交易被执行，则设置回执与状态根 ==> 后续改为只有等所有交易都执行并提交再设置？
@@ -700,7 +706,8 @@ void BlockVerifier::executeCrossTx(std::string keyReadwriteSet) {
 
     // 取变量
     auto tx = executableTx.tx;
-    transaction txInfo = crossTx[tx->hash()];
+    // transaction txInfo = crossTx[tx->hash()];
+    transaction txInfo = crossTx->at(tx->hash().abridged());
 
     BLOCKVERIFIER_LOG(INFO) << LOG_DESC("in executeCrossTx...")
                             << LOG_KV("keyReadwriteSet", keyReadwriteSet)
@@ -764,11 +771,14 @@ void BlockVerifier::executeCrossTx(std::string keyReadwriteSet) {
        2. locking_key
        3. crossTx2CommitMsg
     */
-    crossTx.erase(tx->hash());
-    if (m_lockKeyMutex.try_lock()) {
-        locking_key->at(keyReadwriteSet)--;
-        m_lockKeyMutex.unlock();
-    }
+    // m_crossTxMutex.lock();
+    // crossTx->unsafe_erase(tx->hash());
+    // m_crossTxMutex.unlock();
+
+    m_lockKeyMutex.lock();
+    locking_key->at(keyReadwriteSet)--;
+    m_lockKeyMutex.unlock();
+    
     
 
     // 判断是否还有等待交易
@@ -787,9 +797,11 @@ void BlockVerifier::executeCandidateTx(std::string keyReadwriteSet) {
     // 取出下一笔交易
     auto executableTx = candidate_tx_queues->at(keyReadwriteSet).queue.front();
     auto tx = executableTx.tx;
-    
     //判断是否为跨片交易
-    if (crossTx.find(tx->hash()) == crossTx.end()) { // 非跨片交易 => 直接执行
+    // m_crossTxMutex.lock();
+    if (crossTx->find(tx->hash().abridged()) == crossTx->end()) { // 非跨片交易 => 直接执行
+        // m_crossTxMutex.unlock();
+
         BLOCKVERIFIER_LOG(INFO) << LOG_DESC("该笔交易为片内交易...");
         // EDIT BY ZH 22.11.3
         auto exec = dev::plugin::executiveContext->getExecutive();
@@ -842,10 +854,9 @@ void BlockVerifier::executeCandidateTx(std::string keyReadwriteSet) {
         // 删除执行过的交易
         candidate_tx_queues->at(keyReadwriteSet).queue.pop();
         // 释放锁
-        if (m_lockKeyMutex.try_lock()) {
-            locking_key->at(keyReadwriteSet)--;
-            m_lockKeyMutex.unlock();
-        }
+        m_lockKeyMutex.lock();
+        locking_key->at(keyReadwriteSet)--;
+        m_lockKeyMutex.unlock();
         
 
         if (candidate_tx_queues->at(keyReadwriteSet).queue.size() != 0) {
@@ -853,7 +864,10 @@ void BlockVerifier::executeCandidateTx(std::string keyReadwriteSet) {
         }
     } else { // 跨片交易
         // 获取跨片交易相关信息
-        transaction txInfo = crossTx[tx->hash()];
+        // transaction txInfo = crossTx[tx->hash()];
+        transaction txInfo = crossTx->at(tx->hash().abridged());
+        // m_crossTxMutex.unlock();
+
         BLOCKVERIFIER_LOG(INFO) << LOG_DESC("该笔交易为跨片交易...")
                                 << LOG_KV("messageId", txInfo.message_id);
         

@@ -78,8 +78,12 @@ namespace dev {
         //     std::string blocked_readwriteset; // 队列所阻塞的读写集
         //     std::queue<transaction> queue; // 缓存的交易
         // };
-        
-        std::map<h256, transaction> crossTx; // 分片待处理的跨片子交易详细信息
+
+        // 分片待处理的跨片子交易详细信息
+        std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> crossTx = 
+                                std::make_shared<tbb::concurrent_unordered_map<std::string, transaction>>(); 
+        std::mutex m_crossTxMutex;
+
         // 缓冲队列跨片交易集合(用以应对网络传输下，收到的交易乱序)，(shardid_messageid-->subtx)，由执行模块代码触发
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> cached_cs_tx = 
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, transaction>>();
@@ -152,8 +156,12 @@ namespace dev {
         std::mutex m_height2TxHashMutex;
 
         // ADD ON 22.11.8
+        // std::map<h256, transaction> innerTx;
         // 片内交易映射至交易状态集
-        std::map<h256, transaction> innerTx;
+        std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> innerTx = 
+                                std::make_shared<tbb::concurrent_unordered_map<std::string, transaction>>();
+        std::mutex m_innerTxMutex;
+
         // 跨片交易映射至对应状态集
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> crossTx2StateAddress = 
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, std::string>>();
@@ -307,37 +315,7 @@ private:
     SecureInitializer::Ptr m_secureInitializer;
 };
 
-/*
-void executeTxs()
-{
-    while (true)
-    {
-        if(dev::consensus::toExecute_transactions.size() > 0)
-        {
-            auto tx = dev::consensus::toExecute_transactions.front();
-            auto tx_hash = tx->hash();
-            BLOCKVERIFIER_LOG(INFO) << LOG_DESC("缓存交易的hash") << LOG_KV("tx_hash", tx_hash);
-            /
-                添加交易逻辑
-            /
 
-
-            
-            dev::consensus::toExecute_transactions.pop();
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-}
-
-void startprocessThread()
-{
-    // 单独启动一个线程执行executeTxs()
-    BLOCKVERIFIER_LOG(INFO) << LOG_DESC("startprocessThread...");
-    std::thread executeTxs_Thread(executeTxs);
-    executeTxs_Thread.detach();
-    BLOCKVERIFIER_LOG(INFO) << LOG_DESC("startprocessThread...");;
-}
-*/
 class CrossShardTest
 {
     private:
@@ -518,8 +496,6 @@ class CrossShardTest
 
 int main(){
 
-    std::cout<< "* * * * * * * * * HieraChain v0.0.2 * * * * * * * * *" <<std::endl;
-
     dev::consensus::SHARDNUM = 3; // 初始化分片数目
     std::cout << "SHARDNUM = " << dev::consensus::SHARDNUM << std::endl;
 
@@ -620,14 +596,21 @@ int main(){
     shared_ptr<dev::plugin::SyncThreadMaster> syncs = std::make_shared<dev::plugin::SyncThreadMaster>(p2pService, syncId, nodeId, dev::consensus::internal_groupId, rpcService);
     std::shared_ptr<ConsensusPluginManager> consensusPluginManager = std::make_shared<ConsensusPluginManager>(rpcService);
     // consensusPluginManager->m_deterministExecute->start(); // 启动交易处理线程
+    
+    
+    consensusPluginManager->m_deterministExecute->setAttribute(blockchainManager);
+    
+    std::thread processBlocksThread(&dev::plugin::deterministExecute::processConsensusBlock, consensusPluginManager->m_deterministExecute);
+    processBlocksThread.detach();
+    
     std::thread executetxsThread(&dev::plugin::deterministExecute::deterministExecuteTx, consensusPluginManager->m_deterministExecute);
     executetxsThread.detach();
-
+    
     syncs->setAttribute(blockchainManager);
     syncs->setAttribute(consensusPluginManager);
     
     // startprocessThread();
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
 
     // 测试发送交易（分片1的node1向本分片1发送一笔片内交易
@@ -675,7 +658,7 @@ int main(){
         */
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    // std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
     if(dev::consensus::internal_groupId == 2 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(1)))
     {
@@ -689,7 +672,7 @@ int main(){
         // _injectionTest.createInnerTransactions(2);
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    // std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
     if(dev::consensus::internal_groupId == 3 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(2)))
     {
@@ -706,8 +689,8 @@ int main(){
 
         /* 批量生产跨片交易
         std::string res;
-        for (int i =0 ; i < 100; i++) {
-            auto tx = _injectionTest.createCrossTransactions(3, 1, 2);
+        for (int i =0 ; i < 1000; i++) {
+            auto tx = _injectionTest.createCrossTransactions(3, 1, 2, ledgerManager);
             if (i % 100 == 0) { // 10笔写一次文件
                 if (i == 0) {
                     res = "[\"" + tx + "\"";
@@ -724,7 +707,7 @@ int main(){
             } else {
                 res = res + ",\"" + tx + "\"";
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds((1)));
+            std::this_thread::sleep_for(std::chrono::milliseconds((500)));
         }
 
         ofstream out;
@@ -787,11 +770,9 @@ int main(){
         std::cout<<"it's a leaf group" << std::endl;
     }
 
-    //size_t duration = 0;
     while (true)
     {
-        //duration ++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
     }
     return 0;
 }

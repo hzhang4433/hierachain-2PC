@@ -29,22 +29,21 @@ namespace txpool
 bool CommonTransactionNonceCheck::isNonceOk(dev::eth::Transaction const& _trans, bool needInsert)
 {
     UpgradableGuard l(m_lock);
-    { 
-        // EDIT BY ZH 22.11.1
-        // const auto& key = _trans.nonce();
-        // if (m_cache.count(key))
-        // {
-        //     // duplicated transaction sync may cause duplicated nonce
-        //     LOG(INFO) << LOG_DESC("CommonTransactionNonceCheck: isNonceOk: duplicated nonce")
-        //               << LOG_KV("nonce", key) << LOG_KV("transHash", _trans.hash().abridged());
+    {
+        const auto& key = _trans.nonce();
+        if (m_cache.count(key))
+        {
+            // duplicated transaction sync may cause duplicated nonce
+            LOG(DEBUG) << LOG_DESC("CommonTransactionNonceCheck: isNonceOk: duplicated nonce")
+                      << LOG_KV("nonce", key) << LOG_KV("transHash", _trans.hash().abridged());
 
-        //     return false;
-        // }
-        // if (needInsert)
-        // {
-        //     UpgradeGuard ul(l);
-        //     m_cache.insert(key);
-        // }
+            return false;
+        }
+        if (needInsert)
+        {
+            UpgradeGuard ul(l);
+            m_cache.insert(key);
+        }
         return true;
     }
     /// obtain lock failed

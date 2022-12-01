@@ -43,8 +43,8 @@ public:
         std::shared_ptr<std::vector<std::pair<u256, std::vector<unsigned char>>>>;
     using Ptr = std::shared_ptr<Block>;
 
-    size_t unExecutedTxNum; // 区块中还未处理的交易数目 ADD BY THB
-    bool isFirstExecute = true; // 标记区块是否第一次执，默认为true
+    // size_t unExecutedTxNum; // 区块中还未处理的交易数目 ADD BY THB
+    // bool isFirstExecute = true; // 标记区块是否第一次执，默认为true
     ///-----constructors of Block
     Block()
     {
@@ -245,9 +245,9 @@ public:
         u256 totalGas = 0;
         for (auto& receipt : *m_transactionReceipts)
         {
-            if (receipt == nullptr) {
-                continue;
-            }
+            // if (receipt == nullptr) {
+            //     continue;
+            // }
             totalGas += receipt->gasUsed();
             receipt->setGasUsed(totalGas);
         }
@@ -255,17 +255,17 @@ public:
 
     void setStateRootToAllReceipt(h256 const& _stateRoot)
     {
-        if (m_transactionReceipts == nullptr) {
-            std::cout << "m_transactionReceipts is null " << std::endl;
-            return;
-        }
+        // if (m_transactionReceipts == nullptr) {
+        //     std::cout << "m_transactionReceipts is null " << std::endl;
+        //     return;
+        // }
         for (auto& receipt : *m_transactionReceipts)
         {
-            std::cout << "receipt is " << receipt << std::endl;
-            if (receipt == nullptr) {
-                std::cout << "receipt is null" << std::endl;
-                continue;
-            }
+            // std::cout << "receipt is " << receipt << std::endl;
+            // if (receipt == nullptr) {
+            //     std::cout << "receipt is null" << std::endl;
+            //     continue;
+            // }
             receipt->setStateRoot(_stateRoot);
         }
         

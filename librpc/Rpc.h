@@ -133,7 +133,7 @@ public:
     Json::Value call(int _groupID, const Json::Value& request) override;
     std::string sendRawTransaction(int _groupID, const std::string& _rlp) override;
     std::string sendRawTransactionAndGetProof(int _groupID, const std::string& _rlp) override;
-    std::string sendSubCsRawTransaction(int _groupID, const std::string& _rlp, int _iscrosstx); // ADD BY THB, 节点重载一个rpc接口用于接收跨片子交易
+    // std::string sendSubCsRawTransaction(int _groupID, const std::string& _rlp, int _iscrosstx); // ADD BY THB, 节点重载一个rpc接口用于接收跨片子交易
 
     // Get transaction with merkle proof by hash
     Json::Value getTransactionByHashWithProof(
@@ -184,12 +184,12 @@ protected:
             dev::eth::Block::Ptr _blockPtr)>
             _notifyCallback);
 
-    std::string sendRawTransaction(int _groupID, const std::string& _rlp, int __iscrosstx,
-    std::function<std::shared_ptr<Json::Value>(
-        std::weak_ptr<dev::blockchain::BlockChainInterface> _blockChain,
-        LocalisedTransactionReceipt::Ptr receipt, dev::bytesConstRef input,
-        dev::eth::Block::Ptr _blockPtr)>
-        _notifyCallback);
+    // std::string sendRawTransaction(int _groupID, const std::string& _rlp, int __iscrosstx,
+    // std::function<std::shared_ptr<Json::Value>(
+    //     std::weak_ptr<dev::blockchain::BlockChainInterface> _blockChain,
+    //     LocalisedTransactionReceipt::Ptr receipt, dev::bytesConstRef input,
+    //     dev::eth::Block::Ptr _blockPtr)>
+    //     _notifyCallback);
 
     std::shared_ptr<Json::Value> notifyReceipt(
         std::weak_ptr<dev::blockchain::BlockChainInterface> _blockChain,

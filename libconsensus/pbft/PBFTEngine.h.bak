@@ -43,7 +43,7 @@
 #include "PBFTMsgFactory.h"
 #include <libstorage/BasicRocksDB.h>
 #include <libsync/SyncStatus.h>
-// #include <libplugin/transform.h>
+#include <libplugin/transform.h>
 #include <libprotobasic/shard.pb.h>
 #include <libsync/SyncMsgPacket.h>
 
@@ -66,11 +66,6 @@ using PBFTMsgQueue = dev::concurrent_queue<PBFTMsgPacket::Ptr>;
 class PBFTEngine : public ConsensusEngineBase, public std::enable_shared_from_this<PBFTEngine>
 {
 public:
-
-    // static void executeTxs();
-
-    // bool startprocessThread(); // start for executeTxs
-
     using Ptr = std::shared_ptr<PBFTEngine>;
     virtual ~PBFTEngine() { stop(); }
     PBFTEngine(std::shared_ptr<dev::p2p::P2PInterface> _service,
@@ -150,7 +145,6 @@ public:
             std::make_shared<dev::ThreadPool>("PBFTAsync-" + std::to_string(m_groupId), 1);
         m_cachedForwardMsg =
             std::make_shared<std::map<dev::h256, std::pair<int64_t, PBFTMsgPacket::Ptr>>>();
-
     }
 
 
@@ -193,10 +187,7 @@ public:
             std::make_shared<dev::ThreadPool>("PBFTAsync-" + std::to_string(m_groupId), 1);
         m_cachedForwardMsg =
             std::make_shared<std::map<dev::h256, std::pair<int64_t, PBFTMsgPacket::Ptr>>>();
-
     }
-
-    // void saveInterShardTxInfo(std::string &_crossshardtxid, int _participantNum);
 
     void forwardTx(protos::SubCrossShardTx _subCrossShardTx); // 对共识完的跨片交易进行转发，至相应分片
 
@@ -367,7 +358,6 @@ public:
 
     // size_t messageIDs[SHARDNUM] = {0}; // ADD BY THB
 
-
 protected:
     virtual void registerDisconnectHandler();
     virtual void resetConsensusTimeout();
@@ -446,8 +436,7 @@ protected:
     void checkAndCommit();
 
     /// if collect >= 2/3 SignReq and CommitReq, then callback this function to commit block
-    // void checkAndSave();
-    void checkAndSave(bool commitPhase);
+    void checkAndSave();
     // void checkAndSave(PROTOCOL_ID _group_protocolID);
     bool checkAndChangeView(VIEWTYPE const& _view);
 
@@ -810,8 +799,6 @@ protected:
     {
         m_cs_service = _service;
     }
-
-    void sendParticipantsMsg();
 
 protected:
 

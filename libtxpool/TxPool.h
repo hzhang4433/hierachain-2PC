@@ -216,6 +216,8 @@ private:
             TXPOOL_LOG(WARNING) << LOG_DESC("txPool Nonce Check failed");
             return false;
         }
+        // TXPOOL_LOG(INFO) << LOG_KV("txPool txhash", tx->hash());
+
         return true;
     }
 

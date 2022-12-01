@@ -42,6 +42,9 @@ namespace consensus
 class Sealer : public Worker, public std::enable_shared_from_this<Sealer>
 {
 public:
+
+    int transactionNum = 0;
+
     using Ptr = std::shared_ptr<Sealer>;
     /**
      * @param _service: p2p service module

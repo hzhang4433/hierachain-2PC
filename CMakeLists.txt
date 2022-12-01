@@ -24,6 +24,9 @@ set(FISCO_BCOS_CMAKE_DIR "${CMAKE_CURRENT_LIST_DIR}/cmake" CACHE PATH "The path 
 list(APPEND CMAKE_MODULE_PATH ${FISCO_BCOS_CMAKE_DIR})
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum OS X deployment version")
 
+set(LINK_DIR /GPUFS/ecnu_cqjin_zhangzhao/usr/local/protobuf/lib)
+set(INC_DIR /GPUFS/ecnu_cqjin_zhangzhao/usr/local/protobuf/include)
+
 project(FISCO-BCOS VERSION "2.8.0")
 # Suffix like "-rc1" e.t.c. to append to versions wherever needed.
 set(VERSION_SUFFIX "")
@@ -67,7 +70,9 @@ if(USE_HSM_SDF)
   include(ProjectSDF)
 endif()
 
-include_directories("${CMAKE_SOURCE_DIR}")
+include_directories("${CMAKE_SOURCE_DIR}"
+  ${INC_DIR}
+  )
 
 add_subdirectory(libchannelserver)
 add_subdirectory(libdevcore)
@@ -125,6 +130,9 @@ elseif()
 endif()
 
 add_executable(mini-test ${SRC_LIST} ${HEADERS})
+
+link_directories(${LINK_DIR})
+
 target_compile_options(mini-test PRIVATE -Wno-unused-variable -Wno-sign-compare -Wno-uninitialized -Wno-unused-parameter)
 # target_link_libraries(mini-p2p PUBLIC initializer gRPC::grpc++)
-target_link_libraries(mini-test PUBLIC initializer plugin) # 链接具有累积性，initializer中包含了其他静态库
+target_link_libraries(mini-test PUBLIC ${LINK_DIR}/libprotobuf.so initializer plugin) # 链接具有累积性，initializer中包含了其他静态库

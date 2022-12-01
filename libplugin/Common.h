@@ -46,6 +46,14 @@ class ExecuteVMTestFixture;
         std::queue<executableTransaction> queue; // 缓存的交易, 格式：{txIdx, tx}
     };
 
+    enum transactionType:int
+    {
+        DeployContract=0,// other
+        CrossShard=1,// 0x111222333
+        InnerShard=2,// 0x444555666
+        SubShard=3,// 子分片收到跨片交易
+    };
+
     /// peer nodeid info just hardcode
     /// delete later
     const dev::h512 exNodeId[1] = {
@@ -69,7 +77,10 @@ class ExecuteVMTestFixture;
     9. std::map<std::string, int> recVotes; // 记录协调者每个跨片交易收到的投票数目
     10.extern std::vector<std::string> committedDisTxRlp; // 记录所有committed交易的RLP编码
 */
-    extern std::map<h256, transaction> crossTx; // 分片待处理的跨片子交易详细信息
+    // extern std::map<h256, transaction> crossTx; 
+    // 分片待处理的跨片子交易详细信息
+    extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> crossTx;
+
     // 缓冲队列跨片交易集合(用以应对网络传输下，收到的交易乱序)，(shardid_messageid-->subtx)，由执行模块代码触发
     // extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> cached_cs_tx;
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> cached_cs_tx;
@@ -106,7 +117,8 @@ class ExecuteVMTestFixture;
     // 22.11.7
     extern std::shared_ptr<tbb::concurrent_unordered_map<int, std::vector<std::string>>> blockHeight2CrossTxHash;
     // 22.11.8
-    extern std::map<h256, transaction> innerTx;
+    // extern std::map<h256, transaction> innerTx;
+    extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> innerTx;
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> crossTx2StateAddress;
 		
 
@@ -138,6 +150,9 @@ class ExecuteVMTestFixture;
     extern std::mutex m_lateCrossTxMutex;
     extern std::mutex m_crossTx2AddressMutex;
     extern std::mutex m_txHash2HeightMutex;
+    extern std::mutex m_crossTxMutex;
+    extern std::mutex m_innerTxMutex;
+
 
     // extern tbb::concurrent_queue<std::string> preCommTxRlps;
     // extern std::map<std::string, std::vector<std::string>> recePreCommTxRlps;
