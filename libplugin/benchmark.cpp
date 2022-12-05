@@ -213,7 +213,7 @@ void transactionInjectionTest::injectionTransactions(std::string filename, int32
                      << LOG_KV("number", number);
 }
 
-std::string transactionInjectionTest::createInnerTransactions(int32_t _groupId) {
+std::string transactionInjectionTest::createInnerTransactions(int32_t _groupId, std::shared_ptr<dev::ledger::LedgerManager> ledgerManager) {
     
     std::string requestLabel = "0x444555666";
     std::string flag = "|";
@@ -255,6 +255,7 @@ std::string transactionInjectionTest::createInnerTransactions(int32_t _groupId) 
     Transaction tx(0, 1000, 0, contactAddress, data);
     tx.setNonce(tx.nonce() + u256(utcTime()));
     tx.setGroupId(_groupId);
+    tx.setBlockLimit(u256(ledgerManager->blockChain(_groupId)->number()) + 500);
     
     auto keyPair = KeyPair::create();
     auto sig = dev::crypto::Sign(keyPair, tx.hash(WithoutSignature));

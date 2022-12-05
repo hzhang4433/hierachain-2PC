@@ -696,6 +696,20 @@ ExecutiveContext::Ptr BlockVerifier::parallelExecuteBlock(
     return executiveContext;
 }
 
+std::string BlockVerifier::dataToHexString(bytes data) {
+    size_t m_data_size = data.size();
+    std::string hex_m_data_str = "";
+    for(size_t i = 0; i < m_data_size; i++)
+    {
+        string temp;
+        stringstream ioss;
+        ioss << std::hex << data.at(i);
+        ioss >> temp;
+        hex_m_data_str += temp;
+    }
+    return hex_m_data_str;
+}
+
 void BlockVerifier::executeCrossTx(std::string keyReadwriteSet) {
     BLOCKVERIFIER_LOG(INFO) << LOG_DESC("in executeCrossTx...")
                             << LOG_KV("keyReadwriteSet", keyReadwriteSet)
@@ -708,18 +722,62 @@ void BlockVerifier::executeCrossTx(std::string keyReadwriteSet) {
     auto tx = executableTx.tx;
     // transaction txInfo = crossTx[tx->hash()];
     transaction txInfo = crossTx->at(tx->hash().abridged());
+    
+    // ADD BY ZH ON 22.12.3 —— 添加批处理逻辑
+    auto data_str = dataToHexString(tx->data());
 
-    BLOCKVERIFIER_LOG(INFO) << LOG_DESC("in executeCrossTx...")
-                            << LOG_KV("keyReadwriteSet", keyReadwriteSet)
-                            << LOG_KV("size2", candidate_tx_queues->at(keyReadwriteSet).queue.size())
-                            << LOG_KV("messageId", txInfo.message_id);
+    if (data_str == "") {
+        PLUGIN_LOG(INFO) << LOG_DESC("in executeCrossTx data_str is null");
+        auto exec = dev::plugin::executiveContext->getExecutive();
+        auto vm = dev::plugin::executiveContext->getExecutiveInstance();
+        exec->setVM(vm);
+        dev::plugin::executiveContext->executeTransaction(exec, tx);
+        dev::plugin::executiveContext->m_vminstance_pool.push(vm);
+    } else {
+        std::vector<std::string> signedTxs;
+        try {
+            boost::split(signedTxs, data_str, boost::is_any_of("|"), boost::token_compress_on);
+            int signedTxSize = signedTxs.size();
+            PLUGIN_LOG(INFO) << LOG_DESC("in executeCrossTx data_str is not null")
+                             << LOG_KV("signedTx num", signedTxSize);
+
+            auto exec = dev::plugin::executiveContext->getExecutive();
+            auto vm = dev::plugin::executiveContext->getExecutiveInstance();
+            exec->setVM(vm);
+
+            for (int i = 1; i < signedTxSize - 1; i++) {
+                std::string signedTx = signedTxs.at(i);
+                // PLUGIN_LOG(INFO) << LOG_DESC("解析批量交易")
+                //                  << LOG_KV("signedTx", signedTx);
+
+                Transaction::Ptr tx = std::make_shared<Transaction>(
+                        jsToBytes(signedTx, dev::OnFailed::Throw), CheckTransaction::Everything);
+                
+                // PLUGIN_LOG(INFO) << LOG_DESC("222")
+                //                  << LOG_KV("tx", toHex(tx->rlp()));
+
+                dev::plugin::executiveContext->executeTransaction(exec, tx);
+            }
+
+            dev::plugin::executiveContext->m_vminstance_pool.push(vm);
+        } catch (std::exception& e) {
+            PLUGIN_LOG(INFO) << LOG_DESC("error!");
+            exit(1);
+        }
+    }
+    
+
+    // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("in executeCrossTx...")
+    //                         << LOG_KV("keyReadwriteSet", keyReadwriteSet)
+    //                         << LOG_KV("size2", candidate_tx_queues->at(keyReadwriteSet).queue.size())
+    //                         << LOG_KV("messageId", txInfo.message_id);
 
     // EDIT BY ZH 22.11.2
-    auto exec = dev::plugin::executiveContext->getExecutive();
-    auto vm = dev::plugin::executiveContext->getExecutiveInstance();
-    exec->setVM(vm);
-    dev::plugin::executiveContext->executeTransaction(exec, tx);
-    dev::plugin::executiveContext->m_vminstance_pool.push(vm);
+    // auto exec = dev::plugin::executiveContext->getExecutive();
+    // auto vm = dev::plugin::executiveContext->getExecutiveInstance();
+    // exec->setVM(vm);
+    // dev::plugin::executiveContext->executeTransaction(exec, tx);
+    // dev::plugin::executiveContext->m_vminstance_pool.push(vm);
 
     // 更新已完成交易id
     complete_candidate_tx_messageids->at(txInfo.source_shard_id - 1) = txInfo.message_id;
@@ -876,8 +934,7 @@ void BlockVerifier::executeCandidateTx(std::string keyReadwriteSet) {
     }
 }
 
-TransactionReceipt::Ptr BlockVerifier::executeTransaction(
-    const BlockHeader& blockHeader, dev::eth::Transaction::Ptr _t)
+TransactionReceipt::Ptr BlockVerifier::executeTransaction(const BlockHeader& blockHeader, dev::eth::Transaction::Ptr _t)
 {
     ExecutiveContext::Ptr executiveContext = std::make_shared<ExecutiveContext>();
     BlockInfo blockInfo{blockHeader.hash(), blockHeader.number(), blockHeader.stateRoot()};

@@ -72,6 +72,7 @@ public:
 
     // ExecutiveContext::Ptr executeBlock(dev::eth::Block& block, BlockInfo const& parentBlockInfo, 
     //     dev::PROTOCOL_ID& m_group_protocolID, std::shared_ptr<dev::p2p::Service> m_group_service);
+    std::string dataToHexString(bytes data);
 
     void executeCrossTx(std::string keyReadwriteSet);
 

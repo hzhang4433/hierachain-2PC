@@ -623,7 +623,7 @@ int main(){
         // _injectionTest.injectionTransactions("./signedtxs.json", 1);
 
         // std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        // _injectionTest.createInnerTransactions(1);
+        // _injectionTest.createInnerTransactions(1, ledgerManager);
 
         /* 批量生产跨片交易
         std::string res;
@@ -669,7 +669,7 @@ int main(){
         // _injectionTest.injectionTransactions("./signedtxs.json", 2);
 
         // std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        // _injectionTest.createInnerTransactions(2);
+        // _injectionTest.createInnerTransactions(2, ledgerManager);
     }
 
     // std::this_thread::sleep_for(std::chrono::milliseconds(2000));
@@ -684,7 +684,7 @@ int main(){
         _injectionTest.injectionTransactions("./crossTx.json", 3);
 
         // std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        // _injectionTest.createInnerTransactions(3);
+        // _injectionTest.createInnerTransactions(3, ledgerManager);
         // _injectionTest.createCrossTransactions(3, 1, 2);
 
         /* 批量生产跨片交易

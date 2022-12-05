@@ -52,6 +52,7 @@ class ExecuteVMTestFixture;
         CrossShard=1,// 0x111222333
         InnerShard=2,// 0x444555666
         SubShard=3,// 子分片收到跨片交易
+        BatchSubTxs=4, // 子分片收到的批量跨片交易
     };
 
     /// peer nodeid info just hardcode

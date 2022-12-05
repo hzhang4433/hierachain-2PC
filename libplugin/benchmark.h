@@ -32,7 +32,7 @@ namespace dev
                 ~transactionInjectionTest(){};
                 void deployContractTransaction(std::string filename, int32_t _groupId);
                 void injectionTransactions(std::string filename, int32_t _groupId);
-                std::string createInnerTransactions(int32_t _groupId);
+                std::string createInnerTransactions(int32_t _groupId, std::shared_ptr<dev::ledger::LedgerManager> ledgerManager);
                 std::string createCrossTransactions(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, std::shared_ptr<dev::ledger::LedgerManager> ledgerManager);
                 std::string createCrossTransactions_HB(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, int32_t squId);
         };

@@ -1378,8 +1378,8 @@ std::string Rpc::sendRawTransaction(int _groupID, const std::string& _rlp,
                        << LOG_KV("groupID", _groupID) << LOG_KV("rlp", _rlp);
 #endif
 
-        RPC_LOG(INFO) << LOG_DESC("Rpc::sendRawTransaction(int _groupID, const std::string& _rlp, _notifyCallback")
-                      << LOG_KV("_rlp", _rlp);
+        RPC_LOG(INFO) << LOG_DESC("Rpc::sendRawTransaction(int _groupID, const std::string& _rlp, _notifyCallback");
+                    //   << LOG_KV("_rlp", _rlp);
 
         auto txPool = ledgerManager()->txPool(_groupID);
         // only check txPool here
@@ -1422,7 +1422,7 @@ std::string Rpc::sendRawTransaction(int _groupID, const std::string& _rlp,
         // calculate the keccak256 before submit into the transaction pool
         tx->hash();
         RPC_LOG(INFO) << LOG_DESC("将交易投递到交易池")
-                      << LOG_KV("signedData", _rlp)
+                    //   << LOG_KV("signedData", _rlp)
                       << LOG_KV("txhash", tx->hash())
                       << LOG_KV("tx_nonce", tx->nonce());
 
@@ -1436,9 +1436,9 @@ std::string Rpc::sendRawTransaction(int _groupID, const std::string& _rlp,
             checkRequest(_groupID);
             checkSyncStatus(_groupID);
             // 经测试，走这个
-            RPC_LOG(INFO)<<LOG_DESC("开始投递交易1");
+            // RPC_LOG(INFO)<<LOG_DESC("开始投递交易1");
             ret = txPool->submitTransactions(tx);
-            RPC_LOG(INFO)<<LOG_DESC("交易投递结束1");
+            // RPC_LOG(INFO)<<LOG_DESC("交易投递结束1");
             break;
         // the v2 submit transactions sync
         // and v3 submit transactions async

@@ -150,7 +150,7 @@ std::pair<h256, Address> TxPool::submitTransactions(dev::eth::Transaction::Ptr _
     ImportResult ret = import(_tx);
     if (ImportResult::Success == ret)
     {
-        TXPOOL_LOG(INFO) << LOG_DESC("交易提交成功");
+        // TXPOOL_LOG(INFO) << LOG_DESC("交易提交成功");
         return std::make_pair(_tx->hash(), toAddress(_tx->from(), _tx->nonce()));
     }
 
@@ -460,8 +460,8 @@ bool TxPool::insert(Transaction::Ptr _tx)
 
     _tx->original_hash = tx_hash; // 池子中保存的原始hash
 
-    TXPOOL_LOG(INFO) << LOG_DESC("insert tx")
-                     << LOG_KV("txHash", _tx->original_hash);
+    // TXPOOL_LOG(INFO) << LOG_DESC("insert tx")
+    //                  << LOG_KV("txHash", _tx->original_hash);
 
     return true;
 }

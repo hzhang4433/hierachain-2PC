@@ -75,8 +75,8 @@ evmc_bytes32 getStorage(
 evmc_storage_status setStorage(evmc_host_context* _context, const evmc_address* _addr,
     const evmc_bytes32* _key, const evmc_bytes32* _value)
 {
-    std::cout << "setStorage key = " << _key->bytes << std::endl;
-    std::cout << "setStorage value = " << _value->bytes << std::endl;
+    // std::cout << "setStorage key = " << _key->bytes << std::endl;
+    // std::cout << "setStorage value = " << _value->bytes << std::endl;
 
     auto& env = static_cast<EVMHostContext&>(*_context);
     if (!env.isPermitted())
@@ -88,14 +88,14 @@ evmc_storage_status setStorage(evmc_host_context* _context, const evmc_address* 
     u256 index = fromEvmC(*_key);
     u256 value = fromEvmC(*_value);
 
-    std::cout << "setStorage u256 index = " << index << std::endl;
-    std::cout << "setStorage u256 value = " << value << std::endl;
+    // std::cout << "setStorage u256 index = " << index << std::endl;
+    // std::cout << "setStorage u256 value = " << value << std::endl;
 
     u256 oldValue = env.store(index);
 
-    EXECUTIVE_LOG(INFO) << LOG_DESC("setStorage ") << LOG_KV("addr", addr);
-    EXECUTIVE_LOG(INFO) << LOG_DESC("setStorage ") << LOG_KV("index", index);
-    EXECUTIVE_LOG(INFO) << LOG_DESC("setStorage ") << LOG_KV("value", value);
+    // EXECUTIVE_LOG(INFO) << LOG_DESC("setStorage ") << LOG_KV("addr", addr);
+    // EXECUTIVE_LOG(INFO) << LOG_DESC("setStorage ") << LOG_KV("index", index);
+    // EXECUTIVE_LOG(INFO) << LOG_DESC("setStorage ") << LOG_KV("value", value);
 
     if (value == oldValue)
         return EVMC_STORAGE_UNCHANGED;

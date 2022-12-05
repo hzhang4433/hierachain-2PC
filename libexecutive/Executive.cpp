@@ -615,7 +615,7 @@ bool Executive::go()
             else
             {
                 EXECUTIVE_LOG(INFO) << LOG_DESC("发现调用合约交易......");
-                std::cout << "发现调用合约交易......" << std::endl;
+                // std::cout << "发现调用合约交易......" << std::endl;
                 auto mode = toRevision(m_ext->evmSchedule());
                 auto emvcMessage = getEVMCMessage();
                 auto ret = vm->exec(*m_ext, mode, emvcMessage.get(), m_ext->code().data(), m_ext->code().size());

@@ -43,7 +43,7 @@ class Sealer : public Worker, public std::enable_shared_from_this<Sealer>
 {
 public:
 
-    int transactionNum = 0;
+    // int transactionNum = 0;
 
     using Ptr = std::shared_ptr<Sealer>;
     /**
