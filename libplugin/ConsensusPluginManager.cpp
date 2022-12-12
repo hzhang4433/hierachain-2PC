@@ -375,16 +375,17 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
     if (commitMsgNum == 3) {
         PLUGIN_LOG(INFO) << LOG_DESC("释放锁m_crossTx2CommitMsgMutex in if()")
                          << LOG_KV("messageId", messageId);
-
+        
+        auto currentMessageId = current_candidate_tx_messageids->at(sourceShardId - 1);
         // ADD BY ZH -- 22.11.16
         // 考虑commit包集齐但跨片交易还没收到的情况：每个节点收到包的顺序不一致
         // 解决方案：将集齐的相关交易先进行存储，待对应交易收到后立马执行
         PLUGIN_LOG(INFO) << LOG_DESC("跨片交易提交包收齐")
                          << LOG_KV("packet messageId", messageId)
-                         << LOG_KV("current messageId", current_candidate_tx_messageids->at(sourceShardId - 1));
+                         << LOG_KV("current messageId", currentMessageId);
         
         //  如果收到的commit包的messageId不是当前待处理的最小messageId包，则存储
-        if (messageId > current_candidate_tx_messageids->at(sourceShardId - 1)) {
+        if (messageId > currentMessageId) {
             PLUGIN_LOG(INFO) << LOG_DESC("commit包集齐, 但相关跨片交易尚未收到, 存储")
                              << LOG_KV("messageId", messageId);
 

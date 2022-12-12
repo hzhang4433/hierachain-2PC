@@ -531,8 +531,8 @@ void deterministExecute::deterministExecuteTx() {
             
             
             PLUGIN_LOG(INFO) << LOG_DESC("队首元素messageID")
-                             << LOG_KV("messageId", txInfo.message_id)
-                             << LOG_KV("当前正在执行的messageID", current_candidate_tx_messageids->at(sourceShardId - 1));
+                             << LOG_KV("messageId", txInfo.message_id);
+                            //  << LOG_KV("当前正在执行的messageID", current_candidate_tx_messageids->at(sourceShardId - 1));
             
         }
 
@@ -1064,8 +1064,8 @@ void deterministExecute::tryToSendSubTxs() {
                                     << LOG_KV("messageId", messageID)
                                     << LOG_KV("destinShardID", shardID)
                                     << LOG_KV("internal_groupId", internal_groupId)
-                                    //  << LOG_KV("signedTxs", signedTxs)
-                                    << LOG_KV("stateAddress", stateAddress)
+                                    // << LOG_KV("signedTxs", signedTxs)
+                                    // << LOG_KV("stateAddress", stateAddress)
                                     << LOG_KV("crossTxHash", crossTxHash);
                 
                 // 将跨片子交易转发给相应的参与者分片
@@ -1400,14 +1400,7 @@ void deterministExecute::executeCrossTx() {
                 Transaction::Ptr tx = std::make_shared<Transaction>(
                         jsToBytes(signedTx, dev::OnFailed::Throw), CheckTransaction::Everything);
                 
-                // PLUGIN_LOG(INFO) << LOG_DESC("222")
-                //                  << LOG_KV("tx", toHex(tx->rlp()));
-                
-                // auto exec = dev::plugin::executiveContext->getExecutive();
-                // auto vm = dev::plugin::executiveContext->getExecutiveInstance();
-                // exec->setVM(vm);
                 dev::plugin::executiveContext->executeTransaction(exec, tx);
-                // dev::plugin::executiveContext->m_vminstance_pool.push(vm);
                 
                 if (executedTx % 500 == 0) {
                     PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx);
@@ -1417,7 +1410,8 @@ void deterministExecute::executeCrossTx() {
 
             dev::plugin::executiveContext->m_vminstance_pool.push(vm);
         } catch (std::exception& e) {
-            PLUGIN_LOG(INFO) << LOG_DESC("error!");
+            PLUGIN_LOG(INFO) << LOG_DESC("error message:")
+                             << boost::diagnostic_information(e);;
             exit(1);
         }
         
