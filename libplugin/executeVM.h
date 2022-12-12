@@ -69,13 +69,13 @@ namespace dev
                 std::queue<std::shared_ptr<dev::eth::EVMInterface>> m_vminstance_pool;
 
                 void executeTransaction(dev::executive::Executive::Ptr _e, eth::Transaction::Ptr tx) {
-                    PLUGIN_LOG(INFO) << LOG_DESC("xxxx");
+                    // PLUGIN_LOG(INFO) << LOG_DESC("xxxx");
                     _e->initialize(tx);
-                    PLUGIN_LOG(INFO) << LOG_DESC("yyyy");
+                    // PLUGIN_LOG(INFO) << LOG_DESC("yyyy");
                     if (!_e->execute()) {
                         _e->go();
                     }
-                    PLUGIN_LOG(INFO) << LOG_DESC("zzzz");
+                    // PLUGIN_LOG(INFO) << LOG_DESC("zzzz");
                     _e->finalize();
                 }
 

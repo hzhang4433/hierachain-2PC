@@ -58,10 +58,6 @@ public:
     // virtual ExecutiveContext::Ptr executeBlock(dev::eth::Block& block, BlockInfo const& parentBlockInfo, 
     //     dev::PROTOCOL_ID& m_group_protocolID, std::shared_ptr<dev::p2p::Service> m_group_service) = 0;
 
-    virtual void executeCrossTx(std::string keyReadwriteSet) = 0;
-
-    virtual void executeCandidateTx(std::string keyReadwriteSet) = 0;
-
     virtual dev::eth::TransactionReceipt::Ptr execute(dev::eth::Transaction::Ptr _t,
         dev::blockverifier::ExecutiveContext::Ptr executiveContext, dev::executive::Executive::Ptr executive) = 0;
 

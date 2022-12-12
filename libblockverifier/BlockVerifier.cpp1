@@ -21,7 +21,6 @@
 #include "BlockVerifier.h"
 #include "ExecutiveContext.h"
 #include "TxDAG.h"
-#include "libdevcore/Log.h"
 #include "libstorage/StorageException.h"
 #include "libstoragestate/StorageState.h"
 #include <libethcore/Exceptions.h>
@@ -31,11 +30,6 @@
 #include <tbb/parallel_for.h>
 #include <exception>
 #include <thread>
-#include <librpc/Common.h>
-#include <libsync/SyncMsgPacket.h>
-#include <libplugin/deterministExecute.h>
-#include <libplugin/Common.h>
-
 
 using namespace dev;
 using namespace std;
@@ -43,10 +37,6 @@ using namespace dev::eth;
 using namespace dev::blockverifier;
 using namespace dev::executive;
 using namespace dev::storage;
-using namespace dev::rpc;
-using namespace dev::plugin;
-using namespace dev::consensus;
-using namespace dev::p2p;
 
 ExecutiveContext::Ptr BlockVerifier::executeBlock(Block& block, BlockInfo const& parentBlockInfo)
 {
@@ -68,47 +58,7 @@ ExecutiveContext::Ptr BlockVerifier::executeBlock(Block& block, BlockInfo const&
     try
     {
         context = serialExecuteBlock(block, parentBlockInfo); // 交易全部串行执行
-        // if (g_BCOSConfig.version() >= RC2_VERSION && m_enableParallel)
-        // {
-        //     context = parallelExecuteBlock(block, parentBlockInfo);
-        // }
-        // else
-        // {
-        //     context = serialExecuteBlock(block, parentBlockInfo);
-        // }
-    }
-    catch (exception& e)
-    {
-        BLOCKVERIFIER_LOG(ERROR) << LOG_BADGE("executeBlock") << LOG_DESC("executeBlock exception")
-                                 << LOG_KV("blockNumber", block.blockHeader().number());
-        return nullptr;
-    }
-    m_executingNumber = block.blockHeader().number();
-    return context;
-}
 
-/*
-ExecutiveContext::Ptr BlockVerifier::executeBlock(Block& block, BlockInfo const& parentBlockInfo, 
-            dev::PROTOCOL_ID& m_group_protocolID, std::shared_ptr<dev::p2p::Service> m_group_service)
-{
-    // return nullptr prepare to exit when g_BCOSConfig.shouldExit is true
-    if (g_BCOSConfig.shouldExit)
-    {
-        return nullptr;
-    }
-    if (block.blockHeader().number() < m_executingNumber)
-    {
-        return nullptr;
-    }
-    std::lock_guard<std::mutex> l(m_executingMutex);
-    if (block.blockHeader().number() < m_executingNumber)
-    {
-        return nullptr;
-    }
-    ExecutiveContext::Ptr context = nullptr;
-    try
-    {
-        context = serialExecuteBlock(block, parentBlockInfo, m_group_protocolID, m_group_service); // 交易全部串行执行
         // if (g_BCOSConfig.version() >= RC2_VERSION && m_enableParallel)
         // {
         //     context = parallelExecuteBlock(block, parentBlockInfo);
@@ -131,168 +81,35 @@ ExecutiveContext::Ptr BlockVerifier::executeBlock(Block& block, BlockInfo const&
 ExecutiveContext::Ptr BlockVerifier::serialExecuteBlock(
     Block& block, BlockInfo const& parentBlockInfo)
 {
-    BLOCKVERIFIER_LOG(INFO) << LOG_DESC("executeBlock]Executing block")
-                            << LOG_KV("txNum", block.transactions()->size())
-                            << LOG_KV("num", block.blockHeader().number())
-                            << LOG_KV("hash", block.header().hash().abridged())
-                            << LOG_KV("height", block.header().number())
-                            << LOG_KV("receiptRoot", block.header().receiptsRoot())
-                            << LOG_KV("stateRoot", block.header().stateRoot())
-                            << LOG_KV("dbHash", block.header().dbHash())
-                            << LOG_KV("parentHash", parentBlockInfo.hash.abridged())
-                            << LOG_KV("parentNum", parentBlockInfo.number)
-                            << LOG_KV("parentStateRoot", parentBlockInfo.stateRoot);
+    // if(block.isFirstExecute) // 若该区块是第一次处理，对unExecutedTxNum进行初始化 ADD BY THB
+    // {
+    //     block.unExecutedTxNum = block.getTransactionSize();
+    //     block.isFirstExecute = false;
+    // }
+
+    // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("executeBlock]Executing block")
+    //                         << LOG_KV("txNum", block.transactions()->size())
+    //                         << LOG_KV("num", block.blockHeader().number())
+    //                         << LOG_KV("hash", block.header().hash().abridged())
+    //                         << LOG_KV("height", block.header().number())
+    //                         << LOG_KV("receiptRoot", block.header().receiptsRoot())
+    //                         << LOG_KV("stateRoot", block.header().stateRoot())
+    //                         << LOG_KV("dbHash", block.header().dbHash())
+    //                         << LOG_KV("parentHash", parentBlockInfo.hash.abridged())
+    //                         << LOG_KV("parentNum", parentBlockInfo.number)
+    //                         << LOG_KV("parentStateRoot", parentBlockInfo.stateRoot);
 
     uint64_t startTime = utcTime();
 
     ExecutiveContext::Ptr executiveContext = std::make_shared<ExecutiveContext>();
+    
     try
     {
-        m_executiveContextFactory->initExecutiveContext(
-            parentBlockInfo, parentBlockInfo.stateRoot, executiveContext);
-    }
-    catch (exception& e)
-    {
-        BLOCKVERIFIER_LOG(ERROR) << LOG_DESC("[executeBlock] Error during initExecutiveContext")
-                                 << LOG_KV("blkNum", block.blockHeader().number())
-                                 << LOG_KV("EINFO", boost::diagnostic_information(e));
-
-        BOOST_THROW_EXCEPTION(InvalidBlockWithBadStateOrReceipt()
-                              << errinfo_comment("Error during initExecutiveContext"));
-    }
-
-    BlockHeader tmpHeader = block.blockHeader();
-    block.clearAllReceipts();
-    block.resizeTransactionReceipt(block.transactions()->size());
-
-
-    BLOCKVERIFIER_LOG(DEBUG) << LOG_BADGE("executeBlock") << LOG_DESC("Init env takes")
-                             << LOG_KV("time(ms)", utcTime() - startTime)
-                             << LOG_KV("txNum", block.transactions()->size())
-                             << LOG_KV("num", block.blockHeader().number());
-    uint64_t pastTime = utcTime();
-
-    try
-    {
-        EnvInfo envInfo(block.blockHeader(), m_pNumberHash, 0);
-        envInfo.setPrecompiledEngine(executiveContext);
-        auto executive = createAndInitExecutive(executiveContext->getState(), envInfo);
-        for (size_t i = 0; i < block.transactions()->size(); i++)
-        {
-            auto& tx = (*block.transactions())[i];
-
-            // 检查交易hash, 根据std::vector<h256> subCrossTxsHash判断是否为跨片子交易
-            // dev::
-
-            TransactionReceipt::Ptr resultReceipt = execute(tx, executiveContext, executive);
-            block.setTransactionReceipt(i, resultReceipt);
-            executiveContext->getState()->commit();
-        }
-    }
-    catch (exception& e)
-    {
-        BLOCKVERIFIER_LOG(ERROR) << LOG_BADGE("executeBlock")
-                                 << LOG_DESC("Error during serial block execution")
-                                 << LOG_KV("blkNum", block.blockHeader().number())
-                                 << LOG_KV("EINFO", boost::diagnostic_information(e));
-
-        BOOST_THROW_EXCEPTION(
-            BlockExecutionFailed() << errinfo_comment("Error during serial block execution"));
-    }
-
-
-    BLOCKVERIFIER_LOG(DEBUG) << LOG_BADGE("executeBlock") << LOG_DESC("Run serial tx takes")
-                             << LOG_KV("time(ms)", utcTime() - pastTime)
-                             << LOG_KV("txNum", block.transactions()->size())
-                             << LOG_KV("num", block.blockHeader().number());
-
-    h256 stateRoot = executiveContext->getState()->rootHash();
-    // set stateRoot in receipts
-    if (g_BCOSConfig.version() >= V2_2_0)
-    {
-        // when support_version is lower than v2.2.0, doesn't setStateRootToAllReceipt
-        // enable_parallel=true can't be run with enable_parallel=false
-        block.setStateRootToAllReceipt(stateRoot);
-    }
-    block.updateSequenceReceiptGas();
-    block.calReceiptRoot();
-    block.header().setStateRoot(stateRoot);
-    if (dynamic_pointer_cast<storagestate::StorageState>(executiveContext->getState()))
-    {
-        block.header().setDBhash(stateRoot);
-    }
-    else
-    {
-        block.header().setDBhash(executiveContext->getMemoryTableFactory()->hash());
-    }
-
-    // if executeBlock is called by consensus module, no need to compare receiptRoot and stateRoot
-    // since origin value is empty if executeBlock is called by sync module, need to compare
-    // receiptRoot, stateRoot and dbHash
-    // Consensus module execute block, receiptRoot is empty, skip this judgment
-    // The sync module execute block, receiptRoot is not empty, need to compare BlockHeader
-    if (tmpHeader.receiptsRoot() != h256())
-    {
-        if (tmpHeader != block.blockHeader())
-        {
-            BLOCKVERIFIER_LOG(ERROR)
-                << "Invalid Block with bad stateRoot or receiptRoot or dbHash"
-                << LOG_KV("blkNum", block.blockHeader().number())
-                << LOG_KV("originHash", tmpHeader.hash().abridged())
-                << LOG_KV("curHash", block.header().hash().abridged())
-                << LOG_KV("orgReceipt", tmpHeader.receiptsRoot().abridged())
-                << LOG_KV("curRecepit", block.header().receiptsRoot().abridged())
-                << LOG_KV("orgTxRoot", tmpHeader.transactionsRoot().abridged())
-                << LOG_KV("curTxRoot", block.header().transactionsRoot().abridged())
-                << LOG_KV("orgState", tmpHeader.stateRoot().abridged())
-                << LOG_KV("curState", block.header().stateRoot().abridged())
-                << LOG_KV("orgDBHash", tmpHeader.dbHash().abridged())
-                << LOG_KV("curDBHash", block.header().dbHash().abridged());
-            BOOST_THROW_EXCEPTION(
-                InvalidBlockWithBadStateOrReceipt() << errinfo_comment(
-                    "Invalid Block with bad stateRoot or ReceiptRoot, orgBlockHash " +
-                    block.header().hash().abridged()));
-        }
-    }
-    BLOCKVERIFIER_LOG(DEBUG) << LOG_BADGE("executeBlock") << LOG_DESC("Execute block takes")
-                             << LOG_KV("time(ms)", utcTime() - startTime)
-                             << LOG_KV("txNum", block.transactions()->size())
-                             << LOG_KV("num", block.blockHeader().number())
-                             << LOG_KV("blockHash", block.headerHash())
-                             << LOG_KV("stateRoot", block.header().stateRoot())
-                             << LOG_KV("dbHash", block.header().dbHash())
-                             << LOG_KV("transactionRoot", block.transactionRoot())
-                             << LOG_KV("receiptRoot", block.receiptRoot());
-    return executiveContext;
-}
-*/
-
-ExecutiveContext::Ptr BlockVerifier::serialExecuteBlock(Block& block, BlockInfo const& parentBlockInfo)
-{
-    BLOCKVERIFIER_LOG(INFO) << LOG_DESC("executeBlock]Executing block")
-                            << LOG_KV("txNum", block.transactions()->size())
-                            << LOG_KV("num", block.blockHeader().number())
-                            << LOG_KV("hash", block.header().hash().abridged())
-                            << LOG_KV("height", block.header().number())
-                            << LOG_KV("receiptRoot", block.header().receiptsRoot())
-                            << LOG_KV("stateRoot", block.header().stateRoot())
-                            << LOG_KV("dbHash", block.header().dbHash())
-                            << LOG_KV("parentHash", parentBlockInfo.hash.abridged())
-                            << LOG_KV("parentNum", parentBlockInfo.number)
-                            << LOG_KV("parentStateRoot", parentBlockInfo.stateRoot);
-
-    uint64_t startTime = utcTime();
-    // 标记是否有交易立即被执行 -- ADD BY ZH
-    // bool flag = false;
-
-    ExecutiveContext::Ptr executiveContext = std::make_shared<ExecutiveContext>();
-    try
-    {
-        // m_executiveContextFactory->initExecutiveContext(
-        //     parentBlockInfo, parentBlockInfo.stateRoot, executiveContext);
         m_executiveContextFactory->initExecutiveContext(
             parentBlockInfo, h256(0), executiveContext);
-    
+
+        // m_executiveContextFactory->initExecutiveContext(
+        //     parentBlockInfo, h256(0), executiveContext);
     }
     catch (exception& e)
     {
@@ -308,7 +125,6 @@ ExecutiveContext::Ptr BlockVerifier::serialExecuteBlock(Block& block, BlockInfo 
     // block.clearAllReceipts();
     // block.resizeTransactionReceipt(block.transactions()->size());
 
-
     // BLOCKVERIFIER_LOG(DEBUG) << LOG_BADGE("executeBlock") << LOG_DESC("Init env takes")
     //                          << LOG_KV("time(ms)", utcTime() - startTime)
     //                          << LOG_KV("txNum", block.transactions()->size())
@@ -319,27 +135,116 @@ ExecutiveContext::Ptr BlockVerifier::serialExecuteBlock(Block& block, BlockInfo 
     // {
     //     EnvInfo envInfo(block.blockHeader(), m_pNumberHash, 0);
     //     envInfo.setPrecompiledEngine(executiveContext);
-    //     auto executive = createAndInitExecutive(executiveContext->getState(), envInfo);
-    //     // BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("sleeping...");
-    //     // sleep(10000);
-    //     // BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("sleeping over...");
+        // auto executive = createAndInitExecutive(executiveContext->getState(), envInfo);
 
+        // 交易全部不执行
+        // for (size_t i = 0; i < block.transactions()->size(); i++)
+        // {
+        //     auto& tx = (*block.transactions())[i];
+
+            //检查交易hash, 根据 dev::rpc::innertxhash2readwriteset 判断交易是否为片内交易
+            // 若交易的读写集没有被阻塞，那么交易可以立即执行，并将读写key放入阻塞队列，直到区块被提交key才可以出队列
+            //（读写集使用的场景是简单的读后写，例如A=A+1）
+
+            // dev::h256 tx_hash = tx->hash();
+
+            // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("正在执行部署合约交易...") << LOG_KV("block.blockHeader().number()", block.blockHeader().number());
+            // TransactionReceipt::Ptr resultReceipt = execute(tx, executiveContext, executive);
+            // block.setTransactionReceipt(i, resultReceipt);
+            // executiveContext->getState()->commit(); // 状态写缓存
+
+            // if(dev::rpc::innertxhash2readwriteset.count(tx_hash) != 0)
+            // {
+                // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("该交易为片内交易...");
+                // std::string rwkey = dev::rpc::innertxhash2readwriteset.at(tx_hash); // 提取交易读写集
+
+                // if(_blocked_tx_pool.locking_key->count(rwkey) != 0) // 读写key已经被其他区块阻塞，被阻塞的交易统一等某个区块被提交了之后再处理
+                // {
+                //     BLOCKVERIFIER_LOG(INFO) << LOG_DESC("读写集已被其他区块阻塞...");
+                //     int holding_tx_num = _blocked_tx_pool.locking_key->at(rwkey);
+                //     _blocked_tx_pool.locking_key->at(rwkey) = holding_tx_num + 1;
+
+                //     std::shared_ptr<dev::eth::Block> block_ptr = std::make_shared<dev::eth::Block>(block);
+                //     _blocked_tx_pool.insertIntraTx(tx, executiveContext, executive, rwkey, block_ptr);
+
+                //     if(block.m_blockLockedRwKey->count(rwkey) != 0)
+                //     {
+                //         int holding_tx_num = block.m_blockLockedRwKey->at(rwkey);
+                //         block.m_blockLockedRwKey->at(rwkey) = holding_tx_num + 1;
+                //     }
+                //     else
+                //     {
+                //         block.m_blockLockedRwKey->insert(std::make_pair(rwkey, 1));
+                //     }
+                // }
+                // else // 读写key还未被阻塞，交易可以执行，key被阻塞的次数加1，将交易缓存在读写集相对应的队列中
+                // {  
+                //    BLOCKVERIFIER_LOG(INFO) << LOG_DESC("正在执行片内交易...");
+                //    TransactionReceipt::Ptr resultReceipt = execute(tx, executiveContext, executive); 
+                //    block.setTransactionReceipt(i, resultReceipt);
+                //    executiveContext->getState()->commit(); // 状态写缓存
+                   
+                //    block.unExecutedTxNum--; // 未执行交易数目减1
+                //    BLOCKVERIFIER_LOG(INFO) << LOG_DESC("片内交易执行结束...");
+                // }
+            // }
+            // else if(dev::rpc::corsstxhash2transaction_info.count(tx_hash) != 0)
+            // {
+                // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("该交易为跨片交易，待处理...");
+                // std::string rwkey = dev::rpc::corsstxhash2transaction_info.at(tx_hash).readwrite_key; // 提取跨片子交易读写集
+
+                // if(_blocked_tx_pool.locking_key->count(rwkey) != 0)
+                // {
+                //     int holding_tx_num = _blocked_tx_pool.locking_key->at(rwkey);
+                //     _blocked_tx_pool.locking_key->at(rwkey) = holding_tx_num + 1;
+                // }
+                // else
+                // {
+                //    _blocked_tx_pool.locking_key->insert(std::make_pair(rwkey, 1));
+                // }
+
+                // if(block.m_blockLockedRwKey->count(rwkey) != 0)
+                // {
+                //     int holding_tx_num = block.m_blockLockedRwKey->at(rwkey);
+                //     block.m_blockLockedRwKey->at(rwkey) = holding_tx_num + 1;
+                // }
+                // else
+                // {
+                //     block.m_blockLockedRwKey->insert(std::make_pair(rwkey, 1));
+                // }
+
+                // // 对跨片交易进行缓存，先假设收到的交易顺序是正确的，收到交易后直接往candidate_tx_queues中插入
+                // std::shared_ptr<dev::eth::Block> block_ptr = std::make_shared<dev::eth::Block>(block);
+                // _blocked_tx_pool.insert_candidate_cs_tx(tx, executiveContext, executive, block_ptr);
+            // }
+            // else // 为部署合约交易，执行，不访问读写集
+            // {
+                // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("正在执行部署合约交易...") << LOG_KV("block.blockHeader().number()", block.blockHeader().number());
+                // TransactionReceipt::Ptr resultReceipt = execute(tx, executiveContext, executive);
+                // block.setTransactionReceipt(i, resultReceipt);
+                // executiveContext->getState()->commit(); // 状态写缓存
+                // block.unExecutedTxNum--; // 未执行交易数目减1
+
+                // dev::consensus::deploycontractBlock.insert(std::make_pair(block.blockHeader().number(), 1));
+            // }
+        // }
+
+        // blockExecuteContent _blockExecuteContent{executiveContext, executive};
+        // cached_executeContents.insert(std::make_pair(block.blockHeader().number(), _blockExecuteContent)); // 缓存区块执行变量
+        // ENGINE_LOG(INFO) << LOG_KV("BlockVerifer.block->blockHeader().number()", block.blockHeader().number());
+
+        // if(block.unExecutedTxNum == 0)
+        // {
+        //     BLOCKVERIFIER_LOG(INFO) << LOG_DESC("区块内所有的交易执行完毕");
+        // }
+        // else // 若区块内存在未执行的交易，则将交易进行缓存
+        // {
+        //     BLOCKVERIFIER_LOG(INFO) << LOG_DESC("区块内有交易被阻塞，区块放入缓存区块队列");
+        //     std::shared_ptr<dev::eth::Block> block_ptr = std::make_shared<dev::eth::Block>(block);
+        //     dev::consensus::cachedBlocks.push(block_ptr);
+        //     // return nullptr; // 交易未执行完，返回 nullptr // ADD BY THB
+        // }
         
-    //     /*
-    //     blockExecuteContent _blockExecuteContent{executiveContext, executive};
-    //     cached_executeContents.insert(std::make_pair(block.blockHeader().number(), _blockExecuteContent)); // 缓存区块执行变量
-    //     ENGINE_LOG(INFO) << LOG_KV("BlockVerifer.block->blockHeader().number()", block.blockHeader().number());
-    //     */
-        
-    //     for (size_t i = 0; i < block.transactions()->size(); i++)
-    //     {
-    //         auto& tx = (*block.transactions())[i];
-    //         // auto blockInfo = crossTx->at(tx->hash().abridged());
-    //         BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("in serialExecuteBlock")
-    //                                 << LOG_KV("height", block.header().number())
-    //                                 << LOG_KV("tx_hash", tx->hash());
-    //                                 // << LOG_KV("messageId", blockInfo.message_id);
-    //     }
     // }
     // catch (exception& e)
     // {
@@ -352,86 +257,74 @@ ExecutiveContext::Ptr BlockVerifier::serialExecuteBlock(Block& block, BlockInfo 
     //         BlockExecutionFailed() << errinfo_comment("Error during serial block execution"));
     // }
 
-
+    
     // BLOCKVERIFIER_LOG(DEBUG) << LOG_BADGE("executeBlock") << LOG_DESC("Run serial tx takes")
     //                          << LOG_KV("time(ms)", utcTime() - pastTime)
     //                          << LOG_KV("txNum", block.transactions()->size())
     //                          << LOG_KV("num", block.blockHeader().number());
 
-    /*
-    if (flag) { // 若有交易被执行，则设置回执与状态根 ==> 后续改为只有等所有交易都执行并提交再设置？
-        h256 stateRoot = executiveContext->getState()->rootHash();
+    // if(block.unExecutedTxNum < block.getTransactionSize()) // 若第一次处理区块有交易顺利执行，则写缓存
+    // {
+        // h256 stateRoot = executiveContext->getState()->rootHash();
+        // // set stateRoot in receipts
+        // if (g_BCOSConfig.version() >= V2_2_0)
+        // {
+        //     // when support_version is lower than v2.2.0, doesn't setStateRootToAllReceipt
+        //     // enable_parallel=true can't be run with enable_parallel=false
+        //     block.setStateRootToAllReceipt(stateRoot);
+        // }
+        // block.updateSequenceReceiptGas();
+        // block.calReceiptRoot();
+        // block.header().setStateRoot(stateRoot);
+        // if (dynamic_pointer_cast<storagestate::StorageState>(executiveContext->getState()))
+        // {
+        //     block.header().setDBhash(stateRoot);
+        // }
+        // else
+        // {
+        //     block.header().setDBhash(executiveContext->getMemoryTableFactory()->hash());
+        // }
 
-        BLOCKVERIFIER_LOG(INFO) << LOG_KV("stateRoot", stateRoot)
-                                << LOG_KV("getState", executiveContext->getState());
+        // // if executeBlock is called by consensus module, no need to compare receiptRoot and stateRoot
+        // // since origin value is empty if executeBlock is called by sync module, need to compare
+        // // receiptRoot, stateRoot and dbHash
+        // // Consensus module execute block, receiptRoot is empty, skip this judgment
+        // // The sync module execute block, receiptRoot is not empty, need to compare BlockHeader
 
-        // set stateRoot in receipts
-        if (g_BCOSConfig.version() >= V2_2_0)
-        {
-            // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 1...");
-            // when support_version is lower than v2.2.0, doesn't setStateRootToAllReceipt
-            // enable_parallel=true can't be run with enable_parallel=false
-            block.setStateRootToAllReceipt(stateRoot);
-        }
-        // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 2...");
-        block.updateSequenceReceiptGas();
-        // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 3...");
-        block.calReceiptRoot();
-        // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 4...");
-        block.header().setStateRoot(stateRoot);
-        // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 5...");
-        if (dynamic_pointer_cast<storagestate::StorageState>(executiveContext->getState()))
-        {
-            BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 6...");
-            block.header().setDBhash(stateRoot);
-        }
-        else
-        {
-            BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 7...");
-            block.header().setDBhash(executiveContext->getMemoryTableFactory()->hash());
-        }
-        // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("testing 8...");
+        // if (tmpHeader.receiptsRoot() != h256())
+        // {
+        //     if (tmpHeader != block.blockHeader())
+        //     {
+        //         BLOCKVERIFIER_LOG(ERROR)
+        //             << "Invalid Block with bad stateRoot or receiptRoot or dbHash"
+        //             << LOG_KV("blkNum", block.blockHeader().number())
+        //             << LOG_KV("originHash", tmpHeader.hash().abridged())
+        //             << LOG_KV("curHash", block.header().hash().abridged())
+        //             << LOG_KV("orgReceipt", tmpHeader.receiptsRoot().abridged())
+        //             << LOG_KV("curRecepit", block.header().receiptsRoot().abridged())
+        //             << LOG_KV("orgTxRoot", tmpHeader.transactionsRoot().abridged())
+        //             << LOG_KV("curTxRoot", block.header().transactionsRoot().abridged())
+        //             << LOG_KV("orgState", tmpHeader.stateRoot().abridged())
+        //             << LOG_KV("curState", block.header().stateRoot().abridged())
+        //             << LOG_KV("orgDBHash", tmpHeader.dbHash().abridged())
+        //             << LOG_KV("curDBHash", block.header().dbHash().abridged());
+        //         BOOST_THROW_EXCEPTION(
+        //             InvalidBlockWithBadStateOrReceipt() << errinfo_comment(
+        //                 "Invalid Block with bad stateRoot or ReceiptRoot, orgBlockHash " +
+        //                 block.header().hash().abridged()));
+        //     }
+        // }
+        // BLOCKVERIFIER_LOG(DEBUG) << LOG_BADGE("executeBlock") << LOG_DESC("Execute block takes")
+        //                             << LOG_KV("time(ms)", utcTime() - startTime)
+        //                             << LOG_KV("txNum", block.transactions()->size())
+        //                             << LOG_KV("num", block.blockHeader().number())
+        //                             << LOG_KV("blockHash", block.headerHash())
+        //                             << LOG_KV("stateRoot", block.header().stateRoot())
+        //                             << LOG_KV("dbHash", block.header().dbHash())
+        //                             << LOG_KV("transactionRoot", block.transactionRoot())
+        //                             << LOG_KV("receiptRoot", block.receiptRoot());
+    // }
 
-        // if executeBlock is called by consensus module, no need to compare receiptRoot and stateRoot
-        // since origin value is empty if executeBlock is called by sync module, need to compare
-        // receiptRoot, stateRoot and dbHash
-        // Consensus module execute block, receiptRoot is empty, skip this judgment
-        // The sync module execute block, receiptRoot is not empty, need to compare BlockHeader
-        if (tmpHeader.receiptsRoot() != h256())
-        {
-            if (tmpHeader != block.blockHeader())
-            {
-                BLOCKVERIFIER_LOG(ERROR)
-                    << "Invalid Block with bad stateRoot or receiptRoot or dbHash"
-                    << LOG_KV("blkNum", block.blockHeader().number())
-                    << LOG_KV("originHash", tmpHeader.hash().abridged())
-                    << LOG_KV("curHash", block.header().hash().abridged())
-                    << LOG_KV("orgReceipt", tmpHeader.receiptsRoot().abridged())
-                    << LOG_KV("curRecepit", block.header().receiptsRoot().abridged())
-                    << LOG_KV("orgTxRoot", tmpHeader.transactionsRoot().abridged())
-                    << LOG_KV("curTxRoot", block.header().transactionsRoot().abridged())
-                    << LOG_KV("orgState", tmpHeader.stateRoot().abridged())
-                    << LOG_KV("curState", block.header().stateRoot().abridged())
-                    << LOG_KV("orgDBHash", tmpHeader.dbHash().abridged())
-                    << LOG_KV("curDBHash", block.header().dbHash().abridged());
-                BOOST_THROW_EXCEPTION(
-                    InvalidBlockWithBadStateOrReceipt() << errinfo_comment(
-                        "Invalid Block with bad stateRoot or ReceiptRoot, orgBlockHash " +
-                        block.header().hash().abridged()));
-            }
-        }
-    }
-    
-    BLOCKVERIFIER_LOG(INFO) << LOG_BADGE("executeBlock") << LOG_DESC("Execute block takes")
-                             << LOG_KV("time(ms)", utcTime() - startTime)
-                             << LOG_KV("txNum", block.transactions()->size())
-                             << LOG_KV("num", block.blockHeader().number())
-                             << LOG_KV("blockHash", block.headerHash())
-                             << LOG_KV("stateRoot", block.header().stateRoot())
-                             << LOG_KV("dbHash", block.header().dbHash())
-                             << LOG_KV("transactionRoot", block.transactionRoot())
-                             << LOG_KV("receiptRoot", block.receiptRoot());
-    */
     return executiveContext;
 }
 
@@ -609,7 +502,9 @@ ExecutiveContext::Ptr BlockVerifier::parallelExecuteBlock(
     return executiveContext;
 }
 
-TransactionReceipt::Ptr BlockVerifier::executeTransaction(const BlockHeader& blockHeader, dev::eth::Transaction::Ptr _t)
+
+TransactionReceipt::Ptr BlockVerifier::executeTransaction(
+    const BlockHeader& blockHeader, dev::eth::Transaction::Ptr _t)
 {
     ExecutiveContext::Ptr executiveContext = std::make_shared<ExecutiveContext>();
     BlockInfo blockInfo{blockHeader.hash(), blockHeader.number(), blockHeader.stateRoot()};
@@ -624,9 +519,11 @@ TransactionReceipt::Ptr BlockVerifier::executeTransaction(const BlockHeader& blo
             << LOG_DESC("[executeTransaction] Error during execute initExecutiveContext")
             << LOG_KV("errorMsg", boost::diagnostic_information(e));
     }
+
     EnvInfo envInfo(blockHeader, m_pNumberHash, 0);
     envInfo.setPrecompiledEngine(executiveContext);
     auto executive = createAndInitExecutive(executiveContext->getState(), envInfo);
+
     // only Rpc::call will use executeTransaction, RPC do catch exception
     return execute(_t, executiveContext, executive);
 }
@@ -672,3 +569,82 @@ dev::executive::Executive::Ptr BlockVerifier::createAndInitExecutive(
 {
     return std::make_shared<Executive>(_s, _envInfo, m_evmFlags & EVMFlags::FreeStorageGas);
 }
+
+// void blocked_tx_pool::insertIntraTx(dev::eth::Transaction::Ptr _tx, ExecutiveContext::Ptr executiveContext, dev::executive::Executive::Ptr executive, std::string& rwkey, std::shared_ptr<dev::eth::Block> block)
+// {
+//     BLOCKVERIFIER_LOG(INFO) << LOG_DESC("开始缓存交易...");
+//     executableTransaction tx{_tx, executiveContext, executive, block};
+//     auto tx_ptr = std::make_shared<dev::blockverifier::executableTransaction>(tx);
+//     candidate_tx_queues->at(rwkey).queue.push(tx_ptr);
+// }
+
+
+// void blocked_tx_pool::insert_candidate_cs_tx(dev::eth::Transaction::Ptr _subtx, ExecutiveContext::Ptr executiveContext, dev::executive::Executive::Ptr executive, std::shared_ptr<dev::eth::Block> block) // 放在RPC模块进行处理
+// {
+//     auto transaction_info = dev::rpc::corsstxhash2transaction_info.at(_subtx->hash());    
+//     std::string rw_keys_str = transaction_info.readwrite_key;
+
+//     std::vector<std::string> readwrite_keys;
+//     bool ret = split(rw_keys_str, readwrite_keys, "_");
+//     std::string readwrite_key = readwrite_keys[0];
+
+//     // 判断candidate_tx_queues中是否有readwrite_key的队列，因为之前可能没有
+//     // 当前片内交易的读写集（假设跨片交易的第一个读写集是当前片的读写集）, 定位读写集 readwrite_key 的交易缓存队列，_subtx 插入到 candidate_cs_tx中，更新上锁的读写集  
+//     if(candidate_tx_queues->count(readwrite_key) == 0)
+//     {
+//         candidate_tx_queue tx_queue { readwrite_key };
+//         executableTransaction tx{_subtx, executiveContext, executive, block};
+//         auto tx_ptr = std::make_shared<dev::blockverifier::executableTransaction>(tx);
+
+//         tx_queue.queue.push(tx_ptr);
+//         candidate_tx_queues->insert(std::make_pair(readwrite_key, tx_queue));
+//     }
+//     else
+//     {
+//         executableTransaction tx{_subtx, executiveContext, executive, block};
+//         auto tx_ptr = std::make_shared<dev::blockverifier::executableTransaction>(tx);
+//         candidate_tx_queues->at(readwrite_key).queue.push(tx_ptr);
+//     }
+    
+//     // 更新 cs_txhash2blockedrwset
+//     cs_txhash2blockedrwset->insert(std::make_pair(transaction_info.cross_tx_hash, readwrite_key));
+
+//     // 更新 received_rwset_num
+//     std::string tx_hash = transaction_info.cross_tx_hash;
+//     received_rwset_num->insert(std::make_pair(tx_hash, 0)); // 未执行前，已经收到的读写集个数设置为0
+
+//     // 在 cs_readwriteset_num 中添加新的内容
+//     int rwsetnum = readwrite_keys.size();
+//     cs_rwset_num->insert(std::make_pair(tx_hash, rwsetnum));
+
+//     // 检查 cached_cs_tx 中后继 _message_id + 1 的交易是否已经到达, 若已经到达，也插入到 candidate_cs_tx 中，更新上锁的读写集
+//     // 暂时 不考虑 乱序问题，因此这部分先跳过.... 稍后补充
+// }
+
+// bool blocked_tx_pool::split(const std::string &str, std::vector<std::string> &ret, std::string sep)  // 工具函数
+// {
+//     if (str.empty()) {
+//         return false;
+//     }
+
+//     std::string temp;
+//     std::string::size_type begin = str.find_first_not_of(sep);
+//     std::string::size_type pos = 0;
+
+//     while (begin != std::string::npos) {
+//         pos = str.find(sep, begin);
+//         if (pos != std::string::npos) {
+//             temp = str.substr(begin, pos - begin);
+//             begin = pos + sep.length();
+//         } else {
+//             temp = str.substr(begin);
+//             begin = pos;
+//         }
+
+//         if (!temp.empty()) {
+//             ret.push_back(temp);
+//             temp.clear();
+//         }
+//     }
+//     return true; 
+// }

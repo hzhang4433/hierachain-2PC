@@ -27,8 +27,8 @@ class ExecuteVMTestFixture;
         unsigned long message_id;
         std::string cross_tx_hash;
         dev::eth::Transaction::Ptr tx;
-        std::string readwrite_key; // 多个读写集时候中间用'|'号分隔开，为了便于实验，先假设所有的片内交易只访问片内的一个读写集key，跨片交易的读写集可能有多个
-        // 子交易句柄，这里先假设有了，拿到了就可以执行
+        // 多个读写集时候中间用'_'号分隔开，为了便于实验，先假设所有的片内交易只访问片内的一个读写集key，跨片交易的读写集可能有多个
+        std::string readwrite_key;
     };
 
     struct executableTransaction
@@ -120,7 +120,7 @@ class ExecuteVMTestFixture;
     // 22.11.8
     // extern std::map<h256, transaction> innerTx;
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> innerTx;
-    extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> crossTx2StateAddress;
+    // extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> crossTx2StateAddress;
 		
 
     extern std::map<std::string, std::string> txRWSet;

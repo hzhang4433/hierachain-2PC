@@ -48,8 +48,8 @@ evmc_bytes32 getStorage(
     evmc_host_context* _context, const evmc_address* _addr, const evmc_bytes32* _key)
 {
     // evmc_bytes32 是 unsigned char数组类型
-    std::cout << "getStorage key = "  << _key->bytes << std::endl;
-    std::cout << "getStorage addr = " << _addr->bytes << std::endl;
+    // std::cout << "getStorage key = "  << _key->bytes << std::endl;
+    // std::cout << "getStorage addr = " << _addr->bytes << std::endl;
 
     auto& env = static_cast<EVMHostContext&>(*_context);
 
@@ -60,15 +60,15 @@ evmc_bytes32 getStorage(
     assert(fromEvmC(*_addr) == env.myAddress());
     u256 key = fromEvmC(*_key);
 
-    std::cout << "Storage u256 key = " << key << std::endl;
+    // std::cout << "Storage u256 key = " << key << std::endl;
 
     // ADD BY ZH
-    EXECUTIVE_LOG(INFO) << LOG_DESC("getStorage ") << LOG_KV("addr", addr);
-    EXECUTIVE_LOG(INFO) << LOG_DESC("getStorage ") << LOG_KV("key", key);
-    EXECUTIVE_LOG(INFO) << LOG_DESC("getStorage ") << LOG_KV("value", env.store(key));
+    // EXECUTIVE_LOG(INFO) << LOG_DESC("getStorage ") << LOG_KV("addr", addr);
+    // EXECUTIVE_LOG(INFO) << LOG_DESC("getStorage ") << LOG_KV("key", key);
+    // EXECUTIVE_LOG(INFO) << LOG_DESC("getStorage ") << LOG_KV("value", env.store(key));
 
-    EXECUTIVE_LOG(INFO) << LOG_KV("Storage u256 key", key)
-                        << LOG_KV("env.store(key)", env.store(key));
+    // EXECUTIVE_LOG(INFO) << LOG_KV("Storage u256 key", key)
+    //                     << LOG_KV("env.store(key)", env.store(key));
     return toEvmC(env.store(key));
 }
 

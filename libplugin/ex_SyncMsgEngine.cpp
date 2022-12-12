@@ -20,7 +20,7 @@ void ex_SyncMsgEngine::messageHandler(dev::p2p::NetworkException _e, std::shared
 {
     try
     {
-        std::cout<< "tanghaibo 收到" << std::endl;
+        // std::cout<< "tanghaibo 收到" << std::endl;
 
         SyncMsgPacket::Ptr packet = std::make_shared<SyncMsgPacket>();
         if(!packet->decode(_session, _msg))

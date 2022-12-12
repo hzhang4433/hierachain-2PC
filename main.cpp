@@ -163,9 +163,9 @@ namespace dev {
         std::mutex m_innerTxMutex;
 
         // 跨片交易映射至对应状态集
-        std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> crossTx2StateAddress = 
-                                std::make_shared<tbb::concurrent_unordered_map<std::string, std::string>>();
-        std::mutex m_crossTx2AddressMutex;
+        // std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> crossTx2StateAddress = 
+        //                         std::make_shared<tbb::concurrent_unordered_map<std::string, std::string>>();
+        // std::mutex m_crossTx2AddressMutex;
         
         // ADD ON 22.11.16
         // 落后的跨片交易
@@ -494,6 +494,195 @@ class CrossShardTest
         }
 };
 
+/*
+status:
+    0 ==> 一次生成全部交易
+    1 ==> 生成部分交易，这次为第一次
+    2 ==> 生成部分交易，这次为中间一次
+    3 ==> 生成部分交易，这次为最后一次
+*/ 
+void createInnerTransaction(int groupId, shared_ptr<dev::ledger::LedgerManager> ledgerManager, int txNum, 
+                            string fileName, int status, transactionInjectionTest _injectionTest) 
+{
+    // 批量生产片内交易
+    cout << "createInnerTransaction, txNum = " << txNum << ", status = " << status << endl;
+    std::string res;
+    for (int i =0 ; i < txNum; i++) {
+        auto tx = _injectionTest.createInnerTransactions(groupId, ledgerManager);
+        if (i % 100 == 0) { // 100笔写一次文件
+            if ((status == 0 || status == 1) && i == 0) {
+                res = "[\"" + tx + "\"";
+            } else {
+                ofstream out;
+                out.open(fileName, ios::in|ios::out|ios::app);
+                if (out.is_open()) {
+                    out << res;
+                    out.close();
+                    res = "";
+                }
+                res = ",\"" + tx + "\"";
+            }
+        } else {
+            res = res + ",\"" + tx + "\"";
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds((1)));
+    }
+    
+    ofstream out;
+    out.open(fileName, ios::in|ios::out|ios::app);
+    if (out.is_open()) {
+        if (status == 0 || status == 3) {
+            res += "]";
+        }
+        out << res;
+        out.close();
+    }
+    
+}
+
+void createCrossTransaction(int cor, int sub1, int sub2, shared_ptr<dev::ledger::LedgerManager> ledgerManager, 
+                            int txNum, string fileName, int status, transactionInjectionTest _injectionTest) 
+{    
+    // 批量生产跨片交易
+    cout << "createCrossTransaction, txNum = " << txNum << ", status = " << status << endl;
+
+    std::string res;
+    for (int i =0 ; i < txNum; i++) {
+        auto tx = _injectionTest.createCrossTransactions(cor, sub1, sub2, ledgerManager);
+        if (i % 100 == 0) { // 100笔写一次文件
+            if ((status == 0 || status == 1) && i == 0) {
+                res = "[\"" + tx + "\"";
+            } else {
+                ofstream out;
+                out.open(fileName, ios::in|ios::out|ios::app);
+                if (out.is_open()) {
+                    out << res;
+                    out.close();
+                    res = "";
+                }
+                res = ",\"" + tx + "\"";
+            }
+        } else {
+            res = res + ",\"" + tx + "\"";
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds((1)));
+    }
+
+    ofstream out;
+    out.open(fileName, ios::in|ios::out|ios::app);
+    if (out.is_open()) {
+        if (status == 0 || status == 3) {
+            res += "]";
+        }
+        out << res;
+        out.close();
+    }
+    
+}
+
+void createDataSet(int cor, int sub1, int sub2, std::shared_ptr<dev::ledger::LedgerManager> ledgerManager,
+                   int txNum, int percent, std::shared_ptr<dev::rpc::Rpc> rpcService) {
+    // 计算跨片交易及各分片的片内交易数
+    string fileName;
+    int crossTxNum = (txNum * percent) / 100;
+    int innerTxNum = (txNum - crossTxNum) / 3;
+    int remain = (txNum - crossTxNum) % 3;
+    transactionInjectionTest _injectionTest(rpcService, 1);
+
+    if (percent == 20) {
+        fileName = "workload1.json";
+    } else if (percent == 80) {
+        fileName = "workload2.json";
+    } else if (percent == 100) {
+        fileName = "workload3.json";
+    }
+
+    // 生成子分片1的片内交易
+    if(innerTxNum != 0 && dev::consensus::internal_groupId == sub1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(sub1 - 1)))
+    {
+        createInnerTransaction(sub1, ledgerManager, innerTxNum, fileName, 0, _injectionTest);
+    }
+
+    // 生成子分片2的片内交易
+    if(innerTxNum != 0 && dev::consensus::internal_groupId == sub2 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(sub2 - 1)))
+    {
+        createInnerTransaction(sub2, ledgerManager, innerTxNum, fileName, 0, _injectionTest);
+    }
+
+    // 生成协调者分片的片内交易和跨片交易
+    cout << "fileName:" << fileName << endl;
+    if(dev::consensus::internal_groupId == cor && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(cor - 1)))
+    {
+        int nowInnerNum = innerTxNum + remain;
+        int nowCrossNum = crossTxNum;
+        if (nowInnerNum == 0) { //纯跨片交易 直接生成返回
+            createCrossTransaction(cor, sub1, sub2, ledgerManager, nowCrossNum, fileName, 0, _injectionTest);
+            return;
+        }
+        bool firstTime = true;
+        while(nowInnerNum != 0 || nowCrossNum != 0) {
+            if (nowInnerNum == 0) {
+                createCrossTransaction(cor, sub1, sub2, ledgerManager, nowCrossNum, fileName, 3, _injectionTest);
+                break;
+            } else if (nowCrossNum == 0) {
+                createInnerTransaction(cor, ledgerManager, nowInnerNum, fileName, 3, _injectionTest);
+                break;
+            }
+            // srand((unsigned)time(NULL));
+            int flag = rand() % 2;
+            if (flag) { // 为1 生成跨片交易
+                cout << "createDataSet 111" << endl;
+                if (nowCrossNum < 100) {
+                    // cout << "createDataSet 222" << endl;
+                    if (firstTime == true) {
+                        // cout << "进来了 firstTime = true" << endl; 
+                        createCrossTransaction(cor, sub1, sub2, ledgerManager, nowCrossNum, fileName, 1, _injectionTest);
+                        firstTime = false;
+                    } else {
+                        createCrossTransaction(cor, sub1, sub2, ledgerManager, nowCrossNum, fileName, 2, _injectionTest);
+                    }
+                    nowCrossNum = 0;
+                } else {
+                    // cout << "createDataSet 333" << endl;
+                    cout << "firstTime:" << firstTime << endl;
+                    if (firstTime == true) { // 第一次
+                        // cout << "进来了 firstTime = true" << endl; 
+                        createCrossTransaction(cor, sub1, sub2, ledgerManager, 100, fileName, 1, _injectionTest);
+                        firstTime = false;
+                    } else {
+                        createCrossTransaction(cor, sub1, sub2, ledgerManager, 100, fileName, 2, _injectionTest);
+                    }
+                    nowCrossNum -= 100;
+                }
+            } else { // 为0 生成片内交易
+                cout << "createDataSet 444" << endl;
+                if (nowInnerNum < 100) {
+                    // cout << "createDataSet 555" << endl;
+                    if (firstTime == true) {
+                        // cout << "进来了 firstTime = true" << endl; 
+                        createInnerTransaction(cor, ledgerManager, nowInnerNum, fileName, 1, _injectionTest);
+                        firstTime = false;
+                    } else {
+                        createInnerTransaction(cor, ledgerManager, nowInnerNum, fileName, 2, _injectionTest);
+                    }
+                    nowInnerNum = 0;
+                } else {
+                    // cout << "createDataSet 666" << endl;
+                    // cout << "firstTime:" << firstTime << endl;
+                    if (firstTime == true) {
+                        // cout << "进来了 firstTime = true" << endl; 
+                        createInnerTransaction(cor, ledgerManager, 100, fileName, 1, _injectionTest);
+                        firstTime = false;
+                    } else {
+                        createInnerTransaction(cor, ledgerManager, 100, fileName, 2, _injectionTest);
+                    }
+                    nowInnerNum -= 100;
+                }
+            }
+        }
+    }
+}
+
 int main(){
 
     dev::consensus::SHARDNUM = 3; // 初始化分片数目
@@ -612,15 +801,15 @@ int main(){
     // startprocessThread();
     std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
-
     // 测试发送交易（分片1的node1向本分片1发送一笔片内交易
     if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0)))
     {
         PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
-        transactionInjectionTest _injectionTest(rpcService, 1);
+        transactionInjectionTest _injectionTest(rpcService, 1, ledgerManager);
         _injectionTest.deployContractTransaction("./deploy.json", 1);
-        // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         // _injectionTest.injectionTransactions("./signedtxs.json", 1);
+        _injectionTest.injectionTransactions("./workload1.json", 1);
 
         // std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         // _injectionTest.createInnerTransactions(1, ledgerManager);
@@ -663,10 +852,11 @@ int main(){
     if(dev::consensus::internal_groupId == 2 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(1)))
     {
         PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
-        transactionInjectionTest _injectionTest(rpcService, 2);
+        transactionInjectionTest _injectionTest(rpcService, 2, ledgerManager);
         _injectionTest.deployContractTransaction("./deploy.json", 2);
-        // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         // _injectionTest.injectionTransactions("./signedtxs.json", 2);
+        _injectionTest.injectionTransactions("./workload1.json", 2);
 
         // std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         // _injectionTest.createInnerTransactions(2, ledgerManager);
@@ -677,11 +867,12 @@ int main(){
     if(dev::consensus::internal_groupId == 3 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(2)))
     {
         PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
-        transactionInjectionTest _injectionTest(rpcService, 3);
+        transactionInjectionTest _injectionTest(rpcService, 3, ledgerManager);
         _injectionTest.deployContractTransaction("./deploy.json", 3);
         std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         // _injectionTest.injectionTransactions("./signedtxs.json", 3);
-        _injectionTest.injectionTransactions("./crossTx.json", 3);
+        // _injectionTest.injectionTransactions("./crossTx.json", 3);
+        _injectionTest.injectionTransactions("./workload1.json", 3);
 
         // std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         // _injectionTest.createInnerTransactions(3, ledgerManager);
@@ -720,35 +911,9 @@ int main(){
         */
     }
 
-    /*
-    // 测试发送交易（分片3的头节点向本分片发送一笔跨片交易
-    if(dev::consensus::internal_groupId == 3 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(2)))
-    {
-        PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdstr", nodeid);
-        transactionInjectionTest _injectionTest(rpcService, dev::consensus::internal_groupId);
-        // _injectionTest.deployContractTransaction("./deploy.json", 1);
-        _injectionTest.injectionTransactions("./signedtxs.json", dev::consensus::internal_groupId);
-    }
-    */
-
-    // // 启动后等待客户端部署合约，将合约贴在文件后，输入回车符，程序继续往下运行
-    // int flag;
-    // cin >> flag;
-    // std::cout << "开始两阶段提交跨片交易性能测试..." << endl;
-
-    // CrossShardTest cst(rpcService, groupId, syncs);
-    // cst.InjectTxRead_Write_Sets(); // 导入所有跨片交易读写集
-    // cst.start(); // 启动 receive 和 work thread
-
-    // cst.InjectTxDAddr();
-    // if(internal_groupId == 1) // 群组1导入所有待发送的交易RLP码
-    // {
-    //     cst.InjectTxRLP();
-    //     cst.InjextConAddress2txrlps(); // 导入跨片子交易
-    //     std::cout << "测试交易导入成功..." << std::endl;
-    //     std::cout << "准备发送交易..."<< std::endl;
-    //     cst.sendTx(); // 向群组二节点发送交易（其实交易应该生成片2的交易，coordinator只是共识保存）
-    // }
+    // createDataSet(3, 1, 2, ledgerManager, 150000, 20, rpcService);
+    // createDataSet(3, 1, 2, ledgerManager, 150000, 80, rpcService);
+    // createDataSet(3, 1, 2, ledgerManager, 150000, 100, rpcService);
 
     std::cout << "node " + jsonrpc_listen_ip + ":" + jsonrpc_listen_port + " start success." << std::endl;
 

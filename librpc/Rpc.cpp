@@ -1378,7 +1378,7 @@ std::string Rpc::sendRawTransaction(int _groupID, const std::string& _rlp,
                        << LOG_KV("groupID", _groupID) << LOG_KV("rlp", _rlp);
 #endif
 
-        RPC_LOG(INFO) << LOG_DESC("Rpc::sendRawTransaction(int _groupID, const std::string& _rlp, _notifyCallback");
+        // RPC_LOG(INFO) << LOG_DESC("Rpc::sendRawTransaction(int _groupID, const std::string& _rlp, _notifyCallback");
                     //   << LOG_KV("_rlp", _rlp);
 
         auto txPool = ledgerManager()->txPool(_groupID);
@@ -1421,10 +1421,10 @@ std::string Rpc::sendRawTransaction(int _groupID, const std::string& _rlp,
         }
         // calculate the keccak256 before submit into the transaction pool
         tx->hash();
-        RPC_LOG(INFO) << LOG_DESC("将交易投递到交易池")
-                    //   << LOG_KV("signedData", _rlp)
-                      << LOG_KV("txhash", tx->hash())
-                      << LOG_KV("tx_nonce", tx->nonce());
+        // RPC_LOG(INFO) << LOG_DESC("将交易投递到交易池")
+        //             //   << LOG_KV("signedData", _rlp)
+        //               << LOG_KV("txhash", tx->hash())
+        //               << LOG_KV("tx_nonce", tx->nonce());
 
 
         std::pair<h256, Address> ret;

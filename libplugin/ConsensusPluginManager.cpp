@@ -69,69 +69,6 @@ void ConsensusPluginManager::processReceivedDisTx(protos::SubCrossShardTx _txrlp
 }
 
 // ADD BY ZH
-void ConsensusPluginManager::processReceivedCrossTx(protos::SubCrossShardTx _txrlp){
-    // receive and storage
-    protos::SubCrossShardTx msg;
-    msg = _txrlp;
-    
-    PLUGIN_LOG(INFO) << LOG_DESC("接收到协调者发来跨片交易请求...");
-    auto stateAddress = msg.stateaddress();
-    auto sourceShardId = msg.sourceshardid();
-    auto destinshardId = msg.destinshardid();
-    auto signedDatas = msg.signeddata();
-    auto messageId = msg.messageid();
-    auto crossTxHash = msg.crosstxhash();
-
-    // 存储跨片交易信息 用于发送res给coordinator
-    Transaction::Ptr tx = std::make_shared<Transaction>(
-            jsToBytes(signedDatas, dev::OnFailed::Throw), CheckTransaction::Everything);
-    
-    // 制造交易，利用data字段对signedDat进行二次包装 ==> 由于各个节点的结果不一致 放由协调者运行
-    // Transaction::Ptr tx = createBatchTransaction(signedDatas);
-
-    PLUGIN_LOG(INFO) << LOG_DESC("交易解析完毕")
-                     << LOG_KV("messageId", messageId)
-                     << LOG_KV("newTxHash", tx->hash().abridged())
-                     << LOG_KV("crossTxHash", crossTxHash)
-                    //  << LOG_KV("signeddata", signedDatas)
-                     << LOG_KV("stateAddress", stateAddress)
-                     << LOG_KV("sourceShardId", sourceShardId)
-                     << LOG_KV("destinshardid", destinshardId);
-
-    // m_crossTxMutex.lock();
-    crossTx->insert(std::make_pair(tx->hash().abridged(), transaction{
-        1, 
-        (unsigned long)sourceShardId, 
-        (unsigned long)destinshardId, 
-        (unsigned long)messageId, 
-        crossTxHash, 
-        tx, 
-        stateAddress}));
-    // m_crossTxMutex.unlock();
-
-    crossTx2StateAddress->insert(std::make_pair(crossTxHash, stateAddress));
-
-    // PLUGIN_LOG(INFO) << LOG_DESC(nodeIdStr);
-    
-    // for(size_t i = 0; i < forwardNodeId.size(); i++)
-    // {
-
-    // 判断当前节点是否为头节点
-    // PLUGIN_LOG(INFO) << LOG_DESC("当前forwardNodeId为: ") << LOG_DESC(toHex(forwardNodeId.at(i)));
-    
-    if(nodeIdStr == toHex(forwardNodeId.at(dev::consensus::internal_groupId - 1))){
-        PLUGIN_LOG(INFO) << LOG_DESC("匹配成功，当前节点为头节点")
-                         << LOG_KV("messageId", messageId);
-                        //  << LOG_KV("rlp", toHex(tx->rlp()));
-        // 通过调用本地的RPC接口发起新的共识
-        m_rpc_service->sendRawTransaction(destinshardId, toHex(tx->rlp()));
-        
-        // break;
-    }
-
-    // }
-}
-
 void ConsensusPluginManager::sendCommitPacket(protos::SubCrossShardTxReply _txrlp) {
     protos::SubCrossShardTxReply msg_status;
     msg_status = _txrlp;
@@ -159,6 +96,8 @@ void ConsensusPluginManager::sendCommitPacket(protos::SubCrossShardTxReply _txrl
 
     PLUGIN_LOG(INFO) << LOG_DESC("协调者共识完毕, 开始向参与者分片发送跨片交易提交消息包....")
                      << LOG_KV("group_protocolID", group_protocolID);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     for (auto destinShardID : crossTx2ShardID->at(crossTxHash)){
         // 向子分片的每个节点发送交易
@@ -211,7 +150,72 @@ void ConsensusPluginManager::sendCommitPacketToShard(protos::SubCrossShardTxRepl
                      << LOG_KV("目标", shardID);
 }
 
+void ConsensusPluginManager::processReceivedCrossTx(protos::SubCrossShardTx _txrlp){
+    // receive and storage
+    protos::SubCrossShardTx msg;
+    msg = _txrlp;
+    
+    PLUGIN_LOG(INFO) << LOG_DESC("接收到协调者发来跨片交易请求...");
+    auto stateAddress = msg.stateaddress();
+    auto sourceShardId = msg.sourceshardid();
+    auto destinshardId = msg.destinshardid();
+    auto signedDatas = msg.signeddata();
+    auto messageId = msg.messageid();
+    auto crossTxHash = msg.crosstxhash();
+
+    // std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    // 存储跨片交易信息 用于发送res给coordinator
+    Transaction::Ptr tx = std::make_shared<Transaction>(
+            jsToBytes(signedDatas, dev::OnFailed::Throw), CheckTransaction::Everything);
+    
+    // 制造交易，利用data字段对signedDat进行二次包装 ==> 由于各个节点的结果不一致 放由协调者运行
+    // Transaction::Ptr tx = createBatchTransaction(signedDatas);
+
+    PLUGIN_LOG(INFO) << LOG_DESC("交易解析完毕")
+                     << LOG_KV("messageId", messageId)
+                     << LOG_KV("newTxHash", tx->hash().abridged())
+                     << LOG_KV("crossTxHash", crossTxHash)
+                    //  << LOG_KV("signeddata", signedDatas)
+                     << LOG_KV("stateAddress", stateAddress) // 多个状态集通过"_"来划分 
+                     << LOG_KV("sourceShardId", sourceShardId)
+                     << LOG_KV("destinshardid", destinshardId);
+
+    // m_crossTxMutex.lock();
+    crossTx->insert(std::make_pair(tx->hash().abridged(), transaction{
+        1, 
+        (unsigned long)sourceShardId, 
+        (unsigned long)destinshardId, 
+        (unsigned long)messageId, 
+        crossTxHash, 
+        tx, 
+        stateAddress}));
+    // m_crossTxMutex.unlock();
+
+    // crossTx2StateAddress->insert(std::make_pair(crossTxHash, stateAddress));
+
+    // PLUGIN_LOG(INFO) << LOG_DESC(nodeIdStr);
+    
+    // for(size_t i = 0; i < forwardNodeId.size(); i++)
+    // {
+
+    // 判断当前节点是否为头节点
+    // PLUGIN_LOG(INFO) << LOG_DESC("当前forwardNodeId为: ") << LOG_DESC(toHex(forwardNodeId.at(i)));
+    
+    if(nodeIdStr == toHex(forwardNodeId.at(dev::consensus::internal_groupId - 1))){
+        PLUGIN_LOG(INFO) << LOG_DESC("匹配成功，当前节点为头节点")
+                         << LOG_KV("messageId", messageId);
+                        //  << LOG_KV("rlp", toHex(tx->rlp()));
+        // 通过调用本地的RPC接口发起新的共识
+        m_rpc_service->sendRawTransaction(destinshardId, toHex(tx->rlp()));
+    }
+
+    // }
+}
+
 void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTxReply _txrlp) {
+    lock_guard<std::mutex> lock(m_crossTx2ReceivedMsgMutex);
+
     protos::SubCrossShardTxReply msg_status;
     msg_status = _txrlp;
     
@@ -221,6 +225,9 @@ void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTx
     auto status = msg_status.status();
     auto crossTxHash = msg_status.crosstxhash();
     auto messageId = msg_status.messageid();
+
+    // std::this_thread::sleep_for(std::chrono::milliseconds(12));
+
 
     PLUGIN_LOG(INFO) << LOG_DESC("跨片交易回执包解析完毕")
                      << LOG_KV("status", status)
@@ -236,7 +243,7 @@ void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTx
     int msgCount;
     int msgNum;
 
-    m_crossTx2ReceivedMsgMutex.lock(); 
+    // m_crossTx2ReceivedMsgMutex.lock(); 
     msgCount = crossTx2ReceivedMsg->count(crossTxHash);
     if (msgCount != 0) {
         msgNum = count(crossTx2ReceivedMsg->at(crossTxHash).begin(), crossTx2ReceivedMsg->at(crossTxHash).end(), (int)sourceShardId);
@@ -247,19 +254,19 @@ void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTx
     if (msgCount == 0 && doneCrossTx->find(crossTxHash) != doneCrossTx->end()) {
         PLUGIN_LOG(INFO) << LOG_DESC("晚了，对于:") << LOG_KV("id", (int)sourceShardId);
         // 如果是已完成交易 ==> 可能是有的子分片过于落后 ==> 再次发送提交消息包
-        m_crossTx2ReceivedMsgMutex.unlock();
+        // m_crossTx2ReceivedMsgMutex.unlock();
         sendCommitPacketToShard(_txrlp, sourceShardId);
         return;
     }
 
-    if (msgCount !=0 && msgNum >= 3) {
+    if (msgCount != 0 && msgNum >= 3) {
         PLUGIN_LOG(INFO) << LOG_DESC("够了，对于:") << LOG_KV("id", (int)sourceShardId);
-        m_crossTx2ReceivedMsgMutex.unlock();
+        // m_crossTx2ReceivedMsgMutex.unlock();
         return;
     }
 
     // 遍历crossTx2ReceivedMsg->at(crossTxHash)
-    PLUGIN_LOG(INFO) << LOG_DESC("遍历crossTx2ReceivedMsg->at(crossTxHash)");
+    // PLUGIN_LOG(INFO) << LOG_DESC("遍历crossTx2ReceivedMsg->at(crossTxHash)");
     if(crossTx2ReceivedMsg->count(crossTxHash)!=0)
     {
         for (int i = 0; i < crossTx2ReceivedMsg->at(crossTxHash).size(); i++) {
@@ -274,7 +281,7 @@ void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTx
         temp.push_back((int)sourceShardId);
         crossTx2ReceivedMsg->insert(std::make_pair(crossTxHash, temp));
 
-        m_crossTx2ReceivedMsgMutex.unlock();
+        // m_crossTx2ReceivedMsgMutex.unlock();
         return;
     } else {
         crossTx2ReceivedMsg->at(crossTxHash).push_back((int)sourceShardId);
@@ -283,14 +290,16 @@ void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTx
     // 判断是否收集足够的包
     for (auto i : crossTx2ShardID->at(crossTxHash)) {
         // PLUGIN_LOG(INFO) << LOG_KV("shard" + i, count(crossTx2ReceivedMsg->at(crossTxHash).begin(), crossTx2ReceivedMsg->at(crossTxHash).end(), i));
-        PLUGIN_LOG(INFO) << LOG_DESC("进入crossTx2ShardID")
-                         << LOG_KV("i", i);
+        // PLUGIN_LOG(INFO) << LOG_DESC("进入crossTx2ShardID")
+        //                  << LOG_KV("i", i);
         if (count(crossTx2ReceivedMsg->at(crossTxHash).begin(), crossTx2ReceivedMsg->at(crossTxHash).end(), i) < 3) {
-            m_crossTx2ReceivedMsgMutex.unlock();
+            PLUGIN_LOG(INFO) << LOG_DESC("回执包数量不足")
+                             << LOG_KV("i", i);
+            // m_crossTx2ReceivedMsgMutex.unlock();
             return;
         }
     }
-    m_crossTx2ReceivedMsgMutex.unlock();
+    // m_crossTx2ReceivedMsgMutex.unlock();
 
     // 集齐 -> 发送commit包
     PLUGIN_LOG(INFO) << LOG_DESC("状态包集齐, 开始发送commit消息包...");
@@ -298,6 +307,8 @@ void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTx
 }
 
 void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardTxCommit _txrlp) {
+    lock_guard<std::mutex> lock(m_crossTx2CommitMsgMutex);
+    
     // 解析消息包
     protos::SubCrossShardTxCommit msg_status;
     msg_status = _txrlp;
@@ -308,6 +319,9 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
     auto sourceShardId = msg_status.sourceshardid();
     auto destinshardid = msg_status.destinshardid();
     auto messageId = msg_status.messageid();
+
+    // std::this_thread::sleep_for(std::chrono::milliseconds(12));
+
 
     PLUGIN_LOG(INFO) << LOG_DESC("跨片交易提交包解析完毕")
                      << LOG_KV("commit", commit)
@@ -322,25 +336,23 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
     int msgCount;
     int commitMsgNum = 0;
 
-    m_crossTx2CommitMsgMutex.lock();
+    // m_crossTx2CommitMsgMutex.lock();
     msgCount = crossTx2CommitMsg->count(crossTxHash);
     
     if (msgCount != 0) {
         commitMsgNum = crossTx2CommitMsg->at(crossTxHash);
     }
-    // m_crossTx2CommitMsgMutex.unlock();
 
     // 如果早已收到了足够的包就停止收取，防止重复执行
     if ((msgCount == 0 && doneCrossTx->find(crossTxHash) != doneCrossTx->end())
         ||
         (msgCount != 0 && commitMsgNum >= 3)) {
         PLUGIN_LOG(INFO) << LOG_DESC("够了") << LOG_KV("crossTx", crossTxHash);
-        m_crossTx2CommitMsgMutex.unlock();
+        // m_crossTx2CommitMsgMutex.unlock();
         return;
     }
     
     // 存储消息
-    // m_crossTx2CommitMsgMutex.lock();
     PLUGIN_LOG(INFO) << LOG_DESC("获得锁m_crossTx2CommitMsgMutex...")
                      << LOG_KV("messageId", messageId);
     if (crossTx2CommitMsg->count(crossTxHash) == 0) {
@@ -350,7 +362,7 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
         crossTx2CommitMsg->at(crossTxHash)++;
         commitMsgNum++;
     }
-    m_crossTx2CommitMsgMutex.unlock();
+    // m_crossTx2CommitMsgMutex.unlock();
     
 
     PLUGIN_LOG(INFO) << LOG_DESC("跨片交易提交包添加完毕")
@@ -384,15 +396,13 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
         PLUGIN_LOG(INFO) << LOG_DESC("commit包集齐, 子分片开始执行并提交相关跨片交易...")
                          << LOG_KV("messageId", messageId);
                         
-        auto readwriteset = crossTx2StateAddress->at(crossTxHash);
-        groupVerifier->executeCrossTx(readwriteset);
+        // auto readwriteset = crossTx2StateAddress->at(crossTxHash);
+        m_deterministExecute->executeCrossTx();
+        // groupVerifier->executeCrossTx(readwriteset);
         // crossTx2StateAddress->unsafe_erase(crossTxHash);
     
         return;
     }
-
-    // m_crossTx2CommitMsgMutex.unlock();
-    
 
     PLUGIN_LOG(INFO) << LOG_DESC("跨片交易暂不满足提交条件")
                      << LOG_KV("commitMsgNum", crossTx2CommitMsg->at(crossTxHash))
@@ -401,6 +411,8 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
 }
 
 void ConsensusPluginManager::processReceivedCrossTxCommitReply(protos::SubCrossShardTxCommitReply _txrlp) {
+    lock_guard<std::mutex> lock(m_crossTx2ReceivedCommitMsgMutex);
+    
     // 解析消息包
     protos::SubCrossShardTxCommitReply msg_status;
     msg_status = _txrlp;
@@ -425,12 +437,11 @@ void ConsensusPluginManager::processReceivedCrossTxCommitReply(protos::SubCrossS
     int msgCount;
     int receivedMsgNum;
 
-    m_crossTx2ReceivedCommitMsgMutex.lock();
+    // m_crossTx2ReceivedCommitMsgMutex.lock();
     msgCount = crossTx2ReceivedCommitMsg->count(crossTxHash);
     if (msgCount != 0) {
         receivedMsgNum = count(crossTx2ReceivedCommitMsg->at(crossTxHash).begin(), crossTx2ReceivedCommitMsg->at(crossTxHash).end(), (int)sourceShardId);
     }
-    // m_crossTx2ReceivedCommitMsgMutex.unlock();
 
     // 已经收到了大多数包就停止收取，防止重复执行
     // 历史交易包也不会收——22.11.6
@@ -439,7 +450,7 @@ void ConsensusPluginManager::processReceivedCrossTxCommitReply(protos::SubCrossS
         (msgCount != 0 && receivedMsgNum >= 3)) {
         PLUGIN_LOG(INFO) << LOG_DESC("交易提交回执包晚了/够了，对于:")
                          << LOG_KV("id", (int)sourceShardId);
-        m_crossTx2ReceivedCommitMsgMutex.unlock();
+        // m_crossTx2ReceivedCommitMsgMutex.unlock();
         return;
     }
 
@@ -449,7 +460,7 @@ void ConsensusPluginManager::processReceivedCrossTxCommitReply(protos::SubCrossS
         temp.push_back((int)sourceShardId);
         crossTx2ReceivedCommitMsg->insert(std::make_pair(crossTxHash, temp));
         // 必定不可能集齐 直接返回
-        m_crossTx2ReceivedCommitMsgMutex.unlock();
+        // m_crossTx2ReceivedCommitMsgMutex.unlock();
         return;
     } else {
         crossTx2ReceivedCommitMsg->at(crossTxHash).push_back((int)sourceShardId);
@@ -459,11 +470,11 @@ void ConsensusPluginManager::processReceivedCrossTxCommitReply(protos::SubCrossS
     // 判断是否收集足够的包
     for (auto i : crossTx2ShardID->at(crossTxHash)) {
         if (count(crossTx2ReceivedCommitMsg->at(crossTxHash).begin(), crossTx2ReceivedCommitMsg->at(crossTxHash).end(), i) < 3) {
-            m_crossTx2ReceivedCommitMsgMutex.unlock();
+            // m_crossTx2ReceivedCommitMsgMutex.unlock();
             return;
         }
     }
-    m_crossTx2ReceivedCommitMsgMutex.unlock();
+    // m_crossTx2ReceivedCommitMsgMutex.unlock();
 
     /*
       集齐 ==> 删除相关变量

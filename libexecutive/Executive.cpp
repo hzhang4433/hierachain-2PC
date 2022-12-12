@@ -100,8 +100,8 @@ void Executive::verifyTransaction(
 
 bool Executive::execute()
 {
-    EXECUTIVE_LOG(INFO) << LOG_DESC("在函数Executive::execute()中......");
-    std::cout << "在函数Executive::execute()中" << std::endl;
+    // EXECUTIVE_LOG(INFO) << LOG_DESC("在函数Executive::execute()中......");
+    // std::cout << "在函数Executive::execute()中" << std::endl;
     uint64_t txGasLimit = m_envInfo.precompiledEngine()->txGasLimit();
 
     if (g_BCOSConfig.version() > RC3_VERSION) // 判断gas够不够
@@ -534,8 +534,8 @@ void Executive::grantContractStatusManager(TableFactory::Ptr memoryTableFactory,
 
 bool Executive::go()
 {
-    EXECUTIVE_LOG(INFO) << LOG_DESC("在函数Executive::go()中......");
-    std::cout<<"在函数Executive::go()中......"<<std::endl;
+    // EXECUTIVE_LOG(INFO) << LOG_DESC("在函数Executive::go()中......");
+    // std::cout<<"在函数Executive::go()中......"<<std::endl;
 
     if (m_ext)
     {
@@ -614,7 +614,7 @@ bool Executive::go()
             }
             else
             {
-                EXECUTIVE_LOG(INFO) << LOG_DESC("发现调用合约交易......");
+                // EXECUTIVE_LOG(INFO) << LOG_DESC("发现调用合约交易......");
                 // std::cout << "发现调用合约交易......" << std::endl;
                 auto mode = toRevision(m_ext->evmSchedule());
                 auto emvcMessage = getEVMCMessage();

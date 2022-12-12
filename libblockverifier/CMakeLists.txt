@@ -8,7 +8,7 @@ add_library(blockverifier ${SRC_LIST} ${HEADERS})
 
 
 
-target_compile_options(blockverifier PRIVATE -Wno-unused-variable)
+target_compile_options(blockverifier PRIVATE -Wno-unused-variable -Wno-unused-parameter -Wno-comment)
 target_include_directories(blockverifier PRIVATE ..)
 target_link_libraries(blockverifier PUBLIC executivecontext devcore TBB)
 target_link_libraries(blockverifier PRIVATE storage precompiled)
