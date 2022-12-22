@@ -31,13 +31,39 @@ namespace dev {
 
                 void popTx();
 
-                transaction frontTx();
+                shared_ptr<transaction> frontTx();
 
                 ~BlockingTxQueue() { }
 
             public:
                 shared_ptr<queue<transaction>> txs; // 所有缓存的交易
                 shared_ptr<map<string, int>> lockingkeys; // 当前被阻塞的key集合
+                mutex queueLock; // 保证对lockingkeys和txs操作的并发安全
+        };
+
+        class BlockingCrossTxQueue:public std::enable_shared_from_this<BlockingCrossTxQueue>
+        {
+
+            public:
+                BlockingCrossTxQueue()
+                {
+                    txs = make_shared<queue<blockedCrossTransaction>>();
+                }
+                
+                int size();
+
+                bool isBlocked(); // 判断当前队列是否有交易
+
+                void insertTx(blockedCrossTransaction tx);
+
+                void popTx();
+
+                blockedCrossTransaction frontTx();
+
+                ~BlockingCrossTxQueue() { }
+
+            public:
+                shared_ptr<queue<blockedCrossTransaction>> txs; // 所有阻塞的跨片交易
                 mutex queueLock; // 保证对lockingkeys和txs操作的并发安全
         };
     }

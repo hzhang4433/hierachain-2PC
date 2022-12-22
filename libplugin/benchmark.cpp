@@ -421,6 +421,161 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
     return toHex(rlp);
 }
 
+std::string transactionInjectionTest::createSpecialInnerTransactions(int32_t _groupId, 
+                                                    std::shared_ptr<dev::ledger::LedgerManager> ledgerManager,
+                                                    std::string state1, std::string state2) {
+    
+    std::string requestLabel = "0x444555666";
+    std::string flag = "|";
+    std::string stateAddress = state1 + "_" + state2;
+    
+    PLUGIN_LOG(INFO) << LOG_DESC("createInnerTransactions...")
+                     << LOG_KV("stateAddress", stateAddress);
+
+    // std::string hex_m_testdata_str = requestLabel + flag + std::to_string(sourceshardid) + flag + std::to_string(destinshardid)
+    //                                     + flag + readwritekey + flag + requestmessageid + flag + std::to_string(coordinatorshardid);
+
+    std::string hex_m_data_str = requestLabel + flag + stateAddress + flag;
+
+    // 自己构造交易
+    std::string str_address;
+    if (_groupId == 1) {
+        // PLUGIN_LOG(INFO) << LOG_DESC("GroupID为1...");
+        str_address = innerContact_1;
+    } else if (_groupId == 2) {
+        // PLUGIN_LOG(INFO) << LOG_DESC("GroupID为2...");
+        str_address = innerContact_2;
+    } else if (_groupId == 3) {
+        // PLUGIN_LOG(INFO) << LOG_DESC("GroupID为3...");
+        str_address = innerContact_3;
+    }
+    dev::Address contactAddress(str_address);
+    dev::eth::ContractABI abi;
+    bytes data = abi.abiIn("add(string)", hex_m_data_str);  // add
+    // bytes data = [];
+
+    Transaction tx(0, 1000, 0, contactAddress, data);
+    tx.setNonce(tx.nonce() + u256(utcTime()));
+    tx.setGroupId(_groupId);
+    tx.setBlockLimit(u256(ledgerManager->blockChain(_groupId)->number()) + 500);
+    
+    auto keyPair = KeyPair::create();
+    auto sig = dev::crypto::Sign(keyPair, tx.hash(WithoutSignature));
+    tx.updateSignature(sig);
+
+    auto rlp = tx.rlp();
+    PLUGIN_LOG(INFO) << LOG_DESC("交易生成完毕...")
+                     << LOG_KV("rlp", toHex(rlp));
+
+    // m_rpcService->sendRawTransaction(_groupId, toHex(rlp)); // 通过调用本地的RPC接口发起新的共识
+    // PLUGIN_LOG(INFO) << LOG_DESC("发送完毕...");
+
+    return toHex(rlp);
+}
+
+std::string transactionInjectionTest::createSpecialCrossTransactions(int32_t coorGroupId, 
+                                                    int32_t subGroupId1, int32_t subGroupId2, 
+                                                    std::shared_ptr<dev::ledger::LedgerManager> ledgerManager,
+                                                    std::string state1, std::string state2) {
+    std::string requestLabel = "0x111222333";
+    std::string flag = "|";
+    // std::string stateAddress = "state1";
+    // srand((unsigned)time(0));
+
+    std::string stateAddress1 = state1 + "_" + state2;
+    std::string stateAddress2 = state1 + "_" + state2;
+
+
+    // PLUGIN_LOG(INFO) << LOG_DESC("createCrossTransactions...")
+    //                  << LOG_KV("stateAddress", stateAddress1)
+    //                  << LOG_KV("stateAddress", stateAddress2);
+
+    auto keyPair = KeyPair::create();
+
+    // 生成子交易1
+    std::string str_address;
+    if (subGroupId1 == 1) {
+        str_address = innerContact_1;
+    } else if (subGroupId1 == 2) {
+        str_address = innerContact_2;
+    } else if (subGroupId1 == 3) {
+        str_address = innerContact_3;
+    }
+    dev::Address subAddress1(str_address);
+    dev::eth::ContractABI abi;
+    bytes data = abi.abiIn("add(string)");  // add
+    // bytes data = [];
+
+    Transaction subTx1(0, 1000, 0, subAddress1, data);
+    subTx1.setNonce(subTx1.nonce() + u256(utcTime()));
+    subTx1.setGroupId(subGroupId1);
+    subTx1.setBlockLimit(u256(ledgerManager->blockChain(dev::consensus::internal_groupId)->number()) + 500);
+
+    
+    auto subSig1 = dev::crypto::Sign(keyPair, subTx1.hash(WithoutSignature));
+    subTx1.updateSignature(subSig1);
+
+    auto subrlp1 = subTx1.rlp();
+    std::string signTx1 = toHex(subrlp1);
+
+    // 生成子交易2
+    if (subGroupId2 == 1) {
+        str_address = innerContact_1;
+    } else if (subGroupId2 == 2) {
+        str_address = innerContact_2;
+    } else if (subGroupId2 == 3) {
+        str_address = innerContact_3;
+    }
+    dev::Address subAddress2(str_address);
+    // dev::eth::ContractABI abi;
+    data = abi.abiIn("add(string)");  // sub
+    // bytes data = [];
+
+    Transaction subTx2(0, 1000, 0, subAddress2, data);
+    subTx2.setNonce(subTx2.nonce() + u256(utcTime()));
+    subTx2.setGroupId(subGroupId2);
+    subTx2.setBlockLimit(u256(ledgerManager->blockChain(dev::consensus::internal_groupId)->number()) + 500);
+
+    
+    // auto keyPair = KeyPair::create();
+    auto subSig2 = dev::crypto::Sign(keyPair, subTx2.hash(WithoutSignature));
+    subTx2.updateSignature(subSig2);
+
+    auto subrlp = subTx2.rlp();
+    std::string signTx2 = toHex(subrlp);
+
+    // 生成跨片交易
+    std::string hex_m_data_str = requestLabel
+                                + flag + std::to_string(subGroupId1) + flag + signTx1 + flag + stateAddress1 
+                                + flag + std::to_string(subGroupId2) + flag + signTx2 + flag + stateAddress2
+                                + flag;
+
+    str_address = crossContact_3;
+    dev::Address crossAddress(str_address);
+    // dev::eth::ContractABI abi;
+    data = abi.abiIn("set(string)", hex_m_data_str);  // set
+    // bytes data = [];
+
+    Transaction tx(0, 1000, 0, crossAddress, data);
+    tx.setNonce(tx.nonce() + u256(utcTime()));
+    tx.setGroupId(coorGroupId);
+    tx.setBlockLimit(u256(ledgerManager->blockChain(coorGroupId)->number()) + 500);
+
+    
+    // auto keyPair = KeyPair::create();
+    auto sig = dev::crypto::Sign(keyPair, tx.hash(WithoutSignature));
+    tx.updateSignature(sig);
+
+    auto rlp = tx.rlp();
+    PLUGIN_LOG(INFO) << LOG_DESC("跨片交易生成完毕...")
+                     << LOG_KV("rlp", toHex(rlp));
+
+    // m_rpcService->sendRawTransaction(coorGroupId, toHex(rlp)); // 通过调用本地的RPC接口发起新的共识
+    // PLUGIN_LOG(INFO) << LOG_DESC("发送完毕...");
+
+    return toHex(rlp);
+}
+
 std::string transactionInjectionTest::createCrossTransactions_HB(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, int32_t squId) {
     std::string requestLabel = "0x111222333";
     std::string flag = "|";

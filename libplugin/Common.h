@@ -31,6 +31,16 @@ class ExecuteVMTestFixture;
         std::string readwrite_key;
     };
 
+    struct blockedCrossTransaction
+    {
+        int type; // 类型，0为阻塞过的交易，1为直接执行的交易
+        unsigned long source_shard_id;
+        std::string destin_shard_id; // 用 "_" 分隔
+        std::string corss_tx_hash;
+        std::string stateAddress; // 用 "｜" 分隔
+        std::string signedTx; // 用 "｜" 分隔
+    };
+
     struct executableTransaction
     {
         // unsigned long index;

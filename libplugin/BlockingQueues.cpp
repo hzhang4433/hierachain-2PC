@@ -100,9 +100,51 @@ int BlockingTxQueue::size()
     return txs->size();
 }
 
-transaction BlockingTxQueue::frontTx()
+shared_ptr<transaction> BlockingTxQueue::frontTx()
+{
+    lock_guard<std::mutex> lock(queueLock);
+    if (txs->size() > 0) {
+        return make_shared<transaction>(txs->front());
+    }
+    return 0;
+}
+
+int BlockingCrossTxQueue::size()
+{
+    lock_guard<std::mutex> lock(queueLock);
+    return txs->size();
+}
+
+bool BlockingCrossTxQueue::isBlocked()
+{
+    lock_guard<std::mutex> lock(queueLock);
+
+    auto size = txs->size();
+    bool isBlocked = false;
+
+    if (size != 0) {
+        isBlocked = true;
+    }
+
+    return isBlocked;
+}
+
+void BlockingCrossTxQueue::insertTx(blockedCrossTransaction tx) // 后面建议做batch优化
+{
+    // 将交易访问的所有的本地读写集插入到lockingkeys中
+    lock_guard<std::mutex> lock(queueLock);
+    txs->push(tx); // 将交易压入缓存队列
+}
+
+// 交易执行完，将交易和相应的锁清除
+void BlockingCrossTxQueue::popTx()
+{
+    lock_guard<std::mutex> lock(queueLock);
+    txs->pop(); // 锁删除完毕，交易出队列
+}
+
+blockedCrossTransaction BlockingCrossTxQueue::frontTx()
 {
     lock_guard<std::mutex> lock(queueLock);
     return txs->front();
 }
-

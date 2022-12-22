@@ -492,6 +492,7 @@ void ConsensusPluginManager::processReceivedCrossTxCommitReply(protos::SubCrossS
     // 添加doneCrossTx，防止收到历史交易包——22.11.6
     doneCrossTx->insert(crossTxHash);
     PLUGIN_LOG(INFO) << LOG_DESC("跨片交易流程完成...");
+    m_deterministExecute->processBlockedCrossTx();
 }
 
 void ConsensusPluginManager::processReceivedPreCommitedTx(protos::SubPreCommitedDisTx _txrlp)

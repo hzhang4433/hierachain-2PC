@@ -23,12 +23,16 @@ namespace dev{
                     dev::plugin::executiveContext = std::make_shared<ExecuteVMTestFixture>(path);
                     
                     exec = dev::plugin::executiveContext->getExecutive();
+                    auto vm = dev::plugin::executiveContext->getExecutiveInstance();
+                    exec->setVM(vm);
+                    dev::plugin::executiveContext->m_vminstance_pool.push(vm);
                     
                     key2Messageid = std::make_shared<tbb::concurrent_unordered_map<std::string, int>>();
                     key2Signdatas = std::make_shared<tbb::concurrent_unordered_map<std::string, std::string>>();
                     key2CrossTxHash = std::make_shared<tbb::concurrent_unordered_map<std::string, std::string>>();
                     key2StateAddress = std::make_shared<tbb::concurrent_unordered_map<std::string, std::string>>();
                     m_blockingTxQueue = std::make_shared<BlockingTxQueue>();
+                    m_blockingCrossTxQueue = std::make_shared<BlockingCrossTxQueue>();
                 }
                 void deterministExecuteTx();
                 void processConsensusBlock();
@@ -48,6 +52,7 @@ namespace dev{
                 void tryToSendSubTxs();
                 void executeCrossTx();
                 void executeCandidateTx();
+                void processBlockedCrossTx();
                 
                 int popedTxNum = 0;
                 int count = 0;
@@ -76,6 +81,7 @@ namespace dev{
 
                 // 存放待处理的跨片交易以及被阻塞的片内交易
                 std::shared_ptr<BlockingTxQueue> m_blockingTxQueue;
+                std::shared_ptr<BlockingCrossTxQueue> m_blockingCrossTxQueue;
                 dev::executive::Executive::Ptr exec;
             private:
                 std::mutex m_cachedTx;

@@ -43,14 +43,16 @@ namespace dev
                 }
                 
                 ~transactionInjectionTest(){};
-                void deployContractTransaction(std::string filename, int32_t _groupId);
-                void injectionTransactions(std::string filename, int32_t _groupId);
+                void deployContractTransaction(string filename, int32_t _groupId);
+                void injectionTransactions(string filename, int32_t _groupId);
                 int getRand(int a, int b);
-                std::string createInnerTransactions(int32_t _groupId, std::shared_ptr<dev::ledger::LedgerManager> ledgerManager);
-                std::string createCrossTransactions(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, std::shared_ptr<dev::ledger::LedgerManager> ledgerManager);
-                std::string createCrossTransactions_HB(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, int32_t squId);
+                string createInnerTransactions(int32_t _groupId, shared_ptr<dev::ledger::LedgerManager> ledgerManager);
+                string createCrossTransactions(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, shared_ptr<dev::ledger::LedgerManager> ledgerManager);
+                string createCrossTransactions_HB(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, int32_t squId);
                 string dataToHexString(bytes data);
-        
+                string createSpecialInnerTransactions(int32_t _groupId, shared_ptr<dev::ledger::LedgerManager> ledgerManager, string state1, string state2);
+                string createSpecialCrossTransactions(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, shared_ptr<dev::ledger::LedgerManager> ledgerManager, string state1, string state2);
+
         };
     }
 }

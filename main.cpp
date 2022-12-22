@@ -683,6 +683,95 @@ void createDataSet(int cor, int sub1, int sub2, std::shared_ptr<dev::ledger::Led
     }
 }
 
+void createHBDataSet(int cor, int sub1, int sub2, std::shared_ptr<dev::ledger::LedgerManager> ledgerManager,
+                     std::shared_ptr<dev::rpc::Rpc> rpcService) {
+    transactionInjectionTest _injectionTest(rpcService, 1);
+    std::string res = "";
+    std::string fileName = "workload.json";
+    std::string tx = "";
+    // 分片1
+    if(dev::consensus::internal_groupId == sub1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(sub1 - 1)))
+    {
+        for (int i = 0 ; i < 1000; i++) {
+            if (i < 500) {
+                tx = _injectionTest.createSpecialInnerTransactions(sub1, ledgerManager, "stateA", "stateC");
+            } else {
+                tx = _injectionTest.createSpecialInnerTransactions(sub1, ledgerManager, "stateA", "stateD");
+            }
+            if (i == 0) {
+                res = "[\"" + tx + "\"";
+            } else {
+                res += ",\"" + tx + "\"";
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds((1)));
+        }
+        
+        ofstream out;
+        out.open(fileName, ios::in|ios::out|ios::app);
+        if (out.is_open()) {
+            res += "]";
+            out << res;
+            out.close();
+        }
+    }
+
+    // 分片2
+    res = "";
+    if(dev::consensus::internal_groupId == sub2 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(sub2 - 1)))
+    {
+        for (int i =0 ; i < 1000; i++) {
+            if (i < 100) {
+                tx = _injectionTest.createSpecialInnerTransactions(sub2, ledgerManager, "stateE", "stateG");
+            } else if(i < 200) {
+                tx = _injectionTest.createSpecialInnerTransactions(sub2, ledgerManager, "stateF", "stateH");
+            } else {
+                tx = _injectionTest.createSpecialInnerTransactions(sub2, ledgerManager, "stateG", "stateH");
+            }
+            if (i == 0) {
+                res = "[\"" + tx + "\"";
+            } else {
+                res += ",\"" + tx + "\"";
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds((1)));
+        }
+        
+        ofstream out;
+        out.open(fileName, ios::in|ios::out|ios::app);
+        if (out.is_open()) {
+            res += "]";
+            out << res;
+            out.close();
+        }
+    }
+
+    // 分片3
+    res = "";
+    if(dev::consensus::internal_groupId == cor && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(cor - 1)))
+    {
+        for (int i =0 ; i < 1000; i++) {
+            if (i < 500) {
+                tx = _injectionTest.createSpecialCrossTransactions(cor, sub1, sub2, ledgerManager, "stateA", "stateE");
+            } else {
+                tx = _injectionTest.createSpecialCrossTransactions(cor, sub1, sub2, ledgerManager, "stateB", "stateF");
+            }
+            if (i == 0) {
+                res = "[\"" + tx + "\"";
+            } else {
+                res += ",\"" + tx + "\"";
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds((1)));
+        }
+        
+        ofstream out;
+        out.open(fileName, ios::in|ios::out|ios::app);
+        if (out.is_open()) {
+            res += "]";
+            out << res;
+            out.close();
+        }
+    }
+}
+
 int main(){
 
     dev::consensus::SHARDNUM = 3; // 初始化分片数目
@@ -798,6 +887,7 @@ int main(){
     syncs->setAttribute(blockchainManager);
     syncs->setAttribute(consensusPluginManager);
     
+    // /*
     // startprocessThread();
     std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
@@ -809,42 +899,42 @@ int main(){
         _injectionTest.deployContractTransaction("./deploy.json", 1);
         std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         // _injectionTest.injectionTransactions("./signedtxs.json", 1);
-        _injectionTest.injectionTransactions("./workload1.json", 1);
+        // _injectionTest.injectionTransactions("./workload2.json", 1);
 
         // std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         // _injectionTest.createInnerTransactions(1, ledgerManager);
 
-        /* 批量生产跨片交易
-        std::string res;
-        for (int i =0 ; i < 100000; i++) {
-            auto tx = _injectionTest.createCrossTransactions_HB(1, 2, 3, i);
-            if (i % 1000 == 0) { // 100笔写一次文件
-                if (i == 0) {
-                    res = "[\"" + tx + "\"";
-                } else {
-                    ofstream out;
-                    out.open("crossTx_HB.json", ios::in|ios::out|ios::app);
-                    if (out.is_open()) {
-                        out << res;
-                        out.close();
-                        res = "";
-                    }
-                    res = ",\"" + tx + "\"";
-                }
-            } else {
-                res = res + ",\"" + tx + "\"";
-            }
-            // std::this_thread::sleep_for(std::chrono::milliseconds((500)));
-        }
+        // 批量生产跨片交易
+        // std::string res;
+        // for (int i =0 ; i < 100000; i++) {
+        //     auto tx = _injectionTest.createCrossTransactions_HB(1, 2, 3, i);
+        //     if (i % 1000 == 0) { // 100笔写一次文件
+        //         if (i == 0) {
+        //             res = "[\"" + tx + "\"";
+        //         } else {
+        //             ofstream out;
+        //             out.open("crossTx_HB.json", ios::in|ios::out|ios::app);
+        //             if (out.is_open()) {
+        //                 out << res;
+        //                 out.close();
+        //                 res = "";
+        //             }
+        //             res = ",\"" + tx + "\"";
+        //         }
+        //     } else {
+        //         res = res + ",\"" + tx + "\"";
+        //     }
+        //     // std::this_thread::sleep_for(std::chrono::milliseconds((500)));
+        // }
 
-        ofstream out;
-        out.open("crossTx_HB.json", ios::in|ios::out|ios::app);
-        if (out.is_open()) {
-            res += "]";
-            out << res;
-            out.close();
-        }
-        */
+        // ofstream out;
+        // out.open("crossTx_HB.json", ios::in|ios::out|ios::app);
+        // if (out.is_open()) {
+        //     res += "]";
+        //     out << res;
+        //     out.close();
+        // }
+
     }
 
     // std::this_thread::sleep_for(std::chrono::milliseconds(2000));
@@ -856,7 +946,7 @@ int main(){
         _injectionTest.deployContractTransaction("./deploy.json", 2);
         std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         // _injectionTest.injectionTransactions("./signedtxs.json", 2);
-        _injectionTest.injectionTransactions("./workload1.json", 2);
+        // _injectionTest.injectionTransactions("./workload2.json", 2);
 
         // std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         // _injectionTest.createInnerTransactions(2, ledgerManager);
@@ -872,48 +962,51 @@ int main(){
         std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         // _injectionTest.injectionTransactions("./signedtxs.json", 3);
         // _injectionTest.injectionTransactions("./crossTx.json", 3);
-        _injectionTest.injectionTransactions("./workload1.json", 3);
+        // _injectionTest.injectionTransactions("./workload3.json", 3);
 
         // std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         // _injectionTest.createInnerTransactions(3, ledgerManager);
         // _injectionTest.createCrossTransactions(3, 1, 2);
 
-        /* 批量生产跨片交易
-        std::string res;
-        for (int i =0 ; i < 1000; i++) {
-            auto tx = _injectionTest.createCrossTransactions(3, 1, 2, ledgerManager);
-            if (i % 100 == 0) { // 10笔写一次文件
-                if (i == 0) {
-                    res = "[\"" + tx + "\"";
-                } else {
-                    ofstream out;
-                    out.open("crossTx.json", ios::in|ios::out|ios::app);
-                    if (out.is_open()) {
-                        out << res;
-                        out.close();
-                        res = "";
-                    }
-                    res = ",\"" + tx + "\"";
-                }
-            } else {
-                res = res + ",\"" + tx + "\"";
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds((500)));
-        }
+        // 批量生产跨片交易
+        // std::string res;
+        // for (int i =0 ; i < 1000; i++) {
+        //     auto tx = _injectionTest.createCrossTransactions(3, 1, 2, ledgerManager);
+        //     if (i % 100 == 0) { // 10笔写一次文件
+        //         if (i == 0) {
+        //             res = "[\"" + tx + "\"";
+        //         } else {
+        //             ofstream out;
+        //             out.open("crossTx.json", ios::in|ios::out|ios::app);
+        //             if (out.is_open()) {
+        //                 out << res;
+        //                 out.close();
+        //                 res = "";
+        //             }
+        //             res = ",\"" + tx + "\"";
+        //         }
+        //     } else {
+        //         res = res + ",\"" + tx + "\"";
+        //     }
+        //     std::this_thread::sleep_for(std::chrono::milliseconds((500)));
+        // }
 
-        ofstream out;
-        out.open("crossTx.json", ios::in|ios::out|ios::app);
-        if (out.is_open()) {
-            res += "]";
-            out << res;
-            out.close();
-        }
-        */
+        // ofstream out;
+        // out.open("crossTx.json", ios::in|ios::out|ios::app);
+        // if (out.is_open()) {
+        //     res += "]";
+        //     out << res;
+        //     out.close();
+        // }
+        
     }
 
     // createDataSet(3, 1, 2, ledgerManager, 150000, 20, rpcService);
     // createDataSet(3, 1, 2, ledgerManager, 150000, 80, rpcService);
     // createDataSet(3, 1, 2, ledgerManager, 150000, 100, rpcService);
+    // createHBDataSet(3, 1, 2, ledgerManager, rpcService);
+
+    // */
 
     std::cout << "node " + jsonrpc_listen_ip + ":" + jsonrpc_listen_port + " start success." << std::endl;
 
