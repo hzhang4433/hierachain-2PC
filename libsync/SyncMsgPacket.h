@@ -224,5 +224,12 @@ public:
     void encode(dev::bytes const& _blockRLP);
 };
 
+class SyncAbortPacket : public SyncMsgPacket
+{
+public:
+    SyncAbortPacket() { packetType = AbortPacket; }
+    void encode(dev::bytes const& _blockRLP);
+};
+
 }  // namespace sync
 }  // namespace dev

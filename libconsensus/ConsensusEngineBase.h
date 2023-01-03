@@ -371,10 +371,6 @@ protected:
     }
 
     dev::blockverifier::ExecutiveContext::Ptr executeBlock(dev::eth::Block& block);
-    // ADD BY ZH
-    int executeBlockTransactions(std::shared_ptr<dev::eth::Block> block);
-    void replyToCoordinator(dev::plugin::transaction txInfo, 
-        dev::PROTOCOL_ID& m_group_protocolID, std::shared_ptr<dev::p2p::Service> m_group_service);
     
     virtual void checkBlockValid(dev::eth::Block const& block);
     virtual void checkBlockTimeStamp(dev::eth::Block const& _block);

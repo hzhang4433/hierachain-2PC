@@ -359,6 +359,32 @@ void ex_SyncMsgEngine::messageHandler(dev::p2p::NetworkException _e, std::shared
                 }
             }
         }
+        else if(packet->packetType == AbortPacket) { // 若是abort消息包
+            RLP const& rlps = (*packet).rlp();
+            bool size = rlps.isNull();
+            // std::cout << "DistributedTxPacket" << std::endl;
+            if(size)
+            {
+                std::cout << "data is null" << std::endl;
+            }
+            else
+            {
+                try
+                {
+                    PLUGIN_LOG(INFO) << LOG_DESC("开始对收到的 AbortPacket 消息进行处理");
+                    std::string str = rlps[0].toString();
+                    
+                    protos::AbortMsg msg_rs;
+                    msg_rs.ParseFromString(str);
+
+                    m_pluginManager->processReceivedAbortMessage(msg_rs); // 收集并检查包的数量
+                }
+                catch(const std::exception& e)
+                {
+                    std::cerr << e.what() << '\n';
+                }
+            }
+        }
     }
     catch(std::exception const& e)
     {

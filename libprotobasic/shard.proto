@@ -123,6 +123,7 @@ message SubCrossShardTx
     bytes signeddata = 4;
     uint64 messageId = 5;
     bytes crossTxHash = 6;
+    bytes shardIds = 7;
 }
 
 message SubCrossShardTxReply
@@ -150,4 +151,11 @@ message SubCrossShardTxCommitReply
     uint64 destinShardId = 3;
     bytes crossTxHash = 4;
     uint64 messageId = 5;
+}
+
+message AbortMsg
+{
+    uint64 coorShardId = 1;
+    bytes subShardsId = 2;
+    uint64 messageId = 3;
 }

@@ -29,6 +29,8 @@ class ExecuteVMTestFixture;
         dev::eth::Transaction::Ptr tx;
         // 多个读写集时候中间用'_'号分隔开，为了便于实验，先假设所有的片内交易只访问片内的一个读写集key，跨片交易的读写集可能有多个
         std::string readwrite_key;
+        // 跨片交易涉及的所有分片id，用'_'分隔
+        std::string shardIds;
     };
 
     struct blockedCrossTransaction
@@ -131,6 +133,9 @@ class ExecuteVMTestFixture;
     // extern std::map<h256, transaction> innerTx;
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> innerTx;
     // extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> crossTx2StateAddress;
+
+    // 22.12.23
+    extern std::shared_ptr<tbb::concurrent_unordered_set<std::string>> abortSet;
 		
 
     extern std::map<std::string, std::string> txRWSet;
@@ -154,6 +159,7 @@ class ExecuteVMTestFixture;
     extern std::mutex m_crossTx2ReceivedMsgMutex;
     extern std::mutex m_crossTx2CommitMsgMutex;
     extern std::mutex m_crossTx2ReceivedCommitMsgMutex;
+    extern std::mutex m_abortMsgMutex;
     extern std::mutex m_block2UnExecMutex;
     extern std::mutex m_height2TxHashMutex;
     extern std::mutex m_doneCrossTxMutex;

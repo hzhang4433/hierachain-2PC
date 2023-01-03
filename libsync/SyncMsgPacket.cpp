@@ -251,3 +251,10 @@ void SyncCrossTxCommitReplyPacket::encode(dev::bytes const& _blockRLP)
     prep(m_rlpStream, CrossTxCommitReplyPacket, 1);
     m_rlpStream.append(_blockRLP);
 }
+
+void SyncAbortPacket::encode(dev::bytes const& _blockRLP)
+{
+    m_rlpStream.clear();
+    prep(m_rlpStream, AbortPacket, 1);
+    m_rlpStream.append(_blockRLP);
+}

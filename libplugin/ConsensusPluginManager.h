@@ -40,8 +40,10 @@ namespace dev {
                 void processReceivedCrossTxReply(protos::SubCrossShardTxReply _txrlp);
                 void processReceivedCrossTxCommit(protos::SubCrossShardTxCommit _txrlp);
                 void processReceivedCrossTxCommitReply(protos::SubCrossShardTxCommitReply _txrlp);
+                void processReceivedAbortMessage(protos::AbortMsg _txrlp);
                 void sendCommitPacket(protos::SubCrossShardTxReply _txrlp);
                 void sendCommitPacketToShard(protos::SubCrossShardTxReply _txrlp, unsigned long shardID);
+                int getRand(int a, int b);
                 
             
 

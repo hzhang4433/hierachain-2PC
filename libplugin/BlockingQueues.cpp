@@ -1,3 +1,4 @@
+#include "libdevcore/CommonIO.h"
 #include <libplugin/BlockingQueues.h>
 
 using namespace std;
@@ -92,6 +93,40 @@ void BlockingTxQueue::popTx()
 
     // 锁删除完毕，交易出队列
     txs->pop();
+}
+
+// 交易执行完，将交易和相应的锁清除
+bool BlockingTxQueue::popAbortedTx(string abortKey)
+{
+    lock_guard<std::mutex> lock(queueLock);
+
+    auto tx = txs->front(); // 即将被pop的交易
+    string key = toString(tx.source_shard_id) + "_" + toString(tx.message_id);
+    if (key != abortKey) {
+        return false;
+    }
+
+    string localrwkeys = tx.readwrite_key;
+    vector<string> localrwkeyItems;
+    boost::split(localrwkeyItems, localrwkeys, boost::is_any_of("_"), boost::token_compress_on);
+    size_t key_size = localrwkeyItems.size();
+
+    set<string> stateSet;
+    for(size_t i = 0; i < key_size; i++)
+    {
+        stateSet.insert(localrwkeyItems.at(i));
+    }
+
+    for(set<string>::iterator it = stateSet.begin(); it != stateSet.end(); it++)
+    {
+        string key = *it;
+        int lockNum = lockingkeys->at(key);
+        lockingkeys->at(key) = lockNum - 1;
+    }
+
+    // 锁删除完毕，交易出队列
+    txs->pop();
+    return true;
 }
 
 int BlockingTxQueue::size()

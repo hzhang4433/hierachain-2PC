@@ -53,6 +53,10 @@ namespace dev{
                 void executeCrossTx();
                 void executeCandidateTx();
                 void processBlockedCrossTx();
+                void sendAbortPacket(transaction txInfo);
+                void pushBlockCrossTx(string subShardIds, vector<string> shardIds, string crossTxHash, vector<string>& keySet);
+                bool isAborted(string abortKey);
+                void checkAbortedTransaction(shared_ptr<dev::plugin::transaction> txInfo);
                 
                 int popedTxNum = 0;
                 int count = 0;

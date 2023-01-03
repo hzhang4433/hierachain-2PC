@@ -94,6 +94,7 @@ enum SyncPacketType : byte
     CrossTxReplyPacket=0x17,
     CrossTxCommitPacket=0x18,
     CrossTxCommitReplyPacket=0x19,
+    AbortPacket=0x20,
     PacketCount
 };
 

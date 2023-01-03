@@ -31,6 +31,8 @@ namespace dev {
 
                 void popTx();
 
+                bool popAbortedTx(string abortKey);
+
                 shared_ptr<transaction> frontTx();
 
                 ~BlockingTxQueue() { }
