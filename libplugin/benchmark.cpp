@@ -273,8 +273,8 @@ std::string transactionInjectionTest::createInnerTransactions(int32_t _groupId, 
     
     std::string requestLabel = "0x444555666";
     std::string flag = "|";
-    std::string stateAddress = "state" + to_string((rand() % 100) + 1)
-                            + "_state" + to_string((rand() % 100) + 1);
+    std::string stateAddress = "state" + to_string((rand() % 10000) + 1)
+                            + "_state" + to_string((rand() % 10000) + 1);
     
     PLUGIN_LOG(INFO) << LOG_DESC("createInnerTransactions...")
                      << LOG_KV("stateAddress", stateAddress);
@@ -294,6 +294,8 @@ std::string transactionInjectionTest::createInnerTransactions(int32_t _groupId, 
         str_address = innerContact_2;
     } else if (_groupId == 3) {
         // PLUGIN_LOG(INFO) << LOG_DESC("GroupID为3...");
+        str_address = innerContact_3;
+    } else {
         str_address = innerContact_3;
     }
     dev::Address contactAddress(str_address);
@@ -327,8 +329,8 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
     // std::string stateAddress = "state1";
     // srand((unsigned)time(0));
 
-    std::string stateAddress1 = "state" + to_string((rand() % 100) + 1);
-    std::string stateAddress2 = "state" + to_string((rand() % 100) + 1);
+    std::string stateAddress1 = "state" + to_string((rand() % 10000) + 1);
+    std::string stateAddress2 = "state" + to_string((rand() % 10000) + 1);
 
 
     PLUGIN_LOG(INFO) << LOG_DESC("createCrossTransactions...")
@@ -344,6 +346,8 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
     } else if (subGroupId1 == 2) {
         str_address = innerContact_2;
     } else if (subGroupId1 == 3) {
+        str_address = innerContact_3;
+    } else {
         str_address = innerContact_3;
     }
     dev::Address subAddress1(str_address);
@@ -369,6 +373,8 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
     } else if (subGroupId2 == 2) {
         str_address = innerContact_2;
     } else if (subGroupId2 == 3) {
+        str_address = innerContact_3;
+    } else {
         str_address = innerContact_3;
     }
     dev::Address subAddress2(str_address);

@@ -778,7 +778,7 @@ void createHBDataSet(int cor, int sub1, int sub2, std::shared_ptr<dev::ledger::L
 
 int main(){
 
-    dev::consensus::SHARDNUM = 3; // 初始化分片数目
+    dev::consensus::SHARDNUM = 9; // 初始化分片数目
     std::cout << "SHARDNUM = " << dev::consensus::SHARDNUM << std::endl;
 
     // 开始增加组间通信同步组
@@ -895,6 +895,7 @@ int main(){
     // startprocessThread();
     std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
+    // /* 
     // 测试发送交易（分片1的node1向本分片1发送一笔片内交易
     if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0)))
     {
@@ -902,7 +903,6 @@ int main(){
         transactionInjectionTest _injectionTest(rpcService, 1, ledgerManager);
         _injectionTest.deployContractTransaction("./deploy.json", 1);
         std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        // _injectionTest.injectionTransactions("./signedtxs.json", 1);
         // _injectionTest.injectionTransactions("./workload2.json", 1);
     }
 
@@ -914,26 +914,34 @@ int main(){
         transactionInjectionTest _injectionTest(rpcService, 2, ledgerManager);
         _injectionTest.deployContractTransaction("./deploy.json", 2);
         std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        // _injectionTest.injectionTransactions("./signedtxs.json", 2);
         // _injectionTest.injectionTransactions("./workload2-1500.json", 2);
     }
 
     // std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
-    if(dev::consensus::internal_groupId == 3 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(2)))
+    if(dev::consensus::internal_groupId == 7 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(6)))
     {
         PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
-        transactionInjectionTest _injectionTest(rpcService, 3, ledgerManager);
-        _injectionTest.deployContractTransaction("./deploy.json", 3);
+        transactionInjectionTest _injectionTest(rpcService, 7, ledgerManager);
+        // _injectionTest.deployContractTransaction("./deploy.json", 7);
         std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        // _injectionTest.injectionTransactions("./signedtxs.json", 3);
-        // _injectionTest.injectionTransactions("./crossTx.json", 3);
-        _injectionTest.injectionTransactions("./workload3.json", 3);
+        _injectionTest.injectionTransactions("./workload3.json", 7);
     }
+
+    if(dev::consensus::internal_groupId == 8 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(7)))
+    {
+        PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
+        transactionInjectionTest _injectionTest(rpcService, 8, ledgerManager);
+        // _injectionTest.deployContractTransaction("./deploy.json", 8);
+        std::this_thread::sleep_for(std::chrono::milliseconds(4000));
+        _injectionTest.injectionTransactions("./workload3.json", 8);
+    }
+    // */
 
     // createDataSet(3, 1, 2, ledgerManager, 150000, 20, rpcService);
     // createDataSet(3, 1, 2, ledgerManager, 150000, 80, rpcService);
-    // createDataSet(3, 1, 2, ledgerManager, 150000, 100, rpcService);
+    // createDataSet(7, 1, 2, ledgerManager, 1500, 100, rpcService);
+    // createDataSet(8, 2, 3, ledgerManager, 1500, 100, rpcService);
     // createHBDataSet(3, 1, 2, ledgerManager, rpcService);
 
     // */
