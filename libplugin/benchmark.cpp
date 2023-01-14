@@ -306,7 +306,8 @@ std::string transactionInjectionTest::createInnerTransactions(int32_t _groupId, 
     Transaction tx(0, 1000, 0, contactAddress, data);
     tx.setNonce(tx.nonce() + u256(utcTime()));
     tx.setGroupId(_groupId);
-    tx.setBlockLimit(u256(ledgerManager->blockChain(_groupId)->number()) + 500);
+    // tx.setBlockLimit(u256(ledgerManager->blockChain(_groupId)->number()) + 500);
+    tx.setBlockLimit(500);
     
     auto keyPair = KeyPair::create();
     auto sig = dev::crypto::Sign(keyPair, tx.hash(WithoutSignature));
@@ -410,10 +411,86 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
     Transaction tx(0, 1000, 0, crossAddress, data);
     tx.setNonce(tx.nonce() + u256(utcTime()));
     tx.setGroupId(coorGroupId);
-    tx.setBlockLimit(u256(ledgerManager->blockChain(coorGroupId)->number()) + 500);
+    tx.setBlockLimit(500);
 
     
     // auto keyPair = KeyPair::create();
+    auto sig = dev::crypto::Sign(keyPair, tx.hash(WithoutSignature));
+    tx.updateSignature(sig);
+
+    auto rlp = tx.rlp();
+    PLUGIN_LOG(INFO) << LOG_DESC("跨片交易生成完毕...")
+                     << LOG_KV("rlp", toHex(rlp));
+
+    // m_rpcService->sendRawTransaction(coorGroupId, toHex(rlp)); // 通过调用本地的RPC接口发起新的共识
+    // PLUGIN_LOG(INFO) << LOG_DESC("发送完毕...");
+
+    return toHex(rlp);
+}
+
+std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupId, vector<int>& shardIds, 
+                        std::shared_ptr<dev::ledger::LedgerManager> ledgerManager) {
+    std::string requestLabel = "0x111222333";
+    std::string flag = "|";
+    // std::string stateAddress = "state1";
+    // srand((unsigned)time(0));
+    int subShardNum = shardIds.size();
+    string allStateAddress = "";
+    auto keyPair = KeyPair::create();
+
+    // 跨片交易data字段
+    std::string hex_m_data_str = requestLabel;
+    // std::string hex_m_data_str = requestLabel
+    //                             + flag + std::to_string(subGroupId1) + flag + signTx1 + flag + stateAddress1 
+    //                             + flag + std::to_string(subGroupId2) + flag + signTx2 + flag + stateAddress2
+    //                             + flag;
+
+    for (int i = 0; i < subShardNum; i++) {
+        int subId = shardIds[i];
+        std::string stateAddress = "state" + to_string((rand() % 10000) + 1);
+        // 生成子交易1
+        std::string str_address;
+        if (subId == 1) {
+            str_address = innerContact_1;
+        } else if (subId == 2) {
+            str_address = innerContact_2;
+        } else if (subId == 3) {
+            str_address = innerContact_3;
+        } else {
+            str_address = innerContact_3;
+        }
+        dev::Address subAddress(str_address);
+        dev::eth::ContractABI abi;
+        bytes data = abi.abiIn("add(string)");  // add
+        // bytes data = [];
+
+        Transaction subTx(0, 1000, 0, subAddress, data);
+        subTx.setNonce(subTx.nonce() + u256(utcTime()));
+        subTx.setGroupId(subId);
+        subTx.setBlockLimit(u256(ledgerManager->blockChain(dev::consensus::internal_groupId)->number()) + 500);
+
+        auto subSig = dev::crypto::Sign(keyPair, subTx.hash(WithoutSignature));
+        subTx.updateSignature(subSig);
+
+        auto subrlp = subTx.rlp();
+        std::string signTx = toHex(subrlp);
+
+        hex_m_data_str += (flag + std::to_string(subId) + flag + signTx + flag + stateAddress);
+    }
+
+    hex_m_data_str += flag;
+
+    // 生成跨片交易
+    string str_address = crossContact_3;
+    dev::Address crossAddress(str_address);
+    dev::eth::ContractABI abi;
+    bytes data = abi.abiIn("set(string)", hex_m_data_str);  // set
+
+    Transaction tx(0, 1000, 0, crossAddress, data);
+    tx.setNonce(tx.nonce() + u256(utcTime()));
+    tx.setGroupId(coorGroupId);
+    tx.setBlockLimit(u256(ledgerManager->blockChain(coorGroupId)->number()) + 500);
+
     auto sig = dev::crypto::Sign(keyPair, tx.hash(WithoutSignature));
     tx.updateSignature(sig);
 

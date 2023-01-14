@@ -48,6 +48,7 @@ namespace dev
                 int getRand(int a, int b);
                 string createInnerTransactions(int32_t _groupId, shared_ptr<dev::ledger::LedgerManager> ledgerManager);
                 string createCrossTransactions(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, shared_ptr<dev::ledger::LedgerManager> ledgerManager);
+                string createCrossTransactions(int32_t coorGroupId, vector<int>& shardIds, shared_ptr<dev::ledger::LedgerManager> ledgerManager);
                 string createCrossTransactions_HB(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, int32_t squId);
                 string dataToHexString(bytes data);
                 string createSpecialInnerTransactions(int32_t _groupId, shared_ptr<dev::ledger::LedgerManager> ledgerManager, string state1, string state2);
