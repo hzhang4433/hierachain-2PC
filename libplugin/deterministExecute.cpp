@@ -98,7 +98,8 @@ void deterministExecute::replyToCoordinatorCommitOK(dev::plugin::transaction txI
         // BLOCKVERIFIER_LOG(INFO) << LOG_KV("正在发送给", shardNodeId.at((source_shard_id-1)*4 + j));
         group_p2p_service->asyncSendMessageByNodeID(shardNodeId.at((source_shard_id-1)*4 + j), msg, CallbackFuncWithSession(), dev::network::Options());
     }
-    BLOCKVERIFIER_LOG(INFO) << LOG_DESC("子分片向协调者发送commitOK消息包完毕...");
+    BLOCKVERIFIER_LOG(INFO) << LOG_DESC("子分片向协调者发送commitOK消息包完毕...")
+                            << LOG_KV("corId", source_shard_id);
 
     // 发送完回执再删除相关变量，假设此时以收到了所有的commitMsg
     // crossTx2CommitMsg->unsafe_erase(txInfo.cross_tx_hash);
@@ -131,8 +132,8 @@ void deterministExecute::deterministExecuteTx() {
                 PLUGIN_LOG(INFO) << LOG_DESC("队首元素messageID")
                                 << LOG_KV("messageId", txInfo->message_id);
                                 //  << LOG_KV("当前正在执行的messageID", current_candidate_tx_messageids->at(sourceShardId - 1));
-                
-                }
+            }
+            PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx);
         }
 
         checkForDeterministExecuteTxWookLoop();
@@ -271,7 +272,7 @@ int deterministExecute::checkTransactionType(std::string& hex_m_data_str, std::s
     {
         // 23.1.5 舍去这种可能，默认只可能是上面三种
         PLUGIN_LOG(INFO) << LOG_DESC("loop in checkTransactionType...");
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
         checkTransactionType(hex_m_data_str, tx);
         // return 0; 
     }
@@ -319,7 +320,7 @@ void deterministExecute::processInnerShardTx(std::string data_str, std::shared_p
             // 删除txHash2BlockHeight变量，代表相关交易已被执行
             // txHash2BlockHeight->unsafe_erase(txHash);
 
-            if (executedTx % 500 == 0) {
+            if (executedTx % 100 == 0) {
                 // exec = dev::plugin::executiveContext->getExecutive();
                 // auto vm = dev::plugin::executiveContext->getExecutiveInstance();
                 // exec->setVM(vm);
@@ -488,6 +489,9 @@ std::string deterministExecute::createBatchTransaction(std::string signedDatas, 
         str_address = innerContact_2;
     } else if (groupId == 3) {
         PLUGIN_LOG(INFO) << LOG_DESC("in createBatchTransaction GroupID为3...");
+        str_address = innerContact_3;
+    } else {
+        PLUGIN_LOG(INFO) << LOG_DESC("in createBatchTransaction GroupID为other...");
         str_address = innerContact_3;
     }
     dev::Address contactAddress(str_address);
@@ -859,24 +863,6 @@ void deterministExecute::sendAbortPacket(transaction txInfo) {
 }
 
 void deterministExecute::processSubShardTx(std::shared_ptr<dev::eth::Transaction> tx, int height) {
-    // 批量跨片子交易处理
-    // auto txInfo = crossTx->at(tx->hash().abridged());
-    // // m_crossTxMutex.unlock();
-    // auto crossTxHash = txInfo.cross_tx_hash;
-    // auto blockHeight = height;
-
-    // PLUGIN_LOG(INFO) << LOG_DESC("添加(批量)跨片交易至执行队列 in processSubShardTx")
-    //                  << LOG_KV("messageId", txInfo.message_id)
-    //                  << LOG_KV("stateAddress", txInfo.readwrite_key);
-
-    // if (blockHeight2CrossTxHash->count(blockHeight) == 0) {
-    //     std::vector<std::string> temp;
-    //     temp.push_back(crossTxHash);
-    //     blockHeight2CrossTxHash->insert(std::make_pair(blockHeight, temp));
-    // } else {
-    //     blockHeight2CrossTxHash->at(blockHeight).push_back(crossTxHash);
-    // }
-    
     transaction txInfo = crossTx->at(tx->hash().abridged());
 
     unsigned long message_id = txInfo.message_id;
@@ -888,8 +874,8 @@ void deterministExecute::processSubShardTx(std::shared_ptr<dev::eth::Transaction
 
     PLUGIN_LOG(INFO) << LOG_DESC("in processSubShardTx 解析跨片交易成功")
                      << LOG_KV("messageId", message_id)
-                     << LOG_KV("source_shard_id", source_shard_id)
-                     << LOG_KV("destin_shard_id", destin_shard_id)
+                     << LOG_KV("sourceShardId", source_shard_id)
+                     << LOG_KV("destinShardId", destin_shard_id)
                      << LOG_KV("shardIds", shardIds)
                      << LOG_KV("crossTxHash", crossTxHash)
                      << LOG_KV("stateAddress", readwriteset);
@@ -1060,7 +1046,7 @@ void deterministExecute::executeCrossTx() {
         PLUGIN_LOG(INFO) << LOG_DESC("in executeCrossTx data_str is null");
         
         
-        if (executedTx % 500 == 0) {
+        if (executedTx % 100 == 0) {
             // exec = dev::plugin::executiveContext->getExecutive();
             // auto vm = dev::plugin::executiveContext->getExecutiveInstance();
             // exec->setVM(vm);
@@ -1099,7 +1085,7 @@ void deterministExecute::executeCrossTx() {
                 
                 dev::plugin::executiveContext->executeTransaction(exec, tx);
                 
-                if (executedTx % 500 == 0) {
+                if (executedTx % 100 == 0) {
                     PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx);
                 }
                 executedTx++;
@@ -1195,6 +1181,9 @@ void deterministExecute::executeCrossTx() {
     if (m_blockingTxQueue->size() > 0) {
         BLOCKVERIFIER_LOG(INFO) << LOG_DESC("in executeCrossTx... 还有等待的交易");
         executeCandidateTx();
+    } else {
+        PLUGIN_LOG(INFO) << LOG_DESC("in executeCrossTx...")
+                         << LOG_KV("executedTx", executedTx);
     }
     
 
@@ -1217,7 +1206,7 @@ void deterministExecute::executeCandidateTx() {
     if (crossTx->find(tx->hash().abridged()) == crossTx->end()) { // 非跨片交易 => 直接执行
         // PLUGIN_LOG(INFO) << LOG_DESC("该笔交易为片内交易... in executeCandidateTx");
         
-        if (executedTx % 500 == 0) {
+        if (executedTx % 100 == 0) {
             PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx);
         }
         executedTx++;
@@ -1283,6 +1272,9 @@ void deterministExecute::executeCandidateTx() {
             PLUGIN_LOG(INFO) << LOG_DESC("in executeCandidateTx...")
                              << LOG_KV("blockingTxQueue剩余交易数", size);
             executeCandidateTx();
+        } else {
+            PLUGIN_LOG(INFO) << LOG_DESC("in executeCandidateTx...")
+                             << LOG_KV("executedTx", executedTx);
         }
     } 
     // 跨片交易不需要处理，因为是其它协调者发起的
@@ -1349,6 +1341,12 @@ void deterministExecute::processBlockedCrossTx() {
             auto sig = dev::crypto::Sign(keyPair, tx->hash(WithoutSignature));
             tx->updateSignature(sig);
             string newSignedTx = toHex(tx->rlp());
+
+            PLUGIN_LOG(INFO) << LOG_DESC("in processBlockedCrossTx 批量发送跨片子交易")
+                             << LOG_KV("subShardIds", allShardID)
+                             << LOG_KV("sourceId", internal_groupId)
+                             << LOG_KV("messageId", messageID)
+                             << LOG_KV("destinShardID", shardID);
 
             protos::SubCrossShardTx subCrossShardTx;
             subCrossShardTx.set_signeddata(newSignedTx);

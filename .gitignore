@@ -2,4 +2,4 @@
 build/
 deps/
 *.tar.gz
-./CMakeLists.txt
+CMakeLists.txt

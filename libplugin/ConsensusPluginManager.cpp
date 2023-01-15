@@ -72,45 +72,45 @@ void ConsensusPluginManager::processReceivedDisTx(protos::SubCrossShardTx _txrlp
 
 // ADD BY ZH
 void ConsensusPluginManager::sendCommitPacket(protos::SubCrossShardTxReply _txrlp) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    
     protos::SubCrossShardTxReply msg_status;
     msg_status = _txrlp;
     
-    auto sourceShardId = msg_status.sourceshardid();
-    auto destinshardid = msg_status.destinshardid();
+    auto sourceShardId = msg_status.destinshardid();
     auto status = msg_status.status();
     auto crossTxHash = msg_status.crosstxhash();
-    auto messageId = msg_status.messageid();
 
-    protos::SubCrossShardTxCommit subCrossShardTxCommit;
-    subCrossShardTxCommit.set_crosstxhash(crossTxHash);
-    subCrossShardTxCommit.set_commit(1);
-    subCrossShardTxCommit.set_sourceshardid(destinshardid);
-    subCrossShardTxCommit.set_destinshardid(sourceShardId);
-    subCrossShardTxCommit.set_messageid(messageId);
+    for (auto destinShardID : crossTx2ShardID->at(crossTxHash)) {
+        auto destinshardid = destinShardID;
+        auto messageId = messageIDs[destinShardID];
 
-    std::string serializedSubCrossShardTxCommit_str;
-    subCrossShardTxCommit.SerializeToString(&serializedSubCrossShardTxCommit_str);
-    auto txByte = asBytes(serializedSubCrossShardTxCommit_str);
+        protos::SubCrossShardTxCommit subCrossShardTxCommit;
+        subCrossShardTxCommit.set_crosstxhash(crossTxHash);
+        subCrossShardTxCommit.set_commit(1);
+        subCrossShardTxCommit.set_sourceshardid(sourceShardId);
+        subCrossShardTxCommit.set_destinshardid(destinshardid);
+        subCrossShardTxCommit.set_messageid(messageId);
 
-    dev::sync::SyncCrossTxCommitPacket crossTxCommitPacket; // 类型需要自定义
-    crossTxCommitPacket.encode(txByte);
-    auto msg = crossTxCommitPacket.toMessage(group_protocolID);
+        std::string serializedSubCrossShardTxCommit_str;
+        subCrossShardTxCommit.SerializeToString(&serializedSubCrossShardTxCommit_str);
+        auto txByte = asBytes(serializedSubCrossShardTxCommit_str);
 
-    PLUGIN_LOG(INFO) << LOG_DESC("协调者共识完毕, 开始向参与者分片发送跨片交易提交消息包....")
-                     << LOG_KV("group_protocolID", group_protocolID);
+        dev::sync::SyncCrossTxCommitPacket crossTxCommitPacket; // 类型需要自定义
+        crossTxCommitPacket.encode(txByte);
+        auto msg = crossTxCommitPacket.toMessage(group_protocolID);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-    for (auto destinShardID : crossTx2ShardID->at(crossTxHash)){
         // 向子分片的每个节点发送交易
         for(size_t j = 0; j < 4; j++)  // 给所有节点发
         {
             // PLUGIN_LOG(INFO) << LOG_KV("正在发送给", shardNodeId.at((destinShardID - 1) * 4 + j));
             group_p2p_service->asyncSendMessageByNodeID(shardNodeId.at((destinShardID - 1) * 4 + j), msg, CallbackFuncWithSession(), dev::network::Options());
         }
+        
+        PLUGIN_LOG(INFO) << LOG_DESC("commit消息发送完毕...")
+                         << LOG_KV("destinShardId", destinShardID)
+                         << LOG_KV("messageId", messageId);
     }
-    PLUGIN_LOG(INFO) << LOG_DESC("commit消息发送完毕...")
-                     << LOG_KV("messageId", messageId);
 }
 
 void ConsensusPluginManager::sendCommitPacketToShard(protos::SubCrossShardTxReply _txrlp, unsigned long shardID) {
@@ -224,12 +224,17 @@ void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTx
     
     // PLUGIN_LOG(INFO) << "接收到子分片发来的跨片交易状态消息包...";
     auto sourceShardId = msg_status.sourceshardid();
-    auto destinshardid = msg_status.destinshardid();
+    auto destinShardId = msg_status.destinshardid();
     auto status = msg_status.status();
     auto crossTxHash = msg_status.crosstxhash();
     auto messageId = msg_status.messageid();
 
     // std::this_thread::sleep_for(std::chrono::milliseconds(12));
+
+    // 更新非主节点的messageID变量
+    if (messageIDs[sourceShardId] < messageId) {
+        messageIDs[sourceShardId] = messageId;
+    }
 
     // 若该跨片交易已被abort，则其对应reply包消息不处理
     string abortKey = toString(sourceShardId) + "_" + toString(messageId);
@@ -241,7 +246,7 @@ void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTx
                     //  << LOG_KV("status", status)
                      << LOG_KV("messageId", messageId)
                      << LOG_KV("sourceShardId", sourceShardId)
-                     << LOG_KV("destinshardid", destinshardid)
+                     << LOG_KV("destinShardId", destinShardId)
                      << LOG_KV("crossTxHash", crossTxHash);
 
     if ((int)status != 1) 
@@ -275,13 +280,13 @@ void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTx
 
     // 遍历crossTx2ReceivedMsg->at(crossTxHash)
     // PLUGIN_LOG(INFO) << LOG_DESC("遍历crossTx2ReceivedMsg->at(crossTxHash)");
-    if(crossTx2ReceivedMsg->count(crossTxHash)!=0)
-    {
-        for (int i = 0; i < crossTx2ReceivedMsg->at(crossTxHash).size(); i++) {
-            PLUGIN_LOG(INFO) << LOG_DESC("目前收到的reply包的id有")
-                             << LOG_KV("id", crossTx2ReceivedMsg->at(crossTxHash)[i]);
-        }
-    }
+    // if(crossTx2ReceivedMsg->count(crossTxHash)!=0)
+    // {
+    //     for (int i = 0; i < crossTx2ReceivedMsg->at(crossTxHash).size(); i++) {
+    //         PLUGIN_LOG(INFO) << LOG_DESC("目前收到的reply包的id有")
+    //                          << LOG_KV("id", crossTx2ReceivedMsg->at(crossTxHash)[i]);
+    //     }
+    // }
 
     // 存消息
     if (msgCount == 0) {

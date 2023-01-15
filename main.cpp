@@ -609,7 +609,7 @@ void createCrossTransaction(int cor, vector<int>& shardIds, shared_ptr<dev::ledg
 
 void createCrossTransaction(int cor, int sub1, int sub2, shared_ptr<dev::ledger::LedgerManager> ledgerManager, int txNum, string fileName, transactionInjectionTest _injectionTest) 
 {    
-    std::cout << "in new createCrossTransaction txNum = " << txNum << std::endl;
+    // std::cout << "in new createCrossTransaction txNum = " << txNum << std::endl;
     // 批量生产跨片交易
     std::string res;
     for (int i =0; i < txNum; i++) {
@@ -1008,7 +1008,7 @@ void createRandomDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerManag
         for (int i = 1; i <= shardsNum; i++) {
             flags[i - 1] = false;
             newfileName = "../node" + to_string((i-1)*4) + "/" + fileName;
-            std::cout << "fileName: " << newfileName << std::endl;
+            // std::cout << "fileName: " << newfileName << std::endl;
             createInnerTransaction(i, ledgerManager, innerTxNum, newfileName, 0, _injectionTest);
         }
     }
@@ -1157,6 +1157,7 @@ int main(){
     syncs->setAttribute(blockchainManager);
     syncs->setAttribute(consensusPluginManager);
     
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
     /* 
     // 测试发送交易（分片1的node1向本分片1发送一笔片内交易
@@ -1237,15 +1238,15 @@ int main(){
     }
     */
 
-    // for (int i = 1; i <= dev::consensus::SHARDNUM; i++) {
-    //     if(dev::consensus::internal_groupId == i && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(i - 1))) {
-    //         PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
-    //         transactionInjectionTest _injectionTest(rpcService, i, ledgerManager);
-    //         // _injectionTest.deployContractTransaction("./deploy.json", i);
-    //         // std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-    //         // _injectionTest.injectionTransactions("./workload1.json", i);
-    //     }
-    // }
+    for (int i = 1; i <= dev::consensus::SHARDNUM; i++) {
+        if(dev::consensus::internal_groupId == i && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(i - 1))) {
+            PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
+            transactionInjectionTest _injectionTest(rpcService, i, ledgerManager);
+            // _injectionTest.deployContractTransaction("./deploy.json", i);
+            std::this_thread::sleep_for(std::chrono::milliseconds(4000));
+            _injectionTest.injectionTransactions("./workload2.json", i);
+        }
+    }
 
     // createDataSet(3, 1, 2, ledgerManager, 150000, 20, rpcService);
     // createDataSet(3, 1, 2, ledgerManager, 150000, 80, rpcService);
@@ -1266,9 +1267,9 @@ int main(){
     // createDataSet(8, 2, 3, ledgerManager, 15000, 20, rpcService);
     
     // 生成均匀负载
-    if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0))) {
-        createRandomDataSet(ledgerManager, 9000, 80, rpcService);
-    }
+    // if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0))) {
+    //     createRandomDataSet(ledgerManager, 9000, 80, rpcService);
+    // }
     
 
     std::cout << "node " + jsonrpc_listen_ip + ":" + jsonrpc_listen_port + " start success." << std::endl;
