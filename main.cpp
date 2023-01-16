@@ -995,12 +995,18 @@ void createRandomDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerManag
     int remain = (txNum - crossTxNum) % shardsNum;
     crossTxNum += remain;
     transactionInjectionTest _injectionTest(rpcService, 1);
-    if (percent == 20) {
+    if (percent == 0) {
+        fileName = "workload0.json";
+    } else if (percent == 20) {
         fileName = "workload1.json";
-    } else if (percent == 80) {
+    } else if (percent == 40) {
         fileName = "workload2.json";
-    } else if (percent == 100) {
+    } else if (percent == 60) {
         fileName = "workload3.json";
+    } else if (percent == 80) {
+        fileName = "workload4.json";
+    } else if (percent == 100) {
+        fileName = "workload5.json";
     }
 
     // 生成子分片的片内交易
@@ -1016,7 +1022,6 @@ void createRandomDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerManag
     // 生成随机跨片交易
     int nowCrossNum = crossTxNum;
     srand((unsigned)time(NULL));
-
     while(nowCrossNum != 0) {
         // 生成随机两个子分片ID 范围:[1,8]
         // 默认各个节点生成的随机数顺序一致
@@ -1244,9 +1249,12 @@ int main(){
             transactionInjectionTest _injectionTest(rpcService, i, ledgerManager);
             // _injectionTest.deployContractTransaction("./deploy.json", i);
             std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-            // _injectionTest.injectionTransactions("./workload1.json", i);
+            // _injectionTest.injectionTransactions("./workload0.json", i);
+            _injectionTest.injectionTransactions("./workload1.json", i);
             // _injectionTest.injectionTransactions("./workload2.json", i);
-            _injectionTest.injectionTransactions("./workload3.json", i);
+            // _injectionTest.injectionTransactions("./workload3.json", i);
+            // _injectionTest.injectionTransactions("./workload4.json", i);
+            // _injectionTest.injectionTransactions("./workload5.json", i);
         }
     }
 
@@ -1270,6 +1278,11 @@ int main(){
     
     // 生成均匀负载
     // if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0))) {
+    //     createRandomDataSet(ledgerManager, 9000, 0, rpcService);
+    //     createRandomDataSet(ledgerManager, 9000, 20, rpcService);
+    //     createRandomDataSet(ledgerManager, 9000, 40, rpcService);
+    //     createRandomDataSet(ledgerManager, 9000, 60, rpcService);
+    //     createRandomDataSet(ledgerManager, 9000, 80, rpcService);
     //     createRandomDataSet(ledgerManager, 9000, 100, rpcService);
     // }
     
