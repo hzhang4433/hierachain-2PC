@@ -31,6 +31,7 @@ class ExecuteVMTestFixture;
         std::string readwrite_key;
         // 跨片交易涉及的所有分片id，用'_'分隔
         std::string shardIds;
+        std::string messageIds; // 用 "_" 分隔
     };
 
     struct blockedCrossTransaction

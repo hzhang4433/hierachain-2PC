@@ -167,9 +167,10 @@ void ConsensusPluginManager::processReceivedCrossTx(protos::SubCrossShardTx _txr
     auto messageId = msg.messageid();
     auto crossTxHash = msg.crosstxhash();
     auto shardIds = msg.shardids();
+    auto messageIds = msg.messageids();
 
     // 若该跨片交易已被其它分片abort，则直接不处理
-    string abortKey = toString(sourceShardId) + "_" + toString(messageId);
+    string abortKey = toString(sourceShardId) + "_" + messageIds;
     if (m_deterministExecute->isAborted(abortKey)) {
         return;
     }
@@ -183,6 +184,7 @@ void ConsensusPluginManager::processReceivedCrossTx(protos::SubCrossShardTx _txr
 
     PLUGIN_LOG(INFO) << LOG_DESC("交易解析完毕")
                      << LOG_KV("messageId", messageId)
+                     << LOG_KV("messageIds", messageIds)
                      << LOG_KV("sourceShardId", sourceShardId)
                      << LOG_KV("destinshardid", destinshardId)
                      << LOG_KV("shardIds", shardIds)
@@ -198,7 +200,8 @@ void ConsensusPluginManager::processReceivedCrossTx(protos::SubCrossShardTx _txr
         crossTxHash, 
         tx, 
         stateAddress,
-        shardIds}));
+        shardIds,
+        messageIds}));
 
 
     // 判断当前节点是否为头节点
@@ -226,6 +229,7 @@ void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTx
     auto status = msg_status.status();
     auto crossTxHash = msg_status.crosstxhash();
     auto messageId = msg_status.messageid();
+    auto messageIds = msg_status.messageids();
 
     // std::this_thread::sleep_for(std::chrono::milliseconds(12));
 
@@ -235,7 +239,7 @@ void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTx
     }
 
     // 若该跨片交易已被abort，则其对应reply包消息不处理
-    string abortKey = toString(sourceShardId) + "_" + toString(messageId);
+    string abortKey = toString(sourceShardId) + "_" + messageIds;
     if (m_deterministExecute->isAborted(abortKey) || messageIDs[sourceShardId] > messageId) {
         return;
     }
@@ -328,10 +332,10 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
     auto messageId = msg_status.messageid();
 
     // 若该跨片交易已被abort，则其对应commit包消息不处理
-    string abortKey = toString(sourceShardId) + "_" + toString(messageId);
-    if (m_deterministExecute->isAborted(abortKey)) {
-        return;
-    }
+    // string abortKey = toString(sourceShardId) + "_" + toString(messageId);
+    // if (m_deterministExecute->isAborted(abortKey)) {
+    //     return;
+    // }
 
 
     PLUGIN_LOG(INFO) << LOG_DESC("跨片交易提交包解析完毕")
@@ -521,15 +525,17 @@ void ConsensusPluginManager::processReceivedAbortMessage(protos::AbortMsg _txrlp
     auto coorShardId = msg_status.coorshardid();
     auto subShardsId = msg_status.subshardsid();
     auto messageId = msg_status.messageid();
+    auto messageIds = msg_status.messageids();
 
     PLUGIN_LOG(INFO) << LOG_DESC("abort包解析完毕")
                      << LOG_KV("coorShardId", coorShardId)
                      << LOG_KV("subShardsId", subShardsId)
-                     << LOG_KV("messageId", messageId);
+                     << LOG_KV("messageId", messageId)
+                     << LOG_KV("messageIds", messageIds);
     
     // 判断该abort消息包是否之前已经处理过 ==> 查询abortSet
     //                           否则 ==> 插入abortKey
-    string abortKey = toString(coorShardId) + "_" + toString(messageId);
+    string abortKey = toString(coorShardId) + "_" + messageIds;
     if (abortSet->find(abortKey) != abortSet->end()) {
         PLUGIN_LOG(INFO) << LOG_DESC("该abort消息包之前处理过...")
                          << LOG_KV("abortKey", abortKey);
@@ -551,7 +557,7 @@ void ConsensusPluginManager::processReceivedAbortMessage(protos::AbortMsg _txrlp
         // 阻塞队列中是否有交易
         if (m_deterministExecute->m_blockingTxQueue->size() > 0) {
             // 1. 尝试释放相关交易和锁
-            if(m_deterministExecute->m_blockingTxQueue->popAbortedTx(coorShardId)) {
+            if(m_deterministExecute->m_blockingTxQueue->popAbortedTx(to_string(coorShardId))) {
                 BLOCKVERIFIER_LOG(INFO) << LOG_DESC("in processAbortMessage... popAbort成功");
                 // 2. 执行队列中后续交易
                 if (m_deterministExecute->m_blockingTxQueue->size() > 0) {
