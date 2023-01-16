@@ -142,6 +142,7 @@ void deterministExecute::deterministExecuteTx() {
 }
 
 void deterministExecute::checkDelayCommitPacket(dev::plugin::transaction txInfo) {
+    auto coorId = txInfo.source_shard_id;
     unsigned long messageID = txInfo.message_id;
     
     // 如果该笔交易早已收到了足够的commit包，则直接执行
@@ -149,7 +150,7 @@ void deterministExecute::checkDelayCommitPacket(dev::plugin::transaction txInfo)
         PLUGIN_LOG(INFO) << LOG_DESC("commit包之前就已集齐, 直接执行交易... in deter check")
                          << LOG_KV("messageId", messageID);
         // auto readwriteset = crossTx2StateAddress->at(crossTxHash);
-        executeCrossTx();
+        executeCrossTx(coorId, messageID);
         // groupVerifier->executeCrossTx(readwriteset);
         // crossTx2StateAddress->unsafe_erase(crossTxHash);
         // lateCrossTxMessageId->unsafe_erase(messageID);
@@ -1014,7 +1015,7 @@ void deterministExecute::setAttribute(std::shared_ptr<dev::blockchain::BlockChai
     m_blockchainManager = _blockchainManager;
 }
 
-void deterministExecute::executeCrossTx() {
+void deterministExecute::executeCrossTx(unsigned long coorId, unsigned long messageId) {
     BLOCKVERIFIER_LOG(INFO) << LOG_DESC("in executeCrossTx... before pop")
                             // << LOG_KV("keyReadwriteSet", keyReadwriteSet)
                             << LOG_KV("queue size", m_blockingTxQueue->size());
@@ -1032,9 +1033,9 @@ void deterministExecute::executeCrossTx() {
     // 需要判断size大小？正常流程进入该函数 则size必定大于0，因此此时不必判断
 
     // 取变量 EDIT ON 22.12.7
-    auto txInfo = m_blockingTxQueue->frontTx();
+    auto txInfo = m_blockingTxQueue->CrossTx(coorId, messageId);
     auto tx = txInfo->tx;
-    m_blockingTxQueue->popTx();
+    m_blockingTxQueue->popCrossTx(coorId, messageId);
 
     BLOCKVERIFIER_LOG(INFO) << LOG_DESC("in executeCrossTx... after pop")
                             << LOG_KV("queue size", m_blockingTxQueue->size());
@@ -1106,12 +1107,6 @@ void deterministExecute::executeCrossTx() {
         // }
     }
     
-
-    // BLOCKVERIFIER_LOG(INFO) << LOG_DESC("in executeCrossTx...")
-    //                         << LOG_KV("keyReadwriteSet", keyReadwriteSet)
-    //                         << LOG_KV("size2", candidate_tx_queues->at(keyReadwriteSet).queue.size())
-    //                         << LOG_KV("messageId", txInfo.message_id);
-
     // EDIT BY ZH 22.11.2
     // auto exec = dev::plugin::executiveContext->getExecutive();
     // auto vm = dev::plugin::executiveContext->getExecutiveInstance();

@@ -2456,6 +2456,7 @@ class SubCrossShardTx :
     kSigneddataFieldNumber = 4,
     kCrossTxHashFieldNumber = 6,
     kShardIdsFieldNumber = 7,
+    kMessageIdsFieldNumber = 8,
     kSourceShardIdFieldNumber = 2,
     kDestinShardIdFieldNumber = 3,
     kMessageIdFieldNumber = 5,
@@ -2524,6 +2525,22 @@ class SubCrossShardTx :
   std::string* _internal_mutable_shardids();
   public:
 
+  // bytes messageIds = 8;
+  void clear_messageids();
+  const std::string& messageids() const;
+  void set_messageids(const std::string& value);
+  void set_messageids(std::string&& value);
+  void set_messageids(const char* value);
+  void set_messageids(const void* value, size_t size);
+  std::string* mutable_messageids();
+  std::string* release_messageids();
+  void set_allocated_messageids(std::string* messageids);
+  private:
+  const std::string& _internal_messageids() const;
+  void _internal_set_messageids(const std::string& value);
+  std::string* _internal_mutable_messageids();
+  public:
+
   // uint64 sourceShardId = 2;
   void clear_sourceshardid();
   ::PROTOBUF_NAMESPACE_ID::uint64 sourceshardid() const;
@@ -2560,6 +2577,7 @@ class SubCrossShardTx :
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr signeddata_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr crosstxhash_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr shardids_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr messageids_;
   ::PROTOBUF_NAMESPACE_ID::uint64 sourceshardid_;
   ::PROTOBUF_NAMESPACE_ID::uint64 destinshardid_;
   ::PROTOBUF_NAMESPACE_ID::uint64 messageid_;
@@ -2675,6 +2693,7 @@ class SubCrossShardTxReply :
 
   enum : int {
     kCrossTxHashFieldNumber = 4,
+    kMessageIdsFieldNumber = 6,
     kStatusFieldNumber = 1,
     kSourceShardIdFieldNumber = 2,
     kDestinShardIdFieldNumber = 3,
@@ -2694,6 +2713,22 @@ class SubCrossShardTxReply :
   const std::string& _internal_crosstxhash() const;
   void _internal_set_crosstxhash(const std::string& value);
   std::string* _internal_mutable_crosstxhash();
+  public:
+
+  // bytes messageIds = 6;
+  void clear_messageids();
+  const std::string& messageids() const;
+  void set_messageids(const std::string& value);
+  void set_messageids(std::string&& value);
+  void set_messageids(const char* value);
+  void set_messageids(const void* value, size_t size);
+  std::string* mutable_messageids();
+  std::string* release_messageids();
+  void set_allocated_messageids(std::string* messageids);
+  private:
+  const std::string& _internal_messageids() const;
+  void _internal_set_messageids(const std::string& value);
+  std::string* _internal_mutable_messageids();
   public:
 
   // uint64 status = 1;
@@ -2738,6 +2773,7 @@ class SubCrossShardTxReply :
 
   ::PROTOBUF_NAMESPACE_ID::internal::InternalMetadataWithArena _internal_metadata_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr crosstxhash_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr messageids_;
   ::PROTOBUF_NAMESPACE_ID::uint64 status_;
   ::PROTOBUF_NAMESPACE_ID::uint64 sourceshardid_;
   ::PROTOBUF_NAMESPACE_ID::uint64 destinshardid_;
@@ -3212,6 +3248,7 @@ class AbortMsg :
 
   enum : int {
     kSubShardsIdFieldNumber = 2,
+    kMessageIdsFieldNumber = 4,
     kCoorShardIdFieldNumber = 1,
     kMessageIdFieldNumber = 3,
   };
@@ -3229,6 +3266,22 @@ class AbortMsg :
   const std::string& _internal_subshardsid() const;
   void _internal_set_subshardsid(const std::string& value);
   std::string* _internal_mutable_subshardsid();
+  public:
+
+  // bytes messageIds = 4;
+  void clear_messageids();
+  const std::string& messageids() const;
+  void set_messageids(const std::string& value);
+  void set_messageids(std::string&& value);
+  void set_messageids(const char* value);
+  void set_messageids(const void* value, size_t size);
+  std::string* mutable_messageids();
+  std::string* release_messageids();
+  void set_allocated_messageids(std::string* messageids);
+  private:
+  const std::string& _internal_messageids() const;
+  void _internal_set_messageids(const std::string& value);
+  std::string* _internal_mutable_messageids();
   public:
 
   // uint64 coorShardId = 1;
@@ -3255,6 +3308,7 @@ class AbortMsg :
 
   ::PROTOBUF_NAMESPACE_ID::internal::InternalMetadataWithArena _internal_metadata_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr subshardsid_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr messageids_;
   ::PROTOBUF_NAMESPACE_ID::uint64 coorshardid_;
   ::PROTOBUF_NAMESPACE_ID::uint64 messageid_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
@@ -5845,6 +5899,66 @@ inline void SubCrossShardTx::set_allocated_shardids(std::string* shardids) {
   // @@protoc_insertion_point(field_set_allocated:protos.SubCrossShardTx.shardIds)
 }
 
+// bytes messageIds = 8;
+inline void SubCrossShardTx::clear_messageids() {
+  messageids_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline const std::string& SubCrossShardTx::messageids() const {
+  // @@protoc_insertion_point(field_get:protos.SubCrossShardTx.messageIds)
+  return _internal_messageids();
+}
+inline void SubCrossShardTx::set_messageids(const std::string& value) {
+  _internal_set_messageids(value);
+  // @@protoc_insertion_point(field_set:protos.SubCrossShardTx.messageIds)
+}
+inline std::string* SubCrossShardTx::mutable_messageids() {
+  // @@protoc_insertion_point(field_mutable:protos.SubCrossShardTx.messageIds)
+  return _internal_mutable_messageids();
+}
+inline const std::string& SubCrossShardTx::_internal_messageids() const {
+  return messageids_.GetNoArena();
+}
+inline void SubCrossShardTx::_internal_set_messageids(const std::string& value) {
+  
+  messageids_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value);
+}
+inline void SubCrossShardTx::set_messageids(std::string&& value) {
+  
+  messageids_.SetNoArena(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:protos.SubCrossShardTx.messageIds)
+}
+inline void SubCrossShardTx::set_messageids(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  
+  messageids_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:protos.SubCrossShardTx.messageIds)
+}
+inline void SubCrossShardTx::set_messageids(const void* value, size_t size) {
+  
+  messageids_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:protos.SubCrossShardTx.messageIds)
+}
+inline std::string* SubCrossShardTx::_internal_mutable_messageids() {
+  
+  return messageids_.MutableNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline std::string* SubCrossShardTx::release_messageids() {
+  // @@protoc_insertion_point(field_release:protos.SubCrossShardTx.messageIds)
+  
+  return messageids_.ReleaseNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline void SubCrossShardTx::set_allocated_messageids(std::string* messageids) {
+  if (messageids != nullptr) {
+    
+  } else {
+    
+  }
+  messageids_.SetAllocatedNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), messageids);
+  // @@protoc_insertion_point(field_set_allocated:protos.SubCrossShardTx.messageIds)
+}
+
 // -------------------------------------------------------------------
 
 // SubCrossShardTxReply
@@ -5987,6 +6101,66 @@ inline void SubCrossShardTxReply::_internal_set_messageid(::PROTOBUF_NAMESPACE_I
 inline void SubCrossShardTxReply::set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value) {
   _internal_set_messageid(value);
   // @@protoc_insertion_point(field_set:protos.SubCrossShardTxReply.messageId)
+}
+
+// bytes messageIds = 6;
+inline void SubCrossShardTxReply::clear_messageids() {
+  messageids_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline const std::string& SubCrossShardTxReply::messageids() const {
+  // @@protoc_insertion_point(field_get:protos.SubCrossShardTxReply.messageIds)
+  return _internal_messageids();
+}
+inline void SubCrossShardTxReply::set_messageids(const std::string& value) {
+  _internal_set_messageids(value);
+  // @@protoc_insertion_point(field_set:protos.SubCrossShardTxReply.messageIds)
+}
+inline std::string* SubCrossShardTxReply::mutable_messageids() {
+  // @@protoc_insertion_point(field_mutable:protos.SubCrossShardTxReply.messageIds)
+  return _internal_mutable_messageids();
+}
+inline const std::string& SubCrossShardTxReply::_internal_messageids() const {
+  return messageids_.GetNoArena();
+}
+inline void SubCrossShardTxReply::_internal_set_messageids(const std::string& value) {
+  
+  messageids_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value);
+}
+inline void SubCrossShardTxReply::set_messageids(std::string&& value) {
+  
+  messageids_.SetNoArena(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:protos.SubCrossShardTxReply.messageIds)
+}
+inline void SubCrossShardTxReply::set_messageids(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  
+  messageids_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:protos.SubCrossShardTxReply.messageIds)
+}
+inline void SubCrossShardTxReply::set_messageids(const void* value, size_t size) {
+  
+  messageids_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:protos.SubCrossShardTxReply.messageIds)
+}
+inline std::string* SubCrossShardTxReply::_internal_mutable_messageids() {
+  
+  return messageids_.MutableNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline std::string* SubCrossShardTxReply::release_messageids() {
+  // @@protoc_insertion_point(field_release:protos.SubCrossShardTxReply.messageIds)
+  
+  return messageids_.ReleaseNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline void SubCrossShardTxReply::set_allocated_messageids(std::string* messageids) {
+  if (messageids != nullptr) {
+    
+  } else {
+    
+  }
+  messageids_.SetAllocatedNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), messageids);
+  // @@protoc_insertion_point(field_set_allocated:protos.SubCrossShardTxReply.messageIds)
 }
 
 // -------------------------------------------------------------------
@@ -6379,6 +6553,66 @@ inline void AbortMsg::_internal_set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 va
 inline void AbortMsg::set_messageid(::PROTOBUF_NAMESPACE_ID::uint64 value) {
   _internal_set_messageid(value);
   // @@protoc_insertion_point(field_set:protos.AbortMsg.messageId)
+}
+
+// bytes messageIds = 4;
+inline void AbortMsg::clear_messageids() {
+  messageids_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline const std::string& AbortMsg::messageids() const {
+  // @@protoc_insertion_point(field_get:protos.AbortMsg.messageIds)
+  return _internal_messageids();
+}
+inline void AbortMsg::set_messageids(const std::string& value) {
+  _internal_set_messageids(value);
+  // @@protoc_insertion_point(field_set:protos.AbortMsg.messageIds)
+}
+inline std::string* AbortMsg::mutable_messageids() {
+  // @@protoc_insertion_point(field_mutable:protos.AbortMsg.messageIds)
+  return _internal_mutable_messageids();
+}
+inline const std::string& AbortMsg::_internal_messageids() const {
+  return messageids_.GetNoArena();
+}
+inline void AbortMsg::_internal_set_messageids(const std::string& value) {
+  
+  messageids_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value);
+}
+inline void AbortMsg::set_messageids(std::string&& value) {
+  
+  messageids_.SetNoArena(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:protos.AbortMsg.messageIds)
+}
+inline void AbortMsg::set_messageids(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  
+  messageids_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:protos.AbortMsg.messageIds)
+}
+inline void AbortMsg::set_messageids(const void* value, size_t size) {
+  
+  messageids_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:protos.AbortMsg.messageIds)
+}
+inline std::string* AbortMsg::_internal_mutable_messageids() {
+  
+  return messageids_.MutableNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline std::string* AbortMsg::release_messageids() {
+  // @@protoc_insertion_point(field_release:protos.AbortMsg.messageIds)
+  
+  return messageids_.ReleaseNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline void AbortMsg::set_allocated_messageids(std::string* messageids) {
+  if (messageids != nullptr) {
+    
+  } else {
+    
+  }
+  messageids_.SetAllocatedNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), messageids);
+  // @@protoc_insertion_point(field_set_allocated:protos.AbortMsg.messageIds)
 }
 
 #ifdef __GNUC__

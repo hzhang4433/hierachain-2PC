@@ -124,6 +124,7 @@ message SubCrossShardTx
     uint64 messageId = 5;
     bytes crossTxHash = 6;
     bytes shardIds = 7;
+    bytes messageIds = 8;
 }
 
 message SubCrossShardTxReply
@@ -133,6 +134,7 @@ message SubCrossShardTxReply
     uint64 destinShardId = 3;
     bytes crossTxHash = 4;
     uint64 messageId = 5;
+    bytes messageIds = 6;
 }
 
 message SubCrossShardTxCommit
@@ -158,4 +160,5 @@ message AbortMsg
     uint64 coorShardId = 1;
     bytes subShardsId = 2;
     uint64 messageId = 3;
+    bytes messageIds = 4;
 }

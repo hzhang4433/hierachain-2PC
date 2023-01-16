@@ -6,6 +6,7 @@
 #include <tbb/concurrent_queue.h>
 #include <libdevcore/FixedHash.h>
 #include <boost/algorithm/string.hpp>
+#include <deque>
 
 using namespace dev;
 using namespace std;
@@ -19,7 +20,7 @@ namespace dev {
             public:
                 BlockingTxQueue()
                 {
-                    txs = make_shared<queue<transaction>>();
+                    txs = make_shared<deque<transaction>>();
                     lockingkeys = make_shared<map<string, int>>();
                 }
 
@@ -31,14 +32,18 @@ namespace dev {
 
                 void popTx();
 
+                void popCrossTx(unsigned long coorId, unsigned long messageId);
+
                 bool popAbortedTx(string abortKey);
 
                 shared_ptr<transaction> frontTx();
 
+                shared_ptr<transaction> CrossTx(unsigned long coorId, unsigned long messageId);
+
                 ~BlockingTxQueue() { }
 
             public:
-                shared_ptr<queue<transaction>> txs; // 所有缓存的交易
+                shared_ptr<deque<transaction>> txs; // 所有缓存的交易
                 shared_ptr<map<string, int>> lockingkeys; // 当前被阻塞的key集合
                 mutex queueLock; // 保证对lockingkeys和txs操作的并发安全
         };

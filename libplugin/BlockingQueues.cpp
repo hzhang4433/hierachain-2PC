@@ -63,7 +63,7 @@ void BlockingTxQueue::insertTx(transaction tx) // 后面建议做batch优化
         }
     }
 
-    txs->push(tx); // 将交易压入缓存队列
+    txs->push_back(tx); // 将交易压入缓存队列
 }
 
 // 交易执行完，将交易和相应的锁清除
@@ -92,41 +92,111 @@ void BlockingTxQueue::popTx()
     }
 
     // 锁删除完毕，交易出队列
-    txs->pop();
+    txs->pop_front();
 }
 
+void BlockingTxQueue::popCrossTx(unsigned long coorId, unsigned long messageId)
+{
+    lock_guard<std::mutex> lock(queueLock);
+    
+    for (int i = 0; i < txs->size(); i++) {
+        auto tx = txs->at(i);
+        if (tx.source_shard_id == coorId && tx.message_id == messageId) {
+            string localrwkeys = tx.readwrite_key;
+            vector<string> localrwkeyItems;
+            boost::split(localrwkeyItems, localrwkeys, boost::is_any_of("_"), boost::token_compress_on);
+            size_t key_size = localrwkeyItems.size();
+
+            set<string> stateSet;
+            for(size_t i = 0; i < key_size; i++)
+            {
+                stateSet.insert(localrwkeyItems.at(i));
+            }
+
+            for(set<string>::iterator it = stateSet.begin(); it != stateSet.end(); it++)
+            {
+                string key = *it;
+                int lockNum = lockingkeys->at(key);
+                lockingkeys->at(key) = lockNum - 1;
+            }
+
+            // 锁删除完毕，交易出队列
+            txs->erase(txs->begin() + i);
+            return;
+        }
+    }
+}
+
+
 // 交易执行完，将交易和相应的锁清除
+// bool BlockingTxQueue::popAbortedTx(string abortKey)
+// {
+//     lock_guard<std::mutex> lock(queueLock);
+
+//     auto tx = txs->front(); // 即将被pop的交易
+//     string key = toString(tx.source_shard_id) + "_" + toString(tx.message_id);
+//     if (key != abortKey) {
+//         return false;
+//     }
+
+//     string localrwkeys = tx.readwrite_key;
+//     vector<string> localrwkeyItems;
+//     boost::split(localrwkeyItems, localrwkeys, boost::is_any_of("_"), boost::token_compress_on);
+//     size_t key_size = localrwkeyItems.size();
+
+//     set<string> stateSet;
+//     for(size_t i = 0; i < key_size; i++)
+//     {
+//         stateSet.insert(localrwkeyItems.at(i));
+//     }
+
+//     for(set<string>::iterator it = stateSet.begin(); it != stateSet.end(); it++)
+//     {
+//         string key = *it;
+//         int lockNum = lockingkeys->at(key);
+//         lockingkeys->at(key) = lockNum - 1;
+//     }
+
+//     // 锁删除完毕，交易出队列
+//     txs->pop();
+//     return true;
+// }
+
+// 遍历所有队列中交易进行abort ==> 在片内交易多时可能影响性能？
 bool BlockingTxQueue::popAbortedTx(string abortKey)
 {
     lock_guard<std::mutex> lock(queueLock);
 
-    auto tx = txs->front(); // 即将被pop的交易
-    string key = toString(tx.source_shard_id) + "_" + toString(tx.message_id);
-    if (key != abortKey) {
-        return false;
+    for (int i = 0; i < txs->size(); i++) {
+        auto tx = txs->at(i);
+        string key = toString(tx.source_shard_id);
+        if (key != abortKey) {
+            continue;
+        }
+        string localrwkeys = tx.readwrite_key;
+        vector<string> localrwkeyItems;
+        boost::split(localrwkeyItems, localrwkeys, boost::is_any_of("_"), boost::token_compress_on);
+        size_t key_size = localrwkeyItems.size();
+
+        set<string> stateSet;
+        for(size_t i = 0; i < key_size; i++)
+        {
+            stateSet.insert(localrwkeyItems.at(i));
+        }
+
+        for(set<string>::iterator it = stateSet.begin(); it != stateSet.end(); it++)
+        {
+            string key = *it;
+            int lockNum = lockingkeys->at(key);
+            lockingkeys->at(key) = lockNum - 1;
+        }
+
+        // 锁删除完毕，交易出队列
+        txs->erase(txs->begin() + i);
+        return true;
     }
 
-    string localrwkeys = tx.readwrite_key;
-    vector<string> localrwkeyItems;
-    boost::split(localrwkeyItems, localrwkeys, boost::is_any_of("_"), boost::token_compress_on);
-    size_t key_size = localrwkeyItems.size();
-
-    set<string> stateSet;
-    for(size_t i = 0; i < key_size; i++)
-    {
-        stateSet.insert(localrwkeyItems.at(i));
-    }
-
-    for(set<string>::iterator it = stateSet.begin(); it != stateSet.end(); it++)
-    {
-        string key = *it;
-        int lockNum = lockingkeys->at(key);
-        lockingkeys->at(key) = lockNum - 1;
-    }
-
-    // 锁删除完毕，交易出队列
-    txs->pop();
-    return true;
+    return false;
 }
 
 int BlockingTxQueue::size()
@@ -140,6 +210,19 @@ shared_ptr<transaction> BlockingTxQueue::frontTx()
     lock_guard<std::mutex> lock(queueLock);
     if (txs->size() > 0) {
         return make_shared<transaction>(txs->front());
+    }
+    return 0;
+}
+
+shared_ptr<transaction> BlockingTxQueue::CrossTx(unsigned long coorId, unsigned long messageId)
+{
+    lock_guard<std::mutex> lock(queueLock);
+    
+    for (int i = 0; i < txs->size(); i++) {
+        transaction txInfo = txs->at(i);
+        if (txInfo.source_shard_id == coorId && txInfo.message_id == messageId) {
+            return make_shared<transaction>(txs->at(i));
+        }
     }
     return 0;
 }

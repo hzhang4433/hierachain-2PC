@@ -50,7 +50,7 @@ namespace dev{
                 void processDeployContract(std::shared_ptr<dev::eth::Transaction> tx);
                 std::string createBatchTransaction(std::string signedDatas, int groupId);
                 void tryToSendSubTxs();
-                void executeCrossTx();
+                void executeCrossTx(unsigned long coorId, unsigned long messageId);
                 void executeCandidateTx();
                 void processBlockedCrossTx();
                 void sendAbortPacket(transaction txInfo);

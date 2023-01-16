@@ -401,7 +401,7 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
                          << LOG_KV("messageId", messageId);
                         
         // auto readwriteset = crossTx2StateAddress->at(crossTxHash);
-        m_deterministExecute->executeCrossTx();
+        m_deterministExecute->executeCrossTx(sourceShardId, messageId);
         // groupVerifier->executeCrossTx(readwriteset);
         // crossTx2StateAddress->unsafe_erase(crossTxHash);
     
@@ -551,7 +551,7 @@ void ConsensusPluginManager::processReceivedAbortMessage(protos::AbortMsg _txrlp
         // 阻塞队列中是否有交易
         if (m_deterministExecute->m_blockingTxQueue->size() > 0) {
             // 1. 尝试释放相关交易和锁
-            if(m_deterministExecute->m_blockingTxQueue->popAbortedTx(abortKey)) {
+            if(m_deterministExecute->m_blockingTxQueue->popAbortedTx(coorShardId)) {
                 BLOCKVERIFIER_LOG(INFO) << LOG_DESC("in processAbortMessage... popAbort成功");
                 // 2. 执行队列中后续交易
                 if (m_deterministExecute->m_blockingTxQueue->size() > 0) {
