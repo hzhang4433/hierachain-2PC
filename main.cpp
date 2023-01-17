@@ -313,7 +313,6 @@ class CrossShardTest
         std::shared_ptr<dev::rpc::Rpc> m_rpcService;
         shared_ptr<SyncThreadMaster> m_syncs;
         int32_t m_groupId;
-        int32_t m_internal_groupId;
 
     public:
         CrossShardTest(std::shared_ptr<dev::rpc::Rpc> _rpcService, int32_t _groupId, shared_ptr<SyncThreadMaster> _syncs)
@@ -1249,8 +1248,8 @@ int main(){
             transactionInjectionTest _injectionTest(rpcService, i, ledgerManager);
             // _injectionTest.deployContractTransaction("./deploy.json", i);
             std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-            // _injectionTest.injectionTransactions("./workload0.json", i);
-            _injectionTest.injectionTransactions("./workload1.json", i);
+            _injectionTest.injectionTransactions("./workload0.json", i);
+            // _injectionTest.injectionTransactions("./workload1.json", i);
             // _injectionTest.injectionTransactions("./workload2.json", i);
             // _injectionTest.injectionTransactions("./workload3.json", i);
             // _injectionTest.injectionTransactions("./workload4.json", i);
@@ -1278,12 +1277,12 @@ int main(){
     
     // 生成均匀负载
     // if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0))) {
-    //     createRandomDataSet(ledgerManager, 9000, 0, rpcService);
-    //     createRandomDataSet(ledgerManager, 9000, 20, rpcService);
-    //     createRandomDataSet(ledgerManager, 9000, 40, rpcService);
-    //     createRandomDataSet(ledgerManager, 9000, 60, rpcService);
-    //     createRandomDataSet(ledgerManager, 9000, 80, rpcService);
-    //     createRandomDataSet(ledgerManager, 9000, 100, rpcService);
+    //     createRandomDataSet(ledgerManager, 90000, 0, rpcService);
+    //     // createRandomDataSet(ledgerManager, 9000, 20, rpcService);
+    //     // createRandomDataSet(ledgerManager, 9000, 40, rpcService);
+    //     // createRandomDataSet(ledgerManager, 9000, 60, rpcService);
+    //     // createRandomDataSet(ledgerManager, 9000, 80, rpcService);
+    //     // createRandomDataSet(ledgerManager, 9000, 100, rpcService);
     // }
     
 

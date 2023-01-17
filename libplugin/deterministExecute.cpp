@@ -325,13 +325,13 @@ void deterministExecute::processInnerShardTx(std::string data_str, std::shared_p
             // 删除txHash2BlockHeight变量，代表相关交易已被执行
             // txHash2BlockHeight->unsafe_erase(txHash);
 
-            if (executedTx % 100 == 0 || (executedTx + 1) % 100 == 0) {
+            if (executedTx == 0 || (executedTx + 1) % 100 == 0) {
                 // exec = dev::plugin::executiveContext->getExecutive();
                 // auto vm = dev::plugin::executiveContext->getExecutiveInstance();
                 // exec->setVM(vm);
                 // dev::plugin::executiveContext->m_vminstance_pool.push(vm);
 
-                PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx);
+                PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx + 1);
             }
             dev::plugin::executiveContext->executeTransaction(exec, tx);
             
@@ -1063,13 +1063,13 @@ void deterministExecute::executeCrossTx(unsigned long coorId, unsigned long mess
         PLUGIN_LOG(INFO) << LOG_DESC("in executeCrossTx data_str is null");
         
         
-        if (executedTx % 100 == 0  || (executedTx + 1) % 100 == 0) {
+        if (executedTx == 0  || (executedTx + 1) % 100 == 0) {
             // exec = dev::plugin::executiveContext->getExecutive();
             // auto vm = dev::plugin::executiveContext->getExecutiveInstance();
             // exec->setVM(vm);
             // dev::plugin::executiveContext->m_vminstance_pool.push(vm);
 
-            PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx);
+            PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx + 1);
         }
         executedTx++;
 
@@ -1102,8 +1102,8 @@ void deterministExecute::executeCrossTx(unsigned long coorId, unsigned long mess
                 
                 dev::plugin::executiveContext->executeTransaction(exec, tx);
                 
-                if (executedTx % 100 == 0  || (executedTx + 1) % 100 == 0) {
-                    PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx);
+                if (executedTx == 0  || (executedTx + 1) % 100 == 0) {
+                    PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx + 1);
                 }
                 executedTx++;
             }
@@ -1217,8 +1217,8 @@ void deterministExecute::executeCandidateTx() {
     if (crossTx->find(tx->hash().abridged()) == crossTx->end()) { // 非跨片交易 => 直接执行
         // PLUGIN_LOG(INFO) << LOG_DESC("该笔交易为片内交易... in executeCandidateTx");
         
-        if (executedTx % 100 == 0  || (executedTx + 1) % 100 == 0) {
-            PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx);
+        if (executedTx == 0  || (executedTx + 1) % 100 == 0) {
+            PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx + 1);
         }
         executedTx++;
 
