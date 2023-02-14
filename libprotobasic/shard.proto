@@ -125,6 +125,7 @@ message SubCrossShardTx
     bytes crossTxHash = 6;
     bytes shardIds = 7;
     bytes messageIds = 8;
+    uint64 txNum = 9;
 }
 
 message SubCrossShardTxReply
@@ -134,7 +135,9 @@ message SubCrossShardTxReply
     uint64 destinShardId = 3;
     bytes crossTxHash = 4;
     uint64 messageId = 5;
-    bytes messageIds = 6;
+    bytes shardIds = 6;
+    bytes messageIds = 7;
+    uint64 txNum = 8;
 }
 
 message SubCrossShardTxCommit
@@ -144,6 +147,7 @@ message SubCrossShardTxCommit
     int64 sourceShardId = 3;
     int64 destinShardId = 4;
     uint64 messageId = 5;
+    uint64 txNum = 6;
 }
 
 message SubCrossShardTxCommitReply
@@ -153,6 +157,7 @@ message SubCrossShardTxCommitReply
     uint64 destinShardId = 3;
     bytes crossTxHash = 4;
     uint64 messageId = 5;
+    uint64 txNum = 6;
 }
 
 message AbortMsg

@@ -91,10 +91,14 @@ namespace dev {
         std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<int>>> crossTx2ShardID = 
                                 std::make_shared<tbb::concurrent_unordered_map<std::string, std::vector<int>>>();
         std::mutex m_crossTx2ShardIDMutex;
+        
+        // std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<int>>> crossTx2ShardMessageID = 
+        //                         std::make_shared<tbb::concurrent_unordered_map<std::string, std::vector<int>>>();
+        
 
         // 协调者分片存储对应跨片交易收集到的状态消息包
-        std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<int>>> crossTx2ReceivedMsg = 
-                                std::make_shared<tbb::concurrent_unordered_map<std::string, std::vector<int>>>();
+        std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<std::string>>> crossTx2ReceivedMsg = 
+                                std::make_shared<tbb::concurrent_unordered_map<std::string, std::vector<std::string>>>();
         std::mutex m_crossTx2ReceivedMsgMutex;
             
         // 子分片存储对应跨片交易收集到的commit消息包数量
@@ -156,6 +160,8 @@ namespace dev {
         // ADD ON 22.11.16
         // 落后的跨片交易
         std::shared_ptr<tbb::concurrent_unordered_set<int>> lateCrossTxMessageId = 
+                                std::make_shared<tbb::concurrent_unordered_set<int>>();
+        std::shared_ptr<tbb::concurrent_unordered_set<int>> lateCommitReplyMessageId = 
                                 std::make_shared<tbb::concurrent_unordered_set<int>>();
         std::mutex m_lateCrossTxMutex;
 
@@ -566,6 +572,7 @@ void createCrossTransaction(int cor, int sub1, int sub2, shared_ptr<dev::ledger:
     
 }
 
+// 两个及两个以上子分片
 void createCrossTransaction(int cor, vector<int>& shardIds, shared_ptr<dev::ledger::LedgerManager> ledgerManager, 
                             int txNum, string fileName, int status, transactionInjectionTest _injectionTest) 
 {    
@@ -606,6 +613,7 @@ void createCrossTransaction(int cor, vector<int>& shardIds, shared_ptr<dev::ledg
     
 }
 
+// 无status参数
 void createCrossTransaction(int cor, int sub1, int sub2, shared_ptr<dev::ledger::LedgerManager> ledgerManager, int txNum, string fileName, transactionInjectionTest _injectionTest) 
 {    
     // std::cout << "in new createCrossTransaction txNum = " << txNum << std::endl;
@@ -677,10 +685,12 @@ void createDataSet(int cor, int sub1, int sub2, std::shared_ptr<dev::ledger::Led
 
     if (percent == 20) {
         fileName = "workload1.json";
-    } else if (percent == 80) {
+    } else if (percent == 50) {
         fileName = "workload2.json";
-    } else if (percent == 100) {
+    } else if (percent == 80) {
         fileName = "workload3.json";
+    } else if (percent == 100) {
+        fileName = "workload4.json";
     }
 
     // 生成子分片1的片内交易
@@ -959,30 +969,47 @@ void createDataSet(int cor, vector<int>& shardIds, std::shared_ptr<dev::ledger::
     }
 }
 
+void swap(int &a, int &b) {
+    a ^= b;       //a=a^b
+    b ^= a;      //b=b^(a^b)=b^a^b=b^b^a=0^a=a
+    a ^= b;     //a=(a^b)^a=a^b^a=a^a^b=0^b=b
+}
+
 int getLCA(int subId1, int subId2) {
-    int flag1, flag2;
-    if (subId1 <= 3) {
-        flag1 = 1;
-    } else if(subId1 <= 6) {
-        flag1 = 2;
-    } else {
-        flag1 = 3;
-    }
-
-    if (subId2 <= 3) {
-        flag2 = 1;
-    } else if(subId2 <= 6) {
-        flag2 = 2;
-    } else {
-        flag2 = 3;
-    }
-
-    if (flag1 == 1 && flag2 ==1) {
+    if ((subId1 <= 3 || subId1 == 7) && (subId2 <=3 || subId2 == 7)) {
         return 7;
-    } else if (flag1 == 2 && flag2 == 2) {
+    } else if (((subId1 >= 4 && subId1 <= 6) || subId1 == 8) && ((subId2 >= 4 && subId2 <= 6) || subId2 == 8)) {
         return 8;
     }
     return 9;
+}
+
+int createCrossId(int id) {
+    srand((unsigned)time(NULL));
+    int newId;
+
+    if (id <= 3) {
+        // 范围:[4-6,8,9]
+        newId = (rand() % 5) + 4;
+        if (newId >= 7) {
+            newId++;
+        }
+    } else if (id <= 6) {
+        // 范围:[1-3,7,9]
+        newId = (rand() % 5) + 1;
+        if (newId == 4) {
+            newId = 7;
+        } else if (newId == 5) {
+            newId = 9;
+        }
+    } else if (id == 7) {
+        // 范围:[4-6]
+        newId = (rand() % 3) + 4;
+    } else if (id == 8) {
+        // 范围:[1-3]
+        newId = (rand() % 3) + 1;
+    }
+    return newId;
 }
 
 void createRandomDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerManager, int txNum, int percent, std::shared_ptr<dev::rpc::Rpc> rpcService) {
@@ -1034,16 +1061,156 @@ void createRandomDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerManag
         std::cout << corId << ":" << subId1 << "-" << subId2 << std::endl;
         // 生成交易
         newfileName = "../node" + to_string((corId-1)*4) + "/" + fileName;
-        if (nowCrossNum < 300) {
+        if (nowCrossNum < 500) {
             createCrossTransaction(corId, subId1, subId2, ledgerManager, nowCrossNum, newfileName, _injectionTest);
             nowCrossNum = 0;
         } else {
-            createCrossTransaction(corId, subId1, subId2, ledgerManager, 300, newfileName, _injectionTest);
-            nowCrossNum -= 300;
+            createCrossTransaction(corId, subId1, subId2, ledgerManager, 500, newfileName, _injectionTest);
+            nowCrossNum -= 500;
         }
     }
 }
 
+// 生成局部性负载
+void createLocalityDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerManager, int txNum, int percent, std::shared_ptr<dev::rpc::Rpc> rpcService) {
+    // 计算跨片交易及各分片的片内交易数
+    string fileName, newfileName;
+    int shardsNum = dev::consensus::SHARDNUM;
+    int crossTxNum = (txNum * percent) / 100;
+    int innerTxNum = (txNum - crossTxNum) / shardsNum;
+    transactionInjectionTest _injectionTest(rpcService, 1);
+    if (percent == 0) {
+        fileName = "workload0.json";
+    } else if (percent == 20) {
+        fileName = "workload1.json";
+    } else if (percent == 50) {
+        fileName = "workload2.json";
+    } else if (percent == 80) {
+        fileName = "workload3.json";
+    } else if (percent == 100) {
+        fileName = "workload4.json";
+    }
+
+    // 生成子分片的片内交易
+    if (innerTxNum != 0) {
+        for (int i = 1; i <= shardsNum; i++) {
+            flags[i - 1] = false;
+            newfileName = "../node" + to_string((i-1)*4) + "/" + fileName;
+            createInnerTransaction(i, ledgerManager, innerTxNum, newfileName, 0, _injectionTest);
+        }
+    }
+
+    // 生成局部性跨片交易
+    int allCrossNum = crossTxNum;
+    // 跨层交易和局部性交易数
+    int otherCrossNum = crossTxNum / 21;
+    int localityCrossNum = otherCrossNum * 20;
+    // 上层局部性交易数
+    int upperCrossNum = localityCrossNum / 5;
+    // 下层局部性交易数
+    int downCrossNum = localityCrossNum / 5 * 2;
+    
+    // 生成局部性交易
+    srand((unsigned)time(NULL));
+    int nowCrossNum = upperCrossNum;
+    std::cout << "开始生成上层局部性交易：" << std::endl;
+    while(nowCrossNum != 0) {
+        // 生成随机两个子分片ID 范围:[7,9]
+        // 默认各个节点生成的随机数顺序一致
+        int subId1 = (rand() % (9 - 7 + 1)) + 7;
+        int subId2 = (rand() % (9 - 7 + 1)) + 7;
+        while (subId2 == subId1) {
+            subId2 = (rand() % (9 - 7 + 1)) + 7;
+        }
+        if (subId1 > subId2) {
+            swap(subId1, subId2);
+        }
+        // 查找最近公共祖先
+        int corId = 9;
+        std::cout << corId << ":" << subId1 << "-" << subId2 << std::endl;
+        // 生成交易
+        newfileName = "../node" + to_string((corId-1)*4) + "/" + fileName;
+        if (nowCrossNum < 500) {
+            createCrossTransaction(corId, subId1, subId2, ledgerManager, nowCrossNum, newfileName, _injectionTest);
+            nowCrossNum = 0;
+        } else {
+            createCrossTransaction(corId, subId1, subId2, ledgerManager, 500, newfileName, _injectionTest);
+            nowCrossNum -= 500;
+        }
+    }
+
+    std::cout << "开始生成下层局部性交易：" << std::endl;
+    for (int i = 1; i < 7; i += 3) {
+        nowCrossNum = downCrossNum;
+        while(nowCrossNum != 0) {
+            // 生成随机两个子分片ID 范围:[1,4] / [4,7] == [i, i+3]
+            // 默认各个节点生成的随机数顺序一致
+            int subId1 = (rand() % 4) + i;
+            int subId2 = (rand() % 4) + i;
+            while (subId2 == subId1) {
+                subId2 = (rand() % 4) + i;
+            }
+            if (i == 1 && subId1 == 4) {
+                subId1 = 7;
+            } else if (i == 1 && subId2 == 4) {
+                subId2 = 7;
+            } else if (subId1 == 7) {
+                subId1 = 8;
+            } else if (subId2 == 7) {
+                subId2 = 8;
+            }
+
+            if (subId1 > subId2) {
+                swap(subId1, subId2);
+            }
+
+            int corId;
+            if (i == 1) {
+                corId = 7;
+            } else if (i == 4) {
+                corId = 8;
+            }
+            
+            std::cout << corId << ":" << subId1 << "-" << subId2 << std::endl;
+            // 生成交易
+            newfileName = "../node" + to_string((corId-1)*4) + "/" + fileName;
+            if (nowCrossNum < 500) {
+                createCrossTransaction(corId, subId1, subId2, ledgerManager, nowCrossNum, newfileName, _injectionTest);
+                nowCrossNum = 0;
+            } else {
+                createCrossTransaction(corId, subId1, subId2, ledgerManager, 500, newfileName, _injectionTest);
+                nowCrossNum -= 500;
+            }
+        }
+    }
+
+    // 生成跨层交易
+    nowCrossNum = otherCrossNum;
+    std::cout << "开始生成跨层级交易：" << std::endl;
+    while(nowCrossNum != 0) {
+        // 生成随机两个子分片ID 范围:[1,9]
+        // 默认各个节点生成的随机数顺序一致
+        int subId1 = (rand() % shardsNum) + 1;
+        int subId2 = createCrossId(subId1);
+        if (subId1 > subId2) {
+            swap(subId1, subId2);
+        }
+
+        // 查找最近公共祖先
+        int corId = getLCA(subId1, subId2);
+        std::cout << corId << ":" << subId1 << "-" << subId2 << std::endl;
+        // 生成交易
+        newfileName = "../node" + to_string((corId-1)*4) + "/" + fileName;
+        if (nowCrossNum < 500) {
+            createCrossTransaction(corId, subId1, subId2, ledgerManager, nowCrossNum, newfileName, _injectionTest);
+            nowCrossNum = 0;
+        } else {
+            createCrossTransaction(corId, subId1, subId2, ledgerManager, 500, newfileName, _injectionTest);
+            nowCrossNum -= 500;
+        }
+    }
+
+}
 
 int main(){
 
@@ -1150,7 +1317,7 @@ int main(){
     // consensusPluginManager->m_deterministExecute->start(); // 启动交易处理线程
     
     
-    consensusPluginManager->m_deterministExecute->setAttribute(blockchainManager);
+    consensusPluginManager->m_deterministExecute->setAttribute(blockchainManager, rpcService);
     
     std::thread processBlocksThread(&dev::plugin::deterministExecute::processConsensusBlock, consensusPluginManager->m_deterministExecute);
     processBlocksThread.detach();
@@ -1161,7 +1328,7 @@ int main(){
     syncs->setAttribute(blockchainManager);
     syncs->setAttribute(consensusPluginManager);
     
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+    // std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
     /* 
     // 测试发送交易（分片1的node1向本分片1发送一笔片内交易
@@ -1242,23 +1409,25 @@ int main(){
     }
     */
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(4000));
+// dev::consensus::SHARDNUM
     for (int i = 1; i <= dev::consensus::SHARDNUM; i++) {
         if(dev::consensus::internal_groupId == i && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(i - 1))) {
             PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
             transactionInjectionTest _injectionTest(rpcService, i, ledgerManager);
             // _injectionTest.deployContractTransaction("./deploy.json", i);
-            std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-            _injectionTest.injectionTransactions("./workload0.json", i);
+            
+            // _injectionTest.injectionTransactions("./workload0.json", i);
             // _injectionTest.injectionTransactions("./workload1.json", i);
             // _injectionTest.injectionTransactions("./workload2.json", i);
             // _injectionTest.injectionTransactions("./workload3.json", i);
-            // _injectionTest.injectionTransactions("./workload4.json", i);
-            // _injectionTest.injectionTransactions("./workload5.json", i);
+            _injectionTest.injectionTransactions("./workload4.json", i);
         }
     }
 
     // createDataSet(3, 1, 2, ledgerManager, 150000, 20, rpcService);
     // createDataSet(3, 1, 2, ledgerManager, 150000, 80, rpcService);
+    // createDataSet(3, 1, 2, ledgerManager, 90000, 100, rpcService);
     // createHBDataSet(3, 1, 2, ledgerManager, rpcService);
 
     // int coorShardId = 7;
@@ -1277,12 +1446,21 @@ int main(){
     
     // 生成均匀负载
     // if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0))) {
-    //     createRandomDataSet(ledgerManager, 90000, 0, rpcService);
-    //     // createRandomDataSet(ledgerManager, 9000, 20, rpcService);
-    //     // createRandomDataSet(ledgerManager, 9000, 40, rpcService);
-    //     // createRandomDataSet(ledgerManager, 9000, 60, rpcService);
-    //     // createRandomDataSet(ledgerManager, 9000, 80, rpcService);
-    //     // createRandomDataSet(ledgerManager, 9000, 100, rpcService);
+    //     // createRandomDataSet(ledgerManager, 90000, 0, rpcService);
+    //     // createRandomDataSet(ledgerManager, 90000, 20, rpcService);
+    //     // createRandomDataSet(ledgerManager, 90000, 40, rpcService);
+    //     // createRandomDataSet(ledgerManager, 90000, 60, rpcService);
+    //     // createRandomDataSet(ledgerManager, 90000, 80, rpcService);
+    //     createRandomDataSet(ledgerManager, 90000, 100, rpcService);
+    // }
+
+    // 生成局部性负载
+    // if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0))) {
+    //     // createLocalityDataSet(ledgerManager, 90000, 0, rpcService);
+    //     // createLocalityDataSet(ledgerManager, 90000, 20, rpcService);
+    //     // createLocalityDataSet(ledgerManager, 90000, 50, rpcService);
+    //     // createLocalityDataSet(ledgerManager, 90000, 80, rpcService);
+    //     createLocalityDataSet(ledgerManager, 21000, 100, rpcService);
     // }
     
 

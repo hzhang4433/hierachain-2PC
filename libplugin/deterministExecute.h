@@ -8,6 +8,7 @@
 #include <mutex>
 #include <libblockchain/BlockChainInterface.h>
 #include <libplugin/BlockingQueues.h>
+#include <librpc/Rpc.h>
 
 using namespace std;
 
@@ -41,7 +42,7 @@ namespace dev{
                 void replyToCoordinatorCommitOK(dev::plugin::transaction txInfo);
                 void checkForDeterministExecuteTxWookLoop();
                 void checkDelayCommitPacket(dev::plugin::transaction txInfo);
-                void setAttribute(std::shared_ptr<dev::blockchain::BlockChainInterface> _blockchainManager);
+                void setAttribute(std::shared_ptr<dev::blockchain::BlockChainInterface> _blockchainManager, std::shared_ptr<dev::rpc::Rpc> _service);
                 std::string dataToHexString(bytes data);
                 int checkTransactionType(std::string& hex_m_data_str, std::shared_ptr<dev::eth::Transaction> tx);
                 void processInnerShardTx(std::string data_str, std::shared_ptr<dev::eth::Transaction> tx);
@@ -68,6 +69,7 @@ namespace dev{
                 int consensusTx = 0;
 
                 std::shared_ptr <dev::blockchain::BlockChainInterface> m_blockchainManager;
+                std::shared_ptr<dev::rpc::Rpc> m_rpc_service;
                 // 对应状态集收集的messageId
                 std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> key2Messageid;
                 // 对应状态集messageId对应的子交易

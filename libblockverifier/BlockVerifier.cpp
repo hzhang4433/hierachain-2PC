@@ -33,8 +33,8 @@
 #include <thread>
 #include <librpc/Common.h>
 #include <libsync/SyncMsgPacket.h>
-#include <libplugin/deterministExecute.h>
-#include <libplugin/Common.h>
+// #include <libplugin/deterministExecute.h>
+// #include <libplugin/Common.h>
 
 
 using namespace dev;
@@ -44,8 +44,8 @@ using namespace dev::blockverifier;
 using namespace dev::executive;
 using namespace dev::storage;
 using namespace dev::rpc;
-using namespace dev::plugin;
-using namespace dev::consensus;
+// using namespace dev::plugin;
+// using namespace dev::consensus;
 using namespace dev::p2p;
 
 ExecutiveContext::Ptr BlockVerifier::executeBlock(Block& block, BlockInfo const& parentBlockInfo)

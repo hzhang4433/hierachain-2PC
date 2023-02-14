@@ -56,7 +56,7 @@ namespace dev {
                 void removeNotLatest(std::string const _state);
                 bool isLatest(std::string const _state);
                 h512 getNodeId(int _index);
-                void setAttribute(std::shared_ptr<dev::blockchain::BlockChainInterface> _blockchainManager);
+                void setAttribute(std::shared_ptr<dev::blockchain::BlockChainInterface> _blockchainManager, std::shared_ptr<dev::rpc::Rpc> _service);
 
 
                 /// record already send DAG(wait exnode) key: dagId value: waitStateNum

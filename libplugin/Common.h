@@ -32,6 +32,7 @@ class ExecuteVMTestFixture;
         // 跨片交易涉及的所有分片id，用'_'分隔
         std::string shardIds;
         std::string messageIds; // 用 "_" 分隔
+        unsigned long txNum;
     };
 
     struct blockedCrossTransaction
@@ -112,7 +113,8 @@ class ExecuteVMTestFixture;
 
     // ADD BY ZH
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<int>>> crossTx2ShardID;
-    extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<int>>> crossTx2ReceivedMsg;
+    // extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<int>>> crossTx2ShardMessageID;
+    extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<std::string>>> crossTx2ReceivedMsg;
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> crossTx2CommitMsg;
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<int>>> crossTx2ReceivedCommitMsg;
 	extern dev::PROTOCOL_ID group_protocolID;
@@ -123,6 +125,7 @@ class ExecuteVMTestFixture;
     extern std::shared_ptr<tbb::concurrent_unordered_set<std::string>> doneCrossTx;
     // 22.11.16
     extern std::shared_ptr<tbb::concurrent_unordered_set<int>> lateCrossTxMessageId;
+    extern std::shared_ptr<tbb::concurrent_unordered_set<int>> lateCommitReplyMessageId;
     // 22.11.2
     // 映射交易hash到其所在区块高度
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> txHash2BlockHeight;
