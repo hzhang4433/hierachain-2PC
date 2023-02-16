@@ -62,8 +62,8 @@ using namespace dev::plugin;
 namespace dev {
     namespace plugin {
         // 分片待处理的跨片子交易详细信息
-        std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> crossTx = 
-                                std::make_shared<tbb::concurrent_unordered_map<std::string, transaction>>(); 
+        std::shared_ptr<tbb::concurrent_unordered_map<string, shared_ptr<transaction>>> crossTx = 
+                                std::make_shared<tbb::concurrent_unordered_map<string, shared_ptr<transaction>>>(); 
         std::mutex m_crossTxMutex;
 
         // 缓冲队列跨片交易集合(用以应对网络传输下，收到的交易乱序)，(shardid_messageid-->subtx)，由执行模块代码触发
@@ -148,8 +148,8 @@ namespace dev {
         // ADD ON 22.11.8
         // std::map<h256, transaction> innerTx;
         // 片内交易映射至交易状态集
-        std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> innerTx = 
-                                std::make_shared<tbb::concurrent_unordered_map<std::string, transaction>>();
+        std::shared_ptr<tbb::concurrent_unordered_map<string, shared_ptr<transaction>>> innerTx = 
+                                std::make_shared<tbb::concurrent_unordered_map<string, shared_ptr<transaction>>>();
         std::mutex m_innerTxMutex;
 
         // 跨片交易映射至对应状态集
@@ -1317,7 +1317,8 @@ int main(){
     // consensusPluginManager->m_deterministExecute->start(); // 启动交易处理线程
     
     
-    consensusPluginManager->m_deterministExecute->setAttribute(blockchainManager, rpcService);
+    consensusPluginManager->setAttribute(blockchainManager, rpcService);
+    // consensusPluginManager->m_deterministExecute->setAttribute(blockchainManager);
     
     std::thread processBlocksThread(&dev::plugin::deterministExecute::processConsensusBlock, consensusPluginManager->m_deterministExecute);
     processBlocksThread.detach();
@@ -1409,7 +1410,7 @@ int main(){
     }
     */
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(4000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 // dev::consensus::SHARDNUM
     for (int i = 1; i <= dev::consensus::SHARDNUM; i++) {
         if(dev::consensus::internal_groupId == i && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(i - 1))) {
@@ -1456,11 +1457,11 @@ int main(){
 
     // 生成局部性负载
     // if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0))) {
-    //     // createLocalityDataSet(ledgerManager, 90000, 0, rpcService);
-    //     // createLocalityDataSet(ledgerManager, 90000, 20, rpcService);
-    //     // createLocalityDataSet(ledgerManager, 90000, 50, rpcService);
-    //     // createLocalityDataSet(ledgerManager, 90000, 80, rpcService);
-    //     createLocalityDataSet(ledgerManager, 21000, 100, rpcService);
+    //     // createLocalityDataSet(ledgerManager, 63000, 0, rpcService);
+    //     // createLocalityDataSet(ledgerManager, 63000, 20, rpcService);
+    //     // createLocalityDataSet(ledgerManager, 63000, 50, rpcService);
+    //     // createLocalityDataSet(ledgerManager, 63000, 80, rpcService);
+    //     createLocalityDataSet(ledgerManager, 63000, 100, rpcService);
     // }
     
 
@@ -1486,7 +1487,7 @@ int main(){
 
     while (true)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000000));
     }
     return 0;
 }

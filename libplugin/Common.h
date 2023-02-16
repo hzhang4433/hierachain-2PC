@@ -19,20 +19,52 @@ class ExecuteVMTestFixture;
 // #define PLUGIN_LOG(LEVEL) LOG(LEVEL) << LOG_BADGE("PLGIN")
 #define PLUGIN_LOG(LEVEL) LOG(LEVEL) << LOG_BADGE("PLUGIN") << LOG_BADGE("PLUGIN")
 
-    struct transaction
-    {
-        int type; // 交易类型, 0 为片内交易, 1 为跨片子交易
-        unsigned long source_shard_id;
-        unsigned long destin_shard_id;
-        unsigned long message_id;
-        std::string cross_tx_hash;
-        dev::eth::Transaction::Ptr tx;
-        // 多个读写集时候中间用'_'号分隔开，为了便于实验，先假设所有的片内交易只访问片内的一个读写集key，跨片交易的读写集可能有多个
-        std::string readwrite_key;
-        // 跨片交易涉及的所有分片id，用'_'分隔
-        std::string shardIds;
-        std::string messageIds; // 用 "_" 分隔
-        unsigned long txNum;
+    // struct transaction
+    // {
+    //     int type; // 交易类型, 0 为片内交易, 1 为跨片子交易
+    //     unsigned long source_shard_id;
+    //     unsigned long destin_shard_id;
+    //     unsigned long message_id;
+    //     // unsigned long txNum;
+    //     std::string cross_tx_hash;
+    //     dev::eth::Transaction::Ptr tx;
+    //     // 多个读写集时候中间用'_'号分隔开，为了便于实验，先假设所有的片内交易只访问片内的一个读写集key，跨片交易的读写集可能有多个
+    //     std::string readwrite_key;
+    //     // 跨片交易涉及的所有分片id，用'_'分隔
+    //     std::string shardIds;
+    //     std::string messageIds; // 用 "_" 分隔
+    // };
+
+
+    class transaction{
+        public:
+            int type; // 交易类型, 0 为片内交易, 1 为跨片子交易
+            unsigned long source_shard_id;
+            unsigned long destin_shard_id;
+            unsigned long message_id;
+            unsigned long txNum;
+            std::string cross_tx_hash;
+            dev::eth::Transaction::Ptr tx;
+            // 多个读写集时候中间用'_'号分隔开，为了便于实验，先假设所有的片内交易只访问片内的一个读写集key，跨片交易的读写集可能有多个
+            std::string readwrite_key;
+            // 跨片交易涉及的所有分片id，用'_'分隔
+            std::string shardIds;
+            std::string messageIds; // 用 "_" 分隔
+        public:
+            transaction(int ty, unsigned long s, unsigned long d, unsigned long m, unsigned long tn,
+                        std::string txHash, dev::eth::Transaction::Ptr txP, std::string key, 
+                        std::string sIds, std::string mIds) {
+                type = ty;
+                source_shard_id = s;
+                destin_shard_id = d;
+                message_id = m;
+                txNum = tn;
+                cross_tx_hash = txHash;
+                tx = txP;
+                readwrite_key = key;
+                shardIds = sIds;
+                messageIds = mIds;
+            }
     };
 
     struct blockedCrossTransaction
@@ -94,7 +126,7 @@ class ExecuteVMTestFixture;
 */
     // extern std::map<h256, transaction> crossTx; 
     // 分片待处理的跨片子交易详细信息
-    extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> crossTx;
+    extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::shared_ptr<transaction>>> crossTx;
 
     // 缓冲队列跨片交易集合(用以应对网络传输下，收到的交易乱序)，(shardid_messageid-->subtx)，由执行模块代码触发
     // extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> cached_cs_tx;
@@ -135,7 +167,7 @@ class ExecuteVMTestFixture;
     extern std::shared_ptr<tbb::concurrent_unordered_map<int, std::vector<std::string>>> blockHeight2CrossTxHash;
     // 22.11.8
     // extern std::map<h256, transaction> innerTx;
-    extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, transaction>> innerTx;
+    extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::shared_ptr<transaction>>> innerTx;
     // extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> crossTx2StateAddress;
 
     // 22.12.23

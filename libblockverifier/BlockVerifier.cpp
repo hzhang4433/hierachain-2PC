@@ -34,7 +34,7 @@
 #include <librpc/Common.h>
 #include <libsync/SyncMsgPacket.h>
 // #include <libplugin/deterministExecute.h>
-// #include <libplugin/Common.h>
+#include <libplugin/Common.h>
 
 
 using namespace dev;

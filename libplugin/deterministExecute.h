@@ -12,6 +12,12 @@
 
 using namespace std;
 
+// namespace dev{
+//     namespace rpc{
+//         class Rpc;
+//     }
+// }
+
 namespace dev{
     namespace plugin
     {
@@ -38,10 +44,10 @@ namespace dev{
                 void deterministExecuteTx();
                 void processConsensusBlock();
                 // void start();
-                void replyToCoordinator(dev::plugin::transaction txInfo, dev::PROTOCOL_ID& m_group_protocolID, std::shared_ptr<dev::p2p::Service> m_group_service);
-                void replyToCoordinatorCommitOK(dev::plugin::transaction txInfo);
+                void replyToCoordinator(shared_ptr<dev::plugin::transaction> txInfo, dev::PROTOCOL_ID& m_group_protocolID, std::shared_ptr<dev::p2p::Service> m_group_service);
+                void replyToCoordinatorCommitOK(shared_ptr<dev::plugin::transaction> txInfo);
                 void checkForDeterministExecuteTxWookLoop();
-                void checkDelayCommitPacket(dev::plugin::transaction txInfo);
+                void checkDelayCommitPacket(shared_ptr<dev::plugin::transaction> txInfo);
                 void setAttribute(std::shared_ptr<dev::blockchain::BlockChainInterface> _blockchainManager, std::shared_ptr<dev::rpc::Rpc> _service);
                 std::string dataToHexString(bytes data);
                 int checkTransactionType(std::string& hex_m_data_str, std::shared_ptr<dev::eth::Transaction> tx);
@@ -54,10 +60,11 @@ namespace dev{
                 void executeCrossTx(unsigned long coorId, unsigned long messageId);
                 void executeCandidateTx();
                 void processBlockedCrossTx();
-                void sendAbortPacket(transaction txInfo);
+                void sendAbortPacket(shared_ptr<transaction> txInfo);
                 void pushBlockCrossTx(string subShardIds, vector<string> shardIds, string crossTxHash, vector<string>& keySet);
                 bool isAborted(string abortKey);
                 void checkAbortedTransaction(shared_ptr<dev::plugin::transaction> txInfo);
+                int getRand(int a, int b);
                 
                 int popedTxNum = 0;
                 int count = 0;

@@ -199,18 +199,17 @@ void ConsensusPluginManager::processReceivedCrossTx(protos::SubCrossShardTx _txr
                     //  << LOG_KV("signeddata", signedDatas)
                      << LOG_KV("stateAddress", stateAddress); // 多个状态集通过"_"来划分 
 
-    crossTx->insert(std::make_pair(tx->hash().abridged(), transaction{
+    crossTx->insert(std::make_pair(tx->hash().abridged(), std::make_shared<transaction>(
         1, 
         (unsigned long)sourceShardId, 
         (unsigned long)destinshardId, 
-        (unsigned long)messageId, 
+        (unsigned long)messageId,
+        (unsigned long)txNum, 
         crossTxHash, 
         tx, 
         stateAddress,
         shardIds,
-        messageIds,
-        txNum}));
-
+        messageIds)));
 
     // 判断当前节点是否为头节点
     // PLUGIN_LOG(INFO) << LOG_DESC("当前forwardNodeId为: ") << LOG_DESC(toHex(forwardNodeId.at(i)));
@@ -425,11 +424,11 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
 
         if (sourceShardId == internal_groupId && lateCommitReplyMessageId->find(messageId) != lateCommitReplyMessageId->end()) {
             doneCrossTx->insert(crossTxHash);
-            PLUGIN_LOG(INFO) << LOG_DESC("跨片交易流程完成... in processReceivedCrossTxCommit")
-                             << LOG_KV("messageId", messageId);
-            
+
             m_deterministExecute->executedTx += crossTxNum;
-            PLUGIN_LOG(INFO) << LOG_KV("executedTx", m_deterministExecute->executedTx);
+            PLUGIN_LOG(INFO) << LOG_DESC("跨片交易流程完成... in processReceivedCrossTxCommit")
+                             << LOG_KV("messageId", messageId)
+                             << LOG_KV("executedTx", m_deterministExecute->executedTx);
 
             // 非头节点不必转发
             if(dev::plugin::nodeIdStr != toHex(forwardNodeId.at(internal_groupId - 1)))
@@ -542,12 +541,10 @@ void ConsensusPluginManager::processReceivedCrossTxCommitReply(protos::SubCrossS
     }
 
     // 添加doneCrossTx，防止收到历史交易包——22.11.6
-    doneCrossTx->insert(crossTxHash);
-    PLUGIN_LOG(INFO) << LOG_DESC("跨片交易流程完成...")
-                     << LOG_KV("messageId", messageId);
-    
     m_deterministExecute->executedTx += txNum;
-    PLUGIN_LOG(INFO) << LOG_KV("executedTx", m_deterministExecute->executedTx);
+    PLUGIN_LOG(INFO) << LOG_DESC("跨片交易流程完成...")
+                     << LOG_KV("messageId", messageId)
+                     << LOG_KV("executedTx", m_deterministExecute->executedTx);
 
     // 非头节点不必转发
     if(dev::plugin::nodeIdStr != toHex(forwardNodeId.at(internal_groupId - 1)))
@@ -593,15 +590,25 @@ void ConsensusPluginManager::processReceivedAbortMessage(protos::AbortMsg _txrlp
         abortSet->insert(abortKey);
     }
     
-    if (coorShardId == dev::consensus::internal_groupId && 
-        nodeIdStr == toHex(forwardNodeId.at(coorShardId - 1))) {
+    if (coorShardId == dev::consensus::internal_groupId) {
         // 协调者节点处理abort消息包
-        // 1. 停随机一段时间 -- [0,100)ms
-        int randomTime = getRand(0, 10) * 10;
-        std::this_thread::sleep_for(std::chrono::milliseconds(randomTime));
-        // 2. 再次发送跨片交易消息包
-        m_deterministExecute->processBlockedCrossTx();
-        PLUGIN_LOG(INFO) << LOG_DESC("协调者头节点处理abort消息包完毕");
+        // 若协调者也是参与者，当收到其它参与者分片发送的abort包时，同样要处理阻塞队列
+        std::vector<std::string> shardIds;
+        boost::split(shardIds, subShardsId, boost::is_any_of("_"), boost::token_compress_on);
+        for (int i = shardIds.size() - 1; i >= 0; i--) {
+            if (atoi(shardIds.at(i).c_str()) == coorShardId) {
+                m_deterministExecute->m_blockingTxQueue->popAbortedTx(to_string(coorShardId));
+                break;
+            }
+        }
+        if (nodeIdStr == toHex(forwardNodeId.at(coorShardId - 1))) {
+            // 1. 停随机一段时间 -- [0,100)ms
+            int randomTime = getRand(0, 10) * 10;
+            std::this_thread::sleep_for(std::chrono::milliseconds(randomTime));
+            // 2. 再次发送跨片交易消息包
+            m_deterministExecute->processBlockedCrossTx();
+            PLUGIN_LOG(INFO) << LOG_DESC("协调者头节点处理abort消息包完毕");
+        }
     } else {
         // 子分片节点处理abort消息包
         // 阻塞队列中是否有交易

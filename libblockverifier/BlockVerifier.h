@@ -37,10 +37,10 @@
 #include <algorithm>
 #include <memory>
 #include <thread>
-// #include <libprotobasic/shard.pb.h>
-// #include <libplugin/Common.h>
+#include <libprotobasic/shard.pb.h>
+#include <libplugin/Common.h>
 
-// #include <libconsensus/pbft/PBFTEngine.h>
+#include <libconsensus/pbft/PBFTEngine.h>
 
 namespace dev
 {

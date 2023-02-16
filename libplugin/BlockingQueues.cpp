@@ -31,12 +31,12 @@ bool BlockingTxQueue::isBlocked(string& keys)
 }
 
 
-void BlockingTxQueue::insertTx(transaction tx) // 后面建议做batch优化
+void BlockingTxQueue::insertTx(shared_ptr<transaction> tx) // 后面建议做batch优化
 {
     // 将交易访问的所有的本地读写集插入到lockingkeys中
     lock_guard<std::mutex> lock(queueLock);
 
-    string localrwkeys = tx.readwrite_key; // 片内交易也可能访问多个状态，用_分开
+    string localrwkeys = tx->readwrite_key; // 片内交易也可能访问多个状态，用_分开
     vector<string> localrwkeyItems;
     boost::split(localrwkeyItems, localrwkeys, boost::is_any_of("_"), boost::token_compress_on);
     size_t key_size = localrwkeyItems.size();
@@ -73,7 +73,7 @@ void BlockingTxQueue::popTx()
 
     auto tx = txs->front(); // 即将被pop的交易
 
-    string localrwkeys = tx.readwrite_key;
+    string localrwkeys = tx->readwrite_key;
     vector<string> localrwkeyItems;
     boost::split(localrwkeyItems, localrwkeys, boost::is_any_of("_"), boost::token_compress_on);
     size_t key_size = localrwkeyItems.size();
@@ -101,8 +101,8 @@ void BlockingTxQueue::popCrossTx(unsigned long coorId, unsigned long messageId)
     
     for (int i = 0; i < txs->size(); i++) {
         auto tx = txs->at(i);
-        if (tx.source_shard_id == coorId && tx.message_id == messageId) {
-            string localrwkeys = tx.readwrite_key;
+        if (tx->source_shard_id == coorId && tx->message_id == messageId) {
+            string localrwkeys = tx->readwrite_key;
             vector<string> localrwkeyItems;
             boost::split(localrwkeyItems, localrwkeys, boost::is_any_of("_"), boost::token_compress_on);
             size_t key_size = localrwkeyItems.size();
@@ -169,11 +169,11 @@ bool BlockingTxQueue::popAbortedTx(string abortKey)
 
     for (int i = 0; i < txs->size(); i++) {
         auto tx = txs->at(i);
-        string key = toString(tx.source_shard_id);
+        string key = toString(tx->source_shard_id);
         if (key != abortKey) {
             continue;
         }
-        string localrwkeys = tx.readwrite_key;
+        string localrwkeys = tx->readwrite_key;
         vector<string> localrwkeyItems;
         boost::split(localrwkeyItems, localrwkeys, boost::is_any_of("_"), boost::token_compress_on);
         size_t key_size = localrwkeyItems.size();
@@ -209,7 +209,8 @@ shared_ptr<transaction> BlockingTxQueue::frontTx()
 {
     lock_guard<std::mutex> lock(queueLock);
     if (txs->size() > 0) {
-        return make_shared<transaction>(txs->front());
+        // return make_shared<transaction>(txs->front());
+        return txs->front();
     }
     return 0;
 }
@@ -219,9 +220,10 @@ shared_ptr<transaction> BlockingTxQueue::CrossTx(unsigned long coorId, unsigned 
     lock_guard<std::mutex> lock(queueLock);
     
     for (int i = 0; i < txs->size(); i++) {
-        transaction txInfo = txs->at(i);
-        if (txInfo.source_shard_id == coorId && txInfo.message_id == messageId) {
-            return make_shared<transaction>(txs->at(i));
+        auto txInfo = txs->at(i);
+        if (txInfo->source_shard_id == coorId && txInfo->message_id == messageId) {
+            // return make_shared<transaction>(txs->at(i));
+            return txs->at(i);
         }
     }
     return 0;
