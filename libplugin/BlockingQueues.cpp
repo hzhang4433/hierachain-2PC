@@ -50,7 +50,7 @@ void BlockingTxQueue::insertTx(shared_ptr<transaction> tx) // 后面建议做bat
     PLUGIN_LOG(INFO) << LOG_DESC("插入交易");
     for (set<string>::iterator it = stateSet.begin(); it != stateSet.end(); it++) {
         string key = *it;
-        PLUGIN_LOG(INFO) << LOG_KV("key", key);
+        // PLUGIN_LOG(INFO) << LOG_KV("key", key);
         
         if(lockingkeys->count(key) == 0)
         {

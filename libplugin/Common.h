@@ -158,6 +158,7 @@ class ExecuteVMTestFixture;
     // 22.11.16
     extern std::shared_ptr<tbb::concurrent_unordered_set<int>> lateCrossTxMessageId;
     extern std::shared_ptr<tbb::concurrent_unordered_set<int>> lateCommitReplyMessageId;
+    extern std::shared_ptr<tbb::concurrent_unordered_set<int>> lateReplyMessageId;
     // 22.11.2
     // 映射交易hash到其所在区块高度
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> txHash2BlockHeight;

@@ -273,8 +273,8 @@ std::string transactionInjectionTest::createInnerTransactions(int32_t _groupId, 
     
     std::string requestLabel = "0x444555666";
     std::string flag = "|";
-    std::string stateAddress = "state" + to_string((rand() % 10000) + 1)
-                            + "_state" + to_string((rand() % 10000) + 1);
+    std::string stateAddress = "state" + to_string((rand() % 1000) + 1)
+                            + "_state" + to_string((rand() % 1000) + 1);
     
     PLUGIN_LOG(INFO) << LOG_DESC("createInnerTransactions...")
                      << LOG_KV("stateAddress", stateAddress);
@@ -330,8 +330,8 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
     // std::string stateAddress = "state1";
     // srand((unsigned)time(0));
 
-    std::string stateAddress1 = "state" + to_string((rand() % 10000) + 1);
-    std::string stateAddress2 = "state" + to_string((rand() % 10000) + 1);
+    std::string stateAddress1 = "state" + to_string((rand() % 1000) + 1);
+    std::string stateAddress2 = "state" + to_string((rand() % 1000) + 1);
 
 
     PLUGIN_LOG(INFO) << LOG_DESC("createCrossTransactions...")
@@ -447,7 +447,7 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
 
     for (int i = 0; i < subShardNum; i++) {
         int subId = shardIds[i];
-        std::string stateAddress = "state" + to_string((rand() % 10000) + 1);
+        std::string stateAddress = "state" + to_string((rand() % 1000) + 1);
         // 生成子交易1
         std::string str_address;
         if (subId == 1) {

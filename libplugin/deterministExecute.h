@@ -46,6 +46,7 @@ namespace dev{
                 // void start();
                 void replyToCoordinator(shared_ptr<dev::plugin::transaction> txInfo, dev::PROTOCOL_ID& m_group_protocolID, std::shared_ptr<dev::p2p::Service> m_group_service);
                 void replyToCoordinatorCommitOK(shared_ptr<dev::plugin::transaction> txInfo);
+                void sendCommitPacket(shared_ptr<dev::plugin::transaction> txInfo);
                 void checkForDeterministExecuteTxWookLoop();
                 void checkDelayCommitPacket(shared_ptr<dev::plugin::transaction> txInfo);
                 void setAttribute(std::shared_ptr<dev::blockchain::BlockChainInterface> _blockchainManager, std::shared_ptr<dev::rpc::Rpc> _service);

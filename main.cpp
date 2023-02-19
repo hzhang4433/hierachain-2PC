@@ -163,6 +163,9 @@ namespace dev {
                                 std::make_shared<tbb::concurrent_unordered_set<int>>();
         std::shared_ptr<tbb::concurrent_unordered_set<int>> lateCommitReplyMessageId = 
                                 std::make_shared<tbb::concurrent_unordered_set<int>>();
+        // 协调者共识落后，记录处理过的reply消息
+        std::shared_ptr<tbb::concurrent_unordered_set<int>> lateReplyMessageId = 
+                                std::make_shared<tbb::concurrent_unordered_set<int>>();
         std::mutex m_lateCrossTxMutex;
 
         std::vector<bool> flags;
@@ -1229,7 +1232,7 @@ int main(){
     // 对dev::consensus::messageIDs进行初始化
     for(int i = 0; i < dev::consensus::SHARDNUM; i++)
     {
-        dev::consensus::messageIDs.insert(std::make_pair(i, 0));
+        dev::consensus::messageIDs.insert(std::make_pair(i + 1, 0));
         dev::plugin::flags.push_back(true);
     }
 
