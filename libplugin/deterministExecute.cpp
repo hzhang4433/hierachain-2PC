@@ -393,7 +393,7 @@ void deterministExecute::processInnerShardTx(std::string data_str, std::shared_p
             if(executedTx == 0) {
                 PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx);
             } 
-            else if ((executedTx + 1) % 500 == 0) {
+            else if ((executedTx + 1) % 100 == 0) {
                 // exec = dev::plugin::executiveContext->getExecutive();
                 // auto vm = dev::plugin::executiveContext->getExecutiveInstance();
                 // exec->setVM(vm);
@@ -1252,7 +1252,7 @@ void deterministExecute::executeCandidateTx() {
         
         if (executedTx == 0) {
             PLUGIN_LOG(INFO) << LOG_KV("executedTx", 0);
-        } else if ((executedTx + 1) % 500 == 0) {
+        } else if ((executedTx + 1) % 100 == 0) {
             PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx + 1);
         }
         executedTx++;

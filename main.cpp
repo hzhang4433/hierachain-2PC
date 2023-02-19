@@ -667,12 +667,22 @@ void createCrossTransaction(int cor, int sub1, int sub2, shared_ptr<dev::ledger:
         std::this_thread::sleep_for(std::chrono::milliseconds((1)));
     }
 
+    // 收尾工作
     ofstream out;
-    out.open(fileName, ios::in|ios::out|ios::app);
-    if (out.is_open()) {
-        res += "]";
-        out << res;
-        out.close();
+    res += "]";
+    if (txNum == 100) {
+        out.open(fileName, ios::binary | ios::out | ios::in);
+        if (out.is_open()) {
+            out.seekp(-1, ios::end);
+            out << res;
+            out.close();
+        }
+    } else {
+        out.open(fileName, ios::in|ios::out|ios::app);
+        if (out.is_open()) {
+            out << res;
+            out.close();
+        }
     }
     
 }
@@ -1422,10 +1432,10 @@ int main(){
             // _injectionTest.deployContractTransaction("./deploy.json", i);
             
             // _injectionTest.injectionTransactions("./workload0.json", i);
-            // _injectionTest.injectionTransactions("./workload1.json", i);
+            _injectionTest.injectionTransactions("./workload1.json", i);
             // _injectionTest.injectionTransactions("./workload2.json", i);
             // _injectionTest.injectionTransactions("./workload3.json", i);
-            _injectionTest.injectionTransactions("./workload4.json", i);
+            // _injectionTest.injectionTransactions("./workload4.json", i);
         }
     }
 
