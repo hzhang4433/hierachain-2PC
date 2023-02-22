@@ -1426,13 +1426,29 @@ int main(){
     std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 // dev::consensus::SHARDNUM
     for (int i = 1; i <= dev::consensus::SHARDNUM; i++) {
-        if(dev::consensus::internal_groupId == i && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(i - 1))) {
+        string intrashardworkload = "./workload0.json";
+        string intershardworkload = "./workload4.json";
+        // dev::consensus::internal_groupId
+        if((7 == i || i <= 3 ) && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(i - 1))) {
             PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
             transactionInjectionTest _injectionTest(rpcService, i, ledgerManager);
+
+            if (i <= 3) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 6650, 0);
+                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 6300, 0);
+                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 5600, 0);
+                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 5250, 0);
+            } else if (i == 7) {
+                _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 6650, 1400);
+                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 6300, 2800);
+                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 5600, 5600);
+                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 5250, 7000);
+            }
             // _injectionTest.deployContractTransaction("./deploy.json", i);
-            
+
             // _injectionTest.injectionTransactions("./workload0.json", i);
-            _injectionTest.injectionTransactions("./workload1.json", i);
+            // _injectionTest.injectionTransactions("./workload1.json", i);
             // _injectionTest.injectionTransactions("./workload2.json", i);
             // _injectionTest.injectionTransactions("./workload3.json", i);
             // _injectionTest.injectionTransactions("./workload4.json", i);

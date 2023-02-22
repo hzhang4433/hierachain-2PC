@@ -269,6 +269,154 @@ void transactionInjectionTest::injectionTransactions(std::string filename, int32
 
 }
 
+void transactionInjectionTest::injectionTransactions(string& intrashardworkload_filename, string& intershardworkload_filename, int intratxNum, int intertxNum)
+{
+    // 只导入片内交易(只需转发节点负责)
+    if(intratxNum != 0 && intertxNum == 0){
+
+        vector<string> txids;
+        vector<string> txRLPS;
+        int inputTxsize = intratxNum;
+        PLUGIN_LOG(INFO) << LOG_KV("即将导入的片内交易总数", intratxNum);
+
+        ifstream infile(intrashardworkload_filename, ios::binary); // signedtxs.json
+        Json::Reader reader;
+        Json::Value root;
+
+        // 加载交易
+        if(reader.parse(infile, root)) {
+            for(int i = 0; i < inputTxsize; i++) {
+                string txrlp = root[i].asString();
+                txRLPS.push_back(txrlp);
+
+                // // 解析交易data字段，获取交易txid
+                // Transaction::Ptr tx = std::make_shared<Transaction>(
+                //     jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
+                // string data_str = dataToHexString(tx->get_data());
+                // vector<string> dataItems;
+                // boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+                // string txid = dataItems.at(2).c_str();
+                // txids.push_back(txid);
+            }
+        }
+
+        // 正式投递到交易池
+        for(int i = 0; i < inputTxsize; i++) {
+            m_rpcService->sendRawTransaction(dev::consensus::internal_groupId, txRLPS.at(i));
+            // string txid = txids.at(i);
+            // struct timeval tv;
+            // gettimeofday(&tv, NULL);
+            // int time_sec = (int)tv.tv_sec;
+            // m_txid_to_starttime->insert(make_pair(txid, time_sec)); // 记录txid的开始时间
+        }
+        infile.close();
+    }
+    // 只导入跨片交易
+    else if(intratxNum == 0 && intertxNum != 0){ 
+        vector<string> txids;
+        vector<string> txRLPS;
+        int inputTxsize = intertxNum;
+        PLUGIN_LOG(INFO) << LOG_KV("即将导入的跨片交易总数", intertxNum);
+
+        ifstream infile(intershardworkload_filename, ios::binary); // signedtxs.json
+        Json::Reader reader;
+        Json::Value root;
+
+        // 加载交易
+        if(reader.parse(infile, root)) {
+            for(int i = 0; i < inputTxsize; i++) {
+                string txrlp = root[i].asString();
+                txRLPS.push_back(txrlp);
+
+                // // 解析交易data字段，获取交易txid
+                // Transaction::Ptr tx = std::make_shared<Transaction>(
+                //     jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
+                // string data_str = dataToHexString(tx->get_data());
+                // vector<string> dataItems;
+                // boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+                // string txid = dataItems.at(1).c_str();
+                // txids.push_back(txid);
+            }
+        }
+
+        // 正式投递到交易池
+        for(int i = 0; i < inputTxsize; i++) {
+            m_rpcService->sendRawTransaction(dev::consensus::internal_groupId, txRLPS.at(i));
+            // string txid = txids.at(i);
+            // struct timeval tv;
+            // gettimeofday(&tv, NULL);
+            // int time_sec = (int)tv.tv_sec;
+            // m_txid_to_starttime->insert(make_pair(txid, time_sec)); // 记录txid的开始时间
+        }
+        infile.close();
+    }
+    // 片内交易+跨片交易
+    else if(intratxNum != 0 && intertxNum != 0){
+        vector<string> txids;
+        vector<string> txRLPS;
+        int inputTxsize = intertxNum;
+        PLUGIN_LOG(INFO) << LOG_KV("即将导入的 片内+跨片 交易总数", intratxNum+intertxNum);
+
+        // 导入片内交易
+        ifstream infile1(intrashardworkload_filename, ios::binary);
+        Json::Reader reader;
+        Json::Value root;
+        // 加载交易
+        if(reader.parse(infile1, root)) {
+            for(int i = 0; i < intratxNum; i++) {
+                string txrlp = root[i].asString();
+                txRLPS.push_back(txrlp);
+            }
+        }
+
+        // 导入跨片交易
+        ifstream infile2(intershardworkload_filename, ios::binary);
+        // 加载交易
+        if(reader.parse(infile2, root)) {
+            for(int i = 0; i < intertxNum; i++) {
+                string txrlp = root[i].asString();
+                txRLPS.push_back(txrlp);
+            }
+        }
+
+        // // 将txRLPS打乱
+        auto start = txRLPS.begin();
+        auto end = txRLPS.end();
+        // srand(time(NULL));
+        // random_shuffle(start, end);
+
+        // 将txRLPS中的交易导入交易池, 且记录下开始时间
+        for(auto it = start; it != end; it++){
+            string txrlp = *it;
+            m_rpcService->sendRawTransaction(dev::consensus::internal_groupId, txrlp);
+
+            // // 获取交易id, 记录交易开始时间
+            // string txid;
+            // Transaction::Ptr tx = std::make_shared<Transaction>(
+            //     jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
+            // string data_str = dataToHexString(tx->get_data());
+            // if(data_str.find("0x444555666", 0) != -1){ // 片内交易
+            //     vector<string> dataItems;
+            //     boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+            //     txid = dataItems.at(2).c_str();
+            // }
+            // else if(data_str.find("0x111222333", 0) != -1){ // 跨片交易
+            //     vector<string> dataItems;
+            //     boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+            //     txid = dataItems.at(1).c_str();
+            // }
+
+            // struct timeval tv;
+            // gettimeofday(&tv, NULL);
+            // int time_sec = (int)tv.tv_sec;
+            // m_txid_to_starttime->insert(make_pair(txid, time_sec));
+        }
+
+        infile1.close();
+        infile2.close();
+    }
+}
+
 std::string transactionInjectionTest::createInnerTransactions(int32_t _groupId, std::shared_ptr<dev::ledger::LedgerManager> ledgerManager) {
     
     std::string requestLabel = "0x444555666";
