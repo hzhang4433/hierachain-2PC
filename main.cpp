@@ -170,6 +170,12 @@ namespace dev {
 
         std::vector<bool> flags;
 
+        // 交易延时记录
+        std::shared_ptr<tbb::concurrent_unordered_map<string, int>> m_txid_to_starttime = 
+                                std::make_shared<tbb::concurrent_unordered_map<string, int>>();
+        std::shared_ptr<tbb::concurrent_unordered_map<string, int>> m_txid_to_endtime = 
+                                std::make_shared<tbb::concurrent_unordered_map<string, int>>();
+
 
         std::map<std::string, std::string> txRWSet;
         std::map<int, std::vector<std::string>> processingTxD;
@@ -184,6 +190,8 @@ namespace dev {
         std::map<std::string, std::string>txRlp2ConAddress;
         std::vector<std::string> coordinatorRlp;
         std::shared_ptr<ExecuteVMTestFixture> executiveContext;
+
+        int global_txId = 0;
     }
 }
 
@@ -1425,35 +1433,37 @@ int main(){
 
     std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 // dev::consensus::SHARDNUM
-    for (int i = 1; i <= dev::consensus::SHARDNUM; i++) {
-        string intrashardworkload = "./workload0.json";
-        string intershardworkload = "./workload4.json";
-        // dev::consensus::internal_groupId
-        if((7 == i || i <= 3 ) && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(i - 1))) {
-            PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
-            transactionInjectionTest _injectionTest(rpcService, i, ledgerManager);
+    // for (int i = 1; i <= dev::consensus::SHARDNUM; i++) {
+    //     string intrashardworkload = "./workload2.json";
+    //     string intershardworkload = "./workload2.json";
+    //     // dev::consensus::internal_groupId == i
+    //     // (7 == i || i <= 3 )
+    //     if(dev::consensus::internal_groupId == i && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(i - 1))) {
+    //         PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
+    //         transactionInjectionTest _injectionTest(rpcService, i, ledgerManager);
 
-            if (i <= 3) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-                _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 6650, 0);
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 6300, 0);
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 5600, 0);
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 5250, 0);
-            } else if (i == 7) {
-                _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 6650, 1400);
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 6300, 2800);
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 5600, 5600);
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 5250, 7000);
-            }
-            // _injectionTest.deployContractTransaction("./deploy.json", i);
+    //         if (i <= 3) {
+    //             std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 6650, 0);
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 6300, 0);
+    //             _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 5600, 0);
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 5250, 0);
+    //         } else if (i == 7) {
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 6650, 1400);
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 6300, 2800);
+    //             _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 5600, 5600);
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 5250, 7000);
+    //         }
 
-            // _injectionTest.injectionTransactions("./workload0.json", i);
-            // _injectionTest.injectionTransactions("./workload1.json", i);
-            // _injectionTest.injectionTransactions("./workload2.json", i);
-            // _injectionTest.injectionTransactions("./workload3.json", i);
-            // _injectionTest.injectionTransactions("./workload4.json", i);
-        }
-    }
+    //         // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, 5600, 5600);
+
+    //         // _injectionTest.injectionTransactions("./workload0.json", i);
+    //         // _injectionTest.injectionTransactions("./workload1.json", i);
+    //         // _injectionTest.injectionTransactions("./workload2.json", i);
+    //         // _injectionTest.injectionTransactions("./workload3.json", i);
+    //         // _injectionTest.injectionTransactions("./workload4.json", i);
+    //     }
+    // }
 
     // createDataSet(3, 1, 2, ledgerManager, 150000, 20, rpcService);
     // createDataSet(3, 1, 2, ledgerManager, 150000, 80, rpcService);
@@ -1485,13 +1495,13 @@ int main(){
     // }
 
     // 生成局部性负载
-    // if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0))) {
-    //     // createLocalityDataSet(ledgerManager, 63000, 0, rpcService);
-    //     // createLocalityDataSet(ledgerManager, 63000, 20, rpcService);
-    //     // createLocalityDataSet(ledgerManager, 63000, 50, rpcService);
-    //     // createLocalityDataSet(ledgerManager, 63000, 80, rpcService);
-    //     createLocalityDataSet(ledgerManager, 63000, 100, rpcService);
-    // }
+    if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0))) {
+        // createLocalityDataSet(ledgerManager, 63000, 0, rpcService);
+        // createLocalityDataSet(ledgerManager, 63000, 20, rpcService);
+        // createLocalityDataSet(ledgerManager, 63000, 50, rpcService);
+        // createLocalityDataSet(ledgerManager, 63000, 80, rpcService);
+        createLocalityDataSet(ledgerManager, 63000, 100, rpcService);
+    }
     
 
     std::cout << "node " + jsonrpc_listen_ip + ":" + jsonrpc_listen_port + " start success." << std::endl;
@@ -1514,8 +1524,11 @@ int main(){
         std::cout<<"it's a leaf group" << std::endl;
     }
 
+    // auto deterministExecute = consensusPluginManager->m_deterministExecute;
     while (true)
     {
+        // deterministExecute->average_latency();
+        // std::this_thread::sleep_for(std::chrono::seconds(1));
         std::this_thread::sleep_for(std::chrono::milliseconds(1000000));
     }
     return 0;
