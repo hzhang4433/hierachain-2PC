@@ -50,10 +50,11 @@ class ExecuteVMTestFixture;
             // 跨片交易涉及的所有分片id，用'_'分隔
             std::string shardIds;
             std::string messageIds; // 用 "_" 分隔
+            std::string txIds; // 用 "_" 分隔
         public:
             transaction(int ty, unsigned long s, unsigned long d, unsigned long m, unsigned long tn,
                         std::string txHash, dev::eth::Transaction::Ptr txP, std::string key, 
-                        std::string sIds, std::string mIds) {
+                        std::string sIds, std::string mIds, std::string tIds) {
                 type = ty;
                 source_shard_id = s;
                 destin_shard_id = d;
@@ -64,6 +65,7 @@ class ExecuteVMTestFixture;
                 readwrite_key = key;
                 shardIds = sIds;
                 messageIds = mIds;
+                txIds = tIds;
             }
     };
 
@@ -75,6 +77,7 @@ class ExecuteVMTestFixture;
         std::string corss_tx_hash;
         std::string stateAddress; // 用 "｜" 分隔
         std::string signedTx; // 用 "｜" 分隔
+        std::string txIds;
     };
 
     struct executableTransaction
@@ -173,6 +176,9 @@ class ExecuteVMTestFixture;
 
     // 22.12.23
     extern std::shared_ptr<tbb::concurrent_unordered_set<std::string>> abortSet;
+
+    extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> m_txid_to_starttime;
+    extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> m_txid_to_endtime;
 		
 
     extern std::map<std::string, std::string> txRWSet;
@@ -207,7 +213,7 @@ class ExecuteVMTestFixture;
     extern std::mutex m_crossTxMutex;
     extern std::mutex m_innerTxMutex;
 
-
+    extern int global_txId;
     // extern tbb::concurrent_queue<std::string> preCommTxRlps;
     // extern std::map<std::string, std::vector<std::string>> recePreCommTxRlps;
     // extern std::vector<std::string> readyDisTxIds;

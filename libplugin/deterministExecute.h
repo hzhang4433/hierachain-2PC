@@ -38,6 +38,7 @@ namespace dev{
                     key2Signdatas = std::make_shared<tbb::concurrent_unordered_map<std::string, std::string>>();
                     key2CrossTxHash = std::make_shared<tbb::concurrent_unordered_map<std::string, std::string>>();
                     key2StateAddress = std::make_shared<tbb::concurrent_unordered_map<std::string, std::string>>();
+                    crossTxHash2Txids = std::make_shared<tbb::concurrent_unordered_map<std::string, std::string>>();
                     m_blockingTxQueue = std::make_shared<BlockingTxQueue>();
                     m_blockingCrossTxQueue = std::make_shared<BlockingCrossTxQueue>();
                 }
@@ -62,10 +63,11 @@ namespace dev{
                 void executeCandidateTx();
                 void processBlockedCrossTx();
                 void sendAbortPacket(shared_ptr<transaction> txInfo);
-                void pushBlockCrossTx(string subShardIds, vector<string> shardIds, string crossTxHash, vector<string>& keySet);
+                void pushBlockCrossTx(string subShardIds, vector<string> shardIds, string crossTxHash, vector<string>& keySet, string txIds);
                 bool isAborted(string abortKey);
                 void checkAbortedTransaction(shared_ptr<dev::plugin::transaction> txInfo);
                 int getRand(int a, int b);
+                void average_latency();
                 
                 int popedTxNum = 0;
                 int count = 0;
@@ -86,6 +88,8 @@ namespace dev{
                 std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> key2CrossTxHash;
                 // 对应key值的stateAddress
                 std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> key2StateAddress;
+                // 对应crossTxHash值的txids
+                std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::string>> crossTxHash2Txids;
                 
                 // 交易地址hash
                 std::string innerContact_1 = "0x93911693669c9a4b83f702838bc3294e95951438";

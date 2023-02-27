@@ -209,6 +209,26 @@ void transactionInjectionTest::injectionTransactions(std::string filename, int32
     for(iter = signedTransactions.begin(); iter != signedTransactions.end(); iter++)
     {
         number++;
+
+        string txid;
+        Transaction::Ptr tx = std::make_shared<Transaction>(
+            jsToBytes(*iter, OnFailed::Throw), CheckTransaction::Everything);
+        string data_str = dataToHexString(tx->get_data());
+        if(data_str.find("0x444555666", 0) != -1){ // 片内交易
+            vector<string> dataItems;
+            boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+            txid = dataItems.at(2).c_str();
+            PLUGIN_LOG(INFO) << LOG_DESC("片内交易")
+                             << LOG_KV("txid", txid);
+        }
+        else if(data_str.find("0x111222333", 0) != -1){ // 跨片交易
+            vector<string> dataItems;
+            boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+            txid = dataItems.at(7).c_str();
+            PLUGIN_LOG(INFO) << LOG_DESC("跨片交易")
+                             << LOG_KV("txid", txid);
+        }
+
         m_rpcService->sendRawTransaction(groupId, *iter);
         // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
@@ -258,15 +278,6 @@ void transactionInjectionTest::injectionTransactions(std::string filename, int32
     // }
     // PLUGIN_LOG(INFO) << LOG_KV("往交易池中灌入的交易数目为", inputTxsize);
     // infile.close();
-
-
-
-
-
-
-
-
-
 }
 
 void transactionInjectionTest::injectionTransactions(string& intrashardworkload_filename, string& intershardworkload_filename, int intratxNum, int intertxNum)
@@ -289,25 +300,27 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
                 string txrlp = root[i].asString();
                 txRLPS.push_back(txrlp);
 
-                // // 解析交易data字段，获取交易txid
-                // Transaction::Ptr tx = std::make_shared<Transaction>(
-                //     jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
-                // string data_str = dataToHexString(tx->get_data());
-                // vector<string> dataItems;
-                // boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
-                // string txid = dataItems.at(2).c_str();
-                // txids.push_back(txid);
+                // 解析交易data字段，获取交易txid
+                Transaction::Ptr tx = std::make_shared<Transaction>(
+                    jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
+                string data_str = dataToHexString(tx->get_data());
+                vector<string> dataItems;
+                boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+                string txid = dataItems.at(2).c_str();
+                PLUGIN_LOG(INFO) << LOG_DESC("片内交易")
+                                 << LOG_KV("txid", txid);
+                txids.push_back(txid);
             }
         }
 
         // 正式投递到交易池
         for(int i = 0; i < inputTxsize; i++) {
             m_rpcService->sendRawTransaction(dev::consensus::internal_groupId, txRLPS.at(i));
-            // string txid = txids.at(i);
-            // struct timeval tv;
-            // gettimeofday(&tv, NULL);
-            // int time_sec = (int)tv.tv_sec;
-            // m_txid_to_starttime->insert(make_pair(txid, time_sec)); // 记录txid的开始时间
+            string txid = txids.at(i);
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+            int time_sec = (int)tv.tv_sec;
+            m_txid_to_starttime->insert(make_pair(txid, time_sec)); // 记录txid的开始时间
         }
         infile.close();
     }
@@ -329,24 +342,26 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
                 txRLPS.push_back(txrlp);
 
                 // // 解析交易data字段，获取交易txid
-                // Transaction::Ptr tx = std::make_shared<Transaction>(
-                //     jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
-                // string data_str = dataToHexString(tx->get_data());
-                // vector<string> dataItems;
-                // boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
-                // string txid = dataItems.at(1).c_str();
-                // txids.push_back(txid);
+                Transaction::Ptr tx = std::make_shared<Transaction>(
+                    jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
+                string data_str = dataToHexString(tx->get_data());
+                vector<string> dataItems;
+                boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+                string txid = dataItems.at(7).c_str();
+                PLUGIN_LOG(INFO) << LOG_DESC("跨片交易")
+                                 << LOG_KV("txid", txid);
+                txids.push_back(txid);
             }
         }
 
         // 正式投递到交易池
         for(int i = 0; i < inputTxsize; i++) {
             m_rpcService->sendRawTransaction(dev::consensus::internal_groupId, txRLPS.at(i));
-            // string txid = txids.at(i);
-            // struct timeval tv;
-            // gettimeofday(&tv, NULL);
-            // int time_sec = (int)tv.tv_sec;
-            // m_txid_to_starttime->insert(make_pair(txid, time_sec)); // 记录txid的开始时间
+            string txid = txids.at(i);
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+            int time_sec = (int)tv.tv_sec;
+            m_txid_to_starttime->insert(make_pair(txid, time_sec)); // 记录txid的开始时间
         }
         infile.close();
     }
@@ -390,26 +405,30 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
             string txrlp = *it;
             m_rpcService->sendRawTransaction(dev::consensus::internal_groupId, txrlp);
 
-            // // 获取交易id, 记录交易开始时间
-            // string txid;
-            // Transaction::Ptr tx = std::make_shared<Transaction>(
-            //     jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
-            // string data_str = dataToHexString(tx->get_data());
-            // if(data_str.find("0x444555666", 0) != -1){ // 片内交易
-            //     vector<string> dataItems;
-            //     boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
-            //     txid = dataItems.at(2).c_str();
-            // }
-            // else if(data_str.find("0x111222333", 0) != -1){ // 跨片交易
-            //     vector<string> dataItems;
-            //     boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
-            //     txid = dataItems.at(1).c_str();
-            // }
+            // 获取交易id, 记录交易开始时间
+            string txid;
+            Transaction::Ptr tx = std::make_shared<Transaction>(
+                jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
+            string data_str = dataToHexString(tx->get_data());
+            if(data_str.find("0x444555666", 0) != -1){ // 片内交易
+                vector<string> dataItems;
+                boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+                txid = dataItems.at(2).c_str();
+                PLUGIN_LOG(INFO) << LOG_DESC("片内交易")
+                                 << LOG_KV("txid", txid);
+            }
+            else if(data_str.find("0x111222333", 0) != -1){ // 跨片交易
+                vector<string> dataItems;
+                boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+                txid = dataItems.at(7).c_str();
+                PLUGIN_LOG(INFO) << LOG_DESC("跨片交易")
+                                 << LOG_KV("txid", txid);
+            }
 
-            // struct timeval tv;
-            // gettimeofday(&tv, NULL);
-            // int time_sec = (int)tv.tv_sec;
-            // m_txid_to_starttime->insert(make_pair(txid, time_sec));
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+            int time_sec = (int)tv.tv_sec;
+            m_txid_to_starttime->insert(make_pair(txid, time_sec));
         }
 
         infile1.close();
@@ -421,16 +440,18 @@ std::string transactionInjectionTest::createInnerTransactions(int32_t _groupId, 
     
     std::string requestLabel = "0x444555666";
     std::string flag = "|";
+    std::string txid = to_string(global_txId++);
     std::string stateAddress = "state" + to_string((rand() % 1000) + 1)
                             + "_state" + to_string((rand() % 1000) + 1);
     
     PLUGIN_LOG(INFO) << LOG_DESC("createInnerTransactions...")
+                     << LOG_KV("txId", txid)
                      << LOG_KV("stateAddress", stateAddress);
 
     // std::string hex_m_testdata_str = requestLabel + flag + std::to_string(sourceshardid) + flag + std::to_string(destinshardid)
     //                                     + flag + readwritekey + flag + requestmessageid + flag + std::to_string(coordinatorshardid);
 
-    std::string hex_m_data_str = requestLabel + flag + stateAddress + flag;
+    std::string hex_m_data_str = requestLabel + flag + stateAddress + flag + txid + flag;
 
     // 自己构造交易
     std::string str_address;
@@ -475,6 +496,7 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
                         std::shared_ptr<dev::ledger::LedgerManager> ledgerManager) {
     std::string requestLabel = "0x111222333";
     std::string flag = "|";
+    std::string txid = to_string(global_txId++);
     // std::string stateAddress = "state1";
     // srand((unsigned)time(0));
 
@@ -484,7 +506,8 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
 
     PLUGIN_LOG(INFO) << LOG_DESC("createCrossTransactions...")
                      << LOG_KV("stateAddress", stateAddress1)
-                     << LOG_KV("stateAddress", stateAddress2);
+                     << LOG_KV("stateAddress", stateAddress2)
+                     << LOG_KV("txid", txid);
 
     auto keyPair = KeyPair::create();
 
@@ -548,6 +571,7 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
     std::string hex_m_data_str = requestLabel
                                 + flag + std::to_string(subGroupId1) + flag + signTx1 + flag + stateAddress1 
                                 + flag + std::to_string(subGroupId2) + flag + signTx2 + flag + stateAddress2
+                                + flag + txid
                                 + flag;
 
     str_address = crossContact_3;

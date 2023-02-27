@@ -83,6 +83,7 @@ void ConsensusPluginManager::sendCommitPacket(protos::SubCrossShardTxReply _txrl
     auto txNum = msg_status.txnum();
     auto shardIds = msg_status.shardids();
     auto messageIds = msg_status.messageids();
+    // auto txIds = msg_status.txids();
 
     for (auto destinShardID : crossTx2ShardID->at(crossTxHash)) {
         auto destinshardid = destinShardID;
@@ -97,6 +98,7 @@ void ConsensusPluginManager::sendCommitPacket(protos::SubCrossShardTxReply _txrl
         subCrossShardTxCommit.set_shardids(shardIds);
         subCrossShardTxCommit.set_messageids(messageIds);
         subCrossShardTxCommit.set_txnum(txNum);
+        // subCrossShardTxCommit.set_txnum(txIds);
 
         std::string serializedSubCrossShardTxCommit_str;
         subCrossShardTxCommit.SerializeToString(&serializedSubCrossShardTxCommit_str);
@@ -131,6 +133,7 @@ void ConsensusPluginManager::sendCommitPacketToShard(protos::SubCrossShardTxRepl
     auto shardIds = msg_status.shardids();
     auto messageIds = msg_status.messageids();
     auto txNum = msg_status.txnum();
+    // auto txIds = msg_status.txids();
 
 
     protos::SubCrossShardTxCommit subCrossShardTxCommit;
@@ -142,6 +145,7 @@ void ConsensusPluginManager::sendCommitPacketToShard(protos::SubCrossShardTxRepl
     subCrossShardTxCommit.set_shardids(shardIds);
     subCrossShardTxCommit.set_messageids(messageIds);
     subCrossShardTxCommit.set_txnum(txNum);
+    // subCrossShardTxCommit.set_txids(txIds);
 
     std::string serializedSubCrossShardTxCommit_str;
     subCrossShardTxCommit.SerializeToString(&serializedSubCrossShardTxCommit_str);
@@ -182,6 +186,7 @@ void ConsensusPluginManager::processReceivedCrossTx(protos::SubCrossShardTx _txr
     auto shardIds = msg.shardids();
     auto messageIds = msg.messageids();
     auto txNum = msg.txnum();
+    auto txIds = msg.txids();
 
     // 若该跨片交易已被其它分片abort，则直接不处理
     string abortKey = toString(sourceShardId) + "_" + shardIds + "_" + messageIds;
@@ -204,7 +209,7 @@ void ConsensusPluginManager::processReceivedCrossTx(protos::SubCrossShardTx _txr
                      << LOG_KV("crossTxNum", txNum)
                      << LOG_KV("shardIds", shardIds)
                      << LOG_KV("crossTxHash", crossTxHash)
-                    //  << LOG_KV("signeddata", signedDatas)
+                     << LOG_KV("txIds", txIds)
                      << LOG_KV("stateAddress", stateAddress); // 多个状态集通过"_"来划分 
 
     crossTx->insert(std::make_pair(tx->hash().abridged(), std::make_shared<transaction>(
@@ -217,7 +222,8 @@ void ConsensusPluginManager::processReceivedCrossTx(protos::SubCrossShardTx _txr
         tx, 
         stateAddress,
         shardIds,
-        messageIds)));
+        messageIds,
+        txIds)));
 
     // 判断当前节点是否为头节点
     // PLUGIN_LOG(INFO) << LOG_DESC("当前forwardNodeId为: ") << LOG_DESC(toHex(forwardNodeId.at(i)));
@@ -529,6 +535,7 @@ void ConsensusPluginManager::processReceivedCrossTxCommitReply(protos::SubCrossS
     auto destinshardid = msg_status.destinshardid();
     auto messageId = msg_status.messageid();
     auto txNum = msg_status.txnum();
+    auto txIds = msg_status.txids();
 
     PLUGIN_LOG(INFO) << LOG_DESC("交易执行成功消息包解析完毕")
                      << LOG_KV("status", status)
@@ -621,6 +628,16 @@ void ConsensusPluginManager::processReceivedCrossTxCommitReply(protos::SubCrossS
                      << LOG_KV("messageId", messageId)
                      << LOG_KV("当笔跨片交易数", txNum)
                      << LOG_KV("executedTx", m_deterministExecute->executedTx);
+
+    // 记录交易结束时间
+    vector<string> dataItems;
+    boost::split(dataItems, txIds, boost::is_any_of("_"), boost::token_compress_on);
+    for (string txid : dataItems) {
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        int time_sec = (int)tv.tv_sec;
+        m_txid_to_endtime->insert(make_pair(txid, time_sec));
+    }
 
     // 非头节点不必转发
     if(dev::plugin::nodeIdStr != toHex(forwardNodeId.at(internal_groupId - 1)))
