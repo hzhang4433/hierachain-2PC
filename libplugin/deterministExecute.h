@@ -1,6 +1,7 @@
 #pragma once
 
 #include <libconsensus/pbft/Common.h>
+// #include <libconsensus/TxGenerator.h>
 #include <libplugin/executeVM.h>
 #include <libsync/SyncMsgPacket.h>
 #include <libprotobasic/shard.pb.h>
@@ -103,6 +104,11 @@ namespace dev{
                 dev::executive::Executive::Ptr exec;
             private:
                 std::mutex m_cachedTx;
+                u256 generateRandomValue()
+                {
+                    auto randomValue = h256::random();
+                    return u256(randomValue);
+                }
         };
     }
 }

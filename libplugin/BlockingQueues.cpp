@@ -249,7 +249,7 @@ bool BlockingCrossTxQueue::isBlocked()
     return isBlocked;
 }
 
-void BlockingCrossTxQueue::insertTx(blockedCrossTransaction tx) // 后面建议做batch优化
+void BlockingCrossTxQueue::insertTx(shared_ptr<blockedCrossTransaction> tx) // 后面建议做batch优化
 {
     // 将交易访问的所有的本地读写集插入到lockingkeys中
     lock_guard<std::mutex> lock(queueLock);
@@ -263,7 +263,7 @@ void BlockingCrossTxQueue::popTx()
     txs->pop(); // 锁删除完毕，交易出队列
 }
 
-blockedCrossTransaction BlockingCrossTxQueue::frontTx()
+shared_ptr<blockedCrossTransaction> BlockingCrossTxQueue::frontTx()
 {
     lock_guard<std::mutex> lock(queueLock);
     return txs->front();

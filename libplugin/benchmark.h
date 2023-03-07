@@ -46,6 +46,7 @@ namespace dev
                 void deployContractTransaction(string filename, int32_t _groupId);
                 void injectionTransactions(string filename, int32_t _groupId);
                 void injectionTransactions(string& intrashardworkload_filename, string& intershardworkload_filename, int intratxNum, int intertxNum);
+                void injectionTransactions(string& intrashardworkload_filename, string& intershardworkload_filename, string& crosslayerworkload_filename, int intratxNum, int intertxNum, int crosslayerNum);
                 int getRand(int a, int b);
                 string createInnerTransactions(int32_t _groupId, shared_ptr<dev::ledger::LedgerManager> ledgerManager);
                 string createCrossTransactions(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, shared_ptr<dev::ledger::LedgerManager> ledgerManager);

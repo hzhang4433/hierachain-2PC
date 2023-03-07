@@ -86,6 +86,8 @@ public:
 
     virtual bool hookAfterHandleBlock() { return true; }
 
+    std::string dataToHexString(bytes data);
+
 protected:
     virtual void initConsensusEngine()
     {

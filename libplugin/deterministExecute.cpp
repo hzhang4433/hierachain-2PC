@@ -35,10 +35,19 @@ void deterministExecute::average_latency() {
             int interval = endtime - starttime;
             totalTime = totalTime + interval;
             totalTxNum++;
+            // PLUGIN_LOG(INFO) << LOG_KV("starttime", starttime)
+            //                  << LOG_KV("endtime", endtime);
         }
     }
-    double avgLatency = double(totalTime) / double(totalTxNum);
-    PLUGIN_LOG(INFO) << LOG_KV("total_txNum", totalTxNum)
+
+    double avgLatency;
+    if (totalTime != 0) {
+        avgLatency = double(totalTime) / double(totalTxNum);
+    } else {
+        avgLatency = 0;
+    }
+    PLUGIN_LOG(INFO) << LOG_DESC("latency")
+                     << LOG_KV("total_txNum", totalTxNum)
                      << LOG_KV("total_time", totalTime)
                      << LOG_KV("average_latency", avgLatency);
 }
@@ -419,14 +428,15 @@ void deterministExecute::processInnerShardTx(std::string data_str, std::shared_p
             // txHash2BlockHeight->unsafe_erase(txHash);
 
             if(executedTx == 0) {
-                PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx);
+                PLUGIN_LOG(INFO) << LOG_KV("executedTx", 0);
             } 
-            else if ((executedTx + 1) % 100 == 0) {
+            else if ((executedTx + 1) % 500 == 0) {
                 // exec = dev::plugin::executiveContext->getExecutive();
                 // auto vm = dev::plugin::executiveContext->getExecutiveInstance();
                 // exec->setVM(vm);
                 // dev::plugin::executiveContext->m_vminstance_pool.push(vm);
-                PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx + 1);
+                PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx + 1)
+                                 << LOG_KV("executedTx_real", executedTx + 1);
             }
             // 记录交易结束时间
             struct timeval tv;
@@ -539,7 +549,7 @@ void deterministExecute::processCrossShardTx(std::string data_str, std::shared_p
         int subSignedTx_size = subSignedTx.size();
         // 拿到所有参与子分片
         std::string subShardIds = "";
-        for (int i = 1; i < subSignedTx_size; i = i + 3) {
+        for (int i = 1; i < subSignedTx_size - 1; i = i + 3) {
             std::string destinShardID = subSignedTx.at(i); // 目标分片ID
             if ( i == 1 ) {
                 subShardIds += destinShardID;
@@ -549,7 +559,7 @@ void deterministExecute::processCrossShardTx(std::string data_str, std::shared_p
             }
         }
         string crossTxHash;
-        for(int i = 1; i < subSignedTx_size; i = i + 3)
+        for(int i = 1; i < subSignedTx_size - 1; i = i + 3)
         {
             int shardID = atoi(subSignedTx.at(i).c_str()); // 目标分片ID
             std::string str_shardID = subSignedTx.at(i);
@@ -559,6 +569,8 @@ void deterministExecute::processCrossShardTx(std::string data_str, std::shared_p
             if (key2CrossTxHash->count(subShardIds) == 0) {
                 crossTxHash = tx->hash().abridged();
                 key2CrossTxHash->insert(std::make_pair(subShardIds, crossTxHash));
+            } else {
+                crossTxHash = key2CrossTxHash->at(subShardIds);
             }
             
             // 这批交易的目标分片都是subShardIds，具体的分片id是str_shardID
@@ -614,7 +626,7 @@ std::string deterministExecute::createBatchTransaction(std::string signedDatas, 
     bytes data = abi.abiIn("add(string)", hex_m_data_str);  // add
 
     std::shared_ptr<Transaction> tx = std::make_shared<Transaction>(0, 1000, 0, contactAddress, data);
-    tx->setNonce(tx->nonce() + u256(utcTime()));
+    tx->setNonce(generateRandomValue());
     tx->setGroupId(groupId);
     
     tx->setBlockLimit(u256(m_blockchainManager->number() + 10));
@@ -651,7 +663,18 @@ void deterministExecute::pushBlockCrossTx(string subShardIds, vector<string> sha
         }
     }
 
-    blockedCrossTransaction transaction = blockedCrossTransaction{
+    // blockedCrossTransaction transaction = blockedCrossTransaction{
+    //     0,
+    //     (long unsigned)internal_groupId,
+    //     allShardID,
+    //     crossTxHash,
+    //     allStateAddress,
+    //     allSignedTx,
+    //     txIds
+    // };
+    PLUGIN_LOG(INFO) << LOG_DESC("当前跨片交易阻塞队列大小 blocked")
+                     << LOG_KV("size", m_blockingCrossTxQueue->size());
+    m_blockingCrossTxQueue->insertTx(std::make_shared<blockedCrossTransaction>(
         0,
         (long unsigned)internal_groupId,
         allShardID,
@@ -659,16 +682,14 @@ void deterministExecute::pushBlockCrossTx(string subShardIds, vector<string> sha
         allStateAddress,
         allSignedTx,
         txIds
-    };
-    PLUGIN_LOG(INFO) << LOG_DESC("当前跨片交易阻塞队列大小 blocked")
-                     << LOG_KV("size", m_blockingCrossTxQueue->size());
-    m_blockingCrossTxQueue->insertTx(transaction);
+    ));
 
     PLUGIN_LOG(INFO) << LOG_DESC("当前跨片交易阻塞队列大小 after")
                      << LOG_KV("size", m_blockingCrossTxQueue->size());
 }
 
 void deterministExecute::tryToSendSubTxs() {
+    // PLUGIN_LOG(INFO) << LOG_DESC("in tryToSendSubTxs");
     std::vector<std::string> keySet;
     std::vector<std::string> hashKeySet;
     for (auto it = key2CrossTxHash->begin(); it != key2CrossTxHash->end(); it ++) {
@@ -812,7 +833,16 @@ void deterministExecute::tryToSendSubTxs() {
                     PLUGIN_LOG(INFO) << LOG_DESC("跨片消息转发完毕...");
                 }
 
-                blockedCrossTransaction transaction = blockedCrossTransaction{
+                // blockedCrossTransaction transaction = blockedCrossTransaction{
+                //     1,
+                //     (long unsigned)internal_groupId,
+                //     allShardID,
+                //     crossTxHash,
+                //     allStateAddress,
+                //     allSignedTx,
+                //     txIds
+                // };
+                m_blockingCrossTxQueue->insertTx(std::make_shared<blockedCrossTransaction>(
                     1,
                     (long unsigned)internal_groupId,
                     allShardID,
@@ -820,8 +850,7 @@ void deterministExecute::tryToSendSubTxs() {
                     allStateAddress,
                     allSignedTx,
                     txIds
-                };
-                m_blockingCrossTxQueue->insertTx(transaction);
+                ));
             } else {
                 pushBlockCrossTx(subShardIds, shardIds, crossTxHash, keySet, txIds);
             }
@@ -1307,8 +1336,9 @@ void deterministExecute::executeCandidateTx() {
 
         if (executedTx == 0) {
             PLUGIN_LOG(INFO) << LOG_KV("executedTx", 0);
-        } else if ((executedTx + 1) % 100 == 0) {
-            PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx + 1);
+        } else if ((executedTx + 1) % 500 == 0) {
+            PLUGIN_LOG(INFO) << LOG_KV("executedTx", executedTx + 1)
+                             << LOG_KV("executedTx_real", executedTx + 1);
         }
         executedTx++;
 
@@ -1408,16 +1438,16 @@ void deterministExecute::processBlockedCrossTx() {
                          << LOG_KV("size", m_blockingCrossTxQueue->size());
 
         auto txInfo = m_blockingCrossTxQueue->frontTx();
-        int type = txInfo.type;
+        int type = txInfo->type;
         // if (type == 1) { // 插入即执行的交易，说明晚了一步 直接返回即可
         //     return;
         // }
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
         // 解析跨片交易
-        std::string allShardID = txInfo.destin_shard_id; // 用 "_" 分隔
-        std::string allStateAddress = txInfo.stateAddress; // 用 "｜" 分隔
-        std::string allSignedTx = txInfo.signedTx; // 用 "｜" 分隔
-        std::string txIds = txInfo.txIds; // 用 "_" 分隔
+        std::string allShardID = txInfo->destin_shard_id; // 用 "_" 分隔
+        std::string allStateAddress = txInfo->stateAddress; // 用 "｜" 分隔
+        std::string allSignedTx = txInfo->signedTx; // 用 "｜" 分隔
+        std::string txIds = txInfo->txIds; // 用 "_" 分隔
         
         std::vector<std::string> shardIds;
         boost::split(shardIds, allShardID, boost::is_any_of("_"), boost::token_compress_on);
@@ -1451,7 +1481,7 @@ void deterministExecute::processBlockedCrossTx() {
             
             Transaction::Ptr tx = std::make_shared<Transaction>(
                     jsToBytes(signedTx, dev::OnFailed::Throw), CheckTransaction::Everything);
-            tx->setNonce(tx->nonce() + u256(utcTime()));
+            tx->setNonce(generateRandomValue());
             auto keyPair = KeyPair::create();
             auto sig = dev::crypto::Sign(keyPair, tx->hash(WithoutSignature));
             tx->updateSignature(sig);
@@ -1472,10 +1502,10 @@ void deterministExecute::processBlockedCrossTx() {
             protos::SubCrossShardTx subCrossShardTx;
             subCrossShardTx.set_signeddata(newSignedTx);
             subCrossShardTx.set_stateaddress(stateAddress);
-            subCrossShardTx.set_sourceshardid(txInfo.source_shard_id);
+            subCrossShardTx.set_sourceshardid(txInfo->source_shard_id);
             subCrossShardTx.set_destinshardid(shardID);
             subCrossShardTx.set_messageid(messageID);
-            subCrossShardTx.set_crosstxhash(txInfo.corss_tx_hash); // 跨片交易哈希字符串
+            subCrossShardTx.set_crosstxhash(txInfo->cross_tx_hash); // 跨片交易哈希字符串
             subCrossShardTx.set_shardids(allShardID); // 参与跨片交易的子分片集合，通过"_"划分
             subCrossShardTx.set_messageids(messageIds);
             subCrossShardTx.set_txnum(txNum);
@@ -1503,7 +1533,7 @@ void deterministExecute::processBlockedCrossTx() {
                     (unsigned long)internal_groupId, 
                     (unsigned long)messageID,
                     (unsigned long)txNum, 
-                    txInfo.corss_tx_hash, 
+                    txInfo->cross_tx_hash, 
                     tx, 
                     stateAddress,
                     allShardID,

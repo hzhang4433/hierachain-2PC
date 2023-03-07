@@ -495,12 +495,17 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
         // 其它节点已经完成提交并返回消息包的情况
         if (sourceShardId == internal_groupId && lateCommitReplyMessageId->find(messageId) != lateCommitReplyMessageId->end()) {
             doneCrossTx->insert(crossTxHash);
-
-            m_deterministExecute->executedTx += crossTxNum;
+            int executedTxNum = m_deterministExecute->executedTx;
+            if (executedTxNum == 0) {
+                PLUGIN_LOG(INFO) << LOG_KV("executedTx", 0);
+            }
+            executedTxNum += crossTxNum;
+            m_deterministExecute->executedTx = executedTxNum;
             PLUGIN_LOG(INFO) << LOG_DESC("跨片交易流程完成... in processReceivedCrossTxCommit")
                              << LOG_KV("messageId", messageId)
                              << LOG_KV("当笔跨片交易数", crossTxNum)
-                             << LOG_KV("executedTx", m_deterministExecute->executedTx);
+                             << LOG_KV("executedTx", executedTxNum - (executedTxNum % 500))
+                             << LOG_KV("executedTx_real", executedTxNum);
 
             // 非头节点不必转发
             if(dev::plugin::nodeIdStr != toHex(forwardNodeId.at(internal_groupId - 1)))
@@ -623,11 +628,17 @@ void ConsensusPluginManager::processReceivedCrossTxCommitReply(protos::SubCrossS
     }
 
     // 添加doneCrossTx，防止收到历史交易包——22.11.6
-    m_deterministExecute->executedTx += txNum;
+    int executedTxNum = m_deterministExecute->executedTx;
+    if (executedTxNum == 0) {
+        PLUGIN_LOG(INFO) << LOG_KV("executedTx", 0);
+    }
+    executedTxNum += txNum;
+    m_deterministExecute->executedTx = executedTxNum;
     PLUGIN_LOG(INFO) << LOG_DESC("跨片交易流程完成...")
                      << LOG_KV("messageId", messageId)
                      << LOG_KV("当笔跨片交易数", txNum)
-                     << LOG_KV("executedTx", m_deterministExecute->executedTx);
+                     << LOG_KV("executedTx", executedTxNum - (executedTxNum % 500))
+                     << LOG_KV("executedTx_real", executedTxNum);
 
     // 记录交易结束时间
     vector<string> dataItems;

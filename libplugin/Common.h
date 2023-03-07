@@ -69,15 +69,37 @@ class ExecuteVMTestFixture;
             }
     };
 
-    struct blockedCrossTransaction
-    {
-        int type; // 类型，0为阻塞过的交易，1为直接执行的交易
-        unsigned long source_shard_id;
-        std::string destin_shard_id; // 用 "_" 分隔
-        std::string corss_tx_hash;
-        std::string stateAddress; // 用 "｜" 分隔
-        std::string signedTx; // 用 "｜" 分隔
-        std::string txIds;
+    // struct blockedCrossTransaction
+    // {
+    //     int type; // 类型，0为阻塞过的交易，1为直接执行的交易
+    //     unsigned long source_shard_id;
+    //     std::string destin_shard_id; // 用 "_" 分隔
+    //     std::string corss_tx_hash;
+    //     std::string stateAddress; // 用 "｜" 分隔
+    //     std::string signedTx; // 用 "｜" 分隔
+    //     std::string txIds;
+    // };
+
+    class blockedCrossTransaction {
+        public:
+            int type; // 类型，0为阻塞过的交易，1为直接执行的交易
+            unsigned long source_shard_id;
+            std::string destin_shard_id; // 用 "_" 分隔
+            std::string cross_tx_hash;
+            std::string stateAddress; // 用 "｜" 分隔
+            std::string signedTx; // 用 "｜" 分隔
+            std::string txIds;
+        public:
+            blockedCrossTransaction(int ty, unsigned long s, std::string d, std::string txHash, 
+                        std::string sAds, std::string sTx, std::string tIds) {
+                type = ty;
+                source_shard_id = s;
+                destin_shard_id = d;
+                cross_tx_hash = txHash;
+                stateAddress = sAds;
+                signedTx = sTx;
+                txIds = tIds;
+            }
     };
 
     struct executableTransaction
