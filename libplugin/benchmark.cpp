@@ -283,6 +283,8 @@ void transactionInjectionTest::injectionTransactions(std::string filename, int32
 void transactionInjectionTest::injectionTransactions(string& intrashardworkload_filename, string& intershardworkload_filename, string& crosslayerworkload_filename
                                                     , int intratxNum, int intertxNum, int crosslayerNum)
 {
+    int SPEED=1000;
+    
     // 只导入片内交易(只需转发节点负责)
     if(intratxNum != 0 && intertxNum == 0 && crosslayerNum == 0){
         vector<string> txids;
@@ -300,28 +302,31 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
                 string txrlp = root[i].asString();
                 txRLPS.push_back(txrlp);
 
-                // // 解析交易data字段，获取交易txid
-                // Transaction::Ptr tx = std::make_shared<Transaction>(
-                //     jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
-                // string data_str = dataToHexString(tx->get_data());
-                // vector<string> dataItems;
-                // boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
-                // string txid = dataItems.at(2).c_str();
-                // // PLUGIN_LOG(INFO) << LOG_DESC("片内交易")
-                // //                  << LOG_KV("txid", txid);
-                // txids.push_back(txid);
+                // 解析交易data字段，获取交易txid
+                Transaction::Ptr tx = std::make_shared<Transaction>(
+                    jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
+                string data_str = dataToHexString(tx->get_data());
+                vector<string> dataItems;
+                boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+                string txid = dataItems.at(2).c_str();
+                // PLUGIN_LOG(INFO) << LOG_DESC("片内交易")
+                //                  << LOG_KV("txid", txid);
+                txids.push_back(txid);
             }
         }
         infile.close();
 
         // 正式投递到交易池
         for(int i = 0; i < inputTxsize; i++) {
+            if(i != 0 && i % SPEED == 0){
+                std::this_thread::sleep_for(std::chrono::seconds(1)); // 暂停1秒
+            }
             m_rpcService->sendRawTransaction(dev::consensus::internal_groupId, txRLPS.at(i));
-            // string txid = txids.at(i);
-            // struct timeval tv;
-            // gettimeofday(&tv, NULL);
-            // int time_sec = (int)tv.tv_sec;
-            // m_txid_to_starttime->insert(make_pair(txid, time_sec)); // 记录txid的开始时间
+            string txid = txids.at(i);
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+            int time_sec = (int)tv.tv_sec;
+            m_txid_to_starttime->insert(make_pair(txid, time_sec)); // 记录txid的开始时间
         }
     }
     // 只导入跨片交易
@@ -341,14 +346,14 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
                     string txrlp = root[i].asString();
                     txRLPS.push_back(txrlp);
 
-                    // // 解析交易data字段，获取交易txid
-                    // Transaction::Ptr tx = std::make_shared<Transaction>(
-                    //     jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
-                    // string data_str = dataToHexString(tx->get_data());
-                    // vector<string> dataItems;
-                    // boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
-                    // string txid = dataItems.at(7).c_str();
-                    // txids.push_back(txid);
+                    // 解析交易data字段，获取交易txid
+                    Transaction::Ptr tx = std::make_shared<Transaction>(
+                        jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
+                    string data_str = dataToHexString(tx->get_data());
+                    vector<string> dataItems;
+                    boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+                    string txid = dataItems.at(7).c_str();
+                    txids.push_back(txid);
                 }
             }
 
@@ -366,14 +371,14 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
                     string txrlp = root[i].asString();
                     txRLPS.push_back(txrlp);
 
-                    // // 解析交易data字段，获取交易txid
-                    // Transaction::Ptr tx = std::make_shared<Transaction>(
-                    //     jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
-                    // string data_str = dataToHexString(tx->get_data());
-                    // vector<string> dataItems;
-                    // boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
-                    // string txid = dataItems.at(7).c_str();
-                    // txids.push_back(txid);
+                    // 解析交易data字段，获取交易txid
+                    Transaction::Ptr tx = std::make_shared<Transaction>(
+                        jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
+                    string data_str = dataToHexString(tx->get_data());
+                    vector<string> dataItems;
+                    boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+                    string txid = dataItems.at(7).c_str();
+                    txids.push_back(txid);
                 }
             }
 
@@ -382,19 +387,23 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
 
         // 正式投递到交易池
         for(int i = 0; i < inputTxsize; i++) {
+            if(i != 0 && i % SPEED == 0){
+                std::this_thread::sleep_for(std::chrono::seconds(1)); // 暂停1秒
+            }
             m_rpcService->sendRawTransaction(dev::consensus::internal_groupId, txRLPS.at(i));
-            // string txid = txids.at(i);
-            // struct timeval tv;
-            // gettimeofday(&tv, NULL);
-            // int time_sec = (int)tv.tv_sec;
-            // m_txid_to_starttime->insert(make_pair(txid, time_sec)); // 记录txid的开始时间
+            string txid = txids.at(i);
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+            int time_sec = (int)tv.tv_sec;
+            m_txid_to_starttime->insert(make_pair(txid, time_sec)); // 记录txid的开始时间
         }
     }
     // 片内交易+跨片交易
     else if(intratxNum != 0 && (intertxNum != 0 || crosslayerNum != 0)){
         vector<string> txids;
         vector<string> txRLPS;
-        PLUGIN_LOG(INFO) << LOG_KV("即将导入的 片内+跨片 交易总数", intratxNum+intertxNum+crosslayerNum);
+        int inputTxsize = intratxNum+intertxNum+crosslayerNum;
+        PLUGIN_LOG(INFO) << LOG_KV("即将导入的 片内+跨片 交易总数", inputTxsize);
 
         // 导入片内交易
         ifstream infile1(intrashardworkload_filename, ios::binary);
@@ -434,36 +443,40 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
         }
 
         // // 将txRLPS打乱
-        auto start = txRLPS.begin();
-        auto end = txRLPS.end();
+        // auto start = txRLPS.begin();
+        // auto end = txRLPS.end();
         // srand(time(NULL));
         // random_shuffle(start, end);
 
         // 将txRLPS中的交易导入交易池, 且记录下开始时间
-        for(auto it = start; it != end; it++){
-            string txrlp = *it;
+        for(int i = 0; i < inputTxsize; i++){
+            if(i != 0 && i % SPEED == 0){
+                std::this_thread::sleep_for(std::chrono::seconds(1)); // 暂停1秒
+            }
+
+            string txrlp = txRLPS.at(i);
             m_rpcService->sendRawTransaction(dev::consensus::internal_groupId, txrlp);
 
-            // // 获取交易id, 记录交易开始时间
-            // string txid;
-            // Transaction::Ptr tx = std::make_shared<Transaction>(
-            //     jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
-            // string data_str = dataToHexString(tx->get_data());
-            // if(data_str.find("0x444555666", 0) != -1){ // 片内交易
-            //     vector<string> dataItems;
-            //     boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
-            //     txid = dataItems.at(2).c_str();
-            // }
-            // else if(data_str.find("0x111222333", 0) != -1){ // 跨片交易
-            //     vector<string> dataItems;
-            //     boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
-            //     txid = dataItems.at(7).c_str();
-            // }
+            // 获取交易id, 记录交易开始时间
+            string txid;
+            Transaction::Ptr tx = std::make_shared<Transaction>(
+                jsToBytes(txrlp, OnFailed::Throw), CheckTransaction::Everything);
+            string data_str = dataToHexString(tx->get_data());
+            if(data_str.find("0x444555666", 0) != -1){ // 片内交易
+                vector<string> dataItems;
+                boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+                txid = dataItems.at(2).c_str();
+            }
+            else if(data_str.find("0x111222333", 0) != -1){ // 跨片交易
+                vector<string> dataItems;
+                boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+                txid = dataItems.at(7).c_str();
+            }
 
-            // struct timeval tv;
-            // gettimeofday(&tv, NULL);
-            // int time_sec = (int)tv.tv_sec;
-            // m_txid_to_starttime->insert(make_pair(txid, time_sec));
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+            int time_sec = (int)tv.tv_sec;
+            m_txid_to_starttime->insert(make_pair(txid, time_sec));
         }
     }
 }

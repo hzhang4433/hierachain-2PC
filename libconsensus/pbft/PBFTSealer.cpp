@@ -71,32 +71,32 @@ void PBFTSealer::handleBlock()
         m_signalled.notify_all();
         m_blockSignalled.notify_all();
     }
-    // 记录交易开始时间戳
-    for (auto tx : *(m_sealing.block->transactions())) {
-        // auto& tx = *(m_sealing.block->transactions())[i];
+    // // 记录交易开始时间戳
+    // for (auto tx : *(m_sealing.block->transactions())) {
+    //     // auto& tx = *(m_sealing.block->transactions())[i];
         
-        std::string txid="";
-        std::string data_str = dataToHexString(tx->get_data());
-        if(data_str.find("0x444555666", 0) != -1){ // 片内交易
-            std::vector<std::string> dataItems;
-            boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
-            txid = dataItems.at(2).c_str();
-            PBFTSEALER_LOG(INFO) << LOG_DESC("片内交易")
-                                 << LOG_KV("txid", txid);
-        }
-        else if(data_str.find("0x111222333", 0) != -1){ // 跨片交易
-            std::vector<std::string> dataItems;
-            boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
-            txid = dataItems.at(7).c_str();
-            PBFTSEALER_LOG(INFO) << LOG_DESC("跨片交易")
-                                 << LOG_KV("txid", txid);
-        }
+    //     std::string txid="";
+    //     std::string data_str = dataToHexString(tx->get_data());
+    //     if(data_str.find("0x444555666", 0) != -1){ // 片内交易
+    //         std::vector<std::string> dataItems;
+    //         boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+    //         txid = dataItems.at(2).c_str();
+    //         PBFTSEALER_LOG(INFO) << LOG_DESC("片内交易")
+    //                              << LOG_KV("txid", txid);
+    //     }
+    //     else if(data_str.find("0x111222333", 0) != -1){ // 跨片交易
+    //         std::vector<std::string> dataItems;
+    //         boost::split(dataItems, data_str, boost::is_any_of("|"), boost::token_compress_on);
+    //         txid = dataItems.at(7).c_str();
+    //         PBFTSEALER_LOG(INFO) << LOG_DESC("跨片交易")
+    //                              << LOG_KV("txid", txid);
+    //     }
 
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-        int time_sec = (int)tv.tv_sec;
-        dev::plugin::m_txid_to_starttime->insert(std::make_pair(txid, time_sec));
-    }
+    //     struct timeval tv;
+    //     gettimeofday(&tv, NULL);
+    //     int time_sec = (int)tv.tv_sec;
+    //     dev::plugin::m_txid_to_starttime->insert(std::make_pair(txid, time_sec));
+    // }
 }
 void PBFTSealer::setBlock()
 {

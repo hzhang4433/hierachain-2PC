@@ -58,6 +58,7 @@ using namespace dev::storage;
 using namespace dev::mptstate;
 using namespace dev::executive;
 using namespace dev::plugin;
+using namespace dev::consensus;
 
 namespace dev {
     namespace plugin {
@@ -1277,16 +1278,25 @@ void createIntrashardDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerM
     // 计算跨片交易及各分片的片内交易数
     string fileName, newfileName;
     int shardsNum = dev::consensus::SHARDNUM;
-    transactionInjectionTest _injectionTest(rpcService, 1);
+    transactionInjectionTest _injectionTest(rpcService, dev::consensus::internal_groupId);
     fileName = "intrashardworkload.json";
-
     // 生成子分片的片内交易
-    for (int i = 1; i <= shardsNum; i++) {
-        // flags[i - 1] = false;
-        newfileName = "../node" + to_string((i-1)*4) + "/" + fileName;
-        createInnerTransaction(i, ledgerManager, txNum, newfileName, 0, _injectionTest);
-    }
+    createInnerTransaction(dev::consensus::internal_groupId, ledgerManager, txNum, fileName, 0, _injectionTest);
 }
+// void createIntrashardDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerManager, int txNum, std::shared_ptr<dev::rpc::Rpc> rpcService) {
+//     // 计算跨片交易及各分片的片内交易数
+//     string fileName, newfileName;
+//     int shardsNum = dev::consensus::SHARDNUM;
+//     transactionInjectionTest _injectionTest(rpcService, 1);
+//     fileName = "intrashardworkload.json";
+
+//     // 生成子分片的片内交易
+//     for (int i = 1; i <= shardsNum; i++) {
+//         // flags[i - 1] = false;
+//         newfileName = "../node" + to_string((i-1)*4) + "/" + fileName;
+//         createInnerTransaction(i, ledgerManager, txNum, newfileName, 0, _injectionTest);
+//     }
+// }
 
 // 生成纯局部性负载
 void createIntershardDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerManager, int txNum, std::shared_ptr<dev::rpc::Rpc> rpcService) {
@@ -1369,9 +1379,49 @@ void createIntershardDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerM
 
 }
 
+// 生成AHL跨片交易-9为协调者
+void createCrossshardDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerManager, int txNum, std::shared_ptr<dev::rpc::Rpc> rpcService) {
+    // 计算跨片交易及各分片的片内交易数
+    string fileName, newfileName;
+    int shardsNum = dev::consensus::SHARDNUM;
+    transactionInjectionTest _injectionTest(rpcService, 1);
+    
+    fileName = "crossshardworkload.json";
+
+    // 生成跨层交易
+    int nowCrossNum = txNum;
+    std::cout << "开始生成AHL跨片交易：" << std::endl;
+    while(nowCrossNum != 0) {
+        // 生成随机两个子分片ID 范围:[1,9]
+        // 默认各个节点生成的随机数顺序一致
+        int subId1 = (rand() % shardsNum) + 1;
+        int subId2 = (rand() % shardsNum) + 1;
+        while (subId1 == subId2) {
+            subId2 = (rand() % shardsNum) + 1;
+        }
+
+        if (subId1 > subId2) {
+            swap(subId1, subId2);
+        }
+
+        // 查找最近公共祖先
+        int corId = 9;
+        std::cout << corId << ":" << subId1 << "-" << subId2 << std::endl;
+        // 生成交易
+        newfileName = "../node" + to_string((corId-1)*4) + "/" + fileName;
+        if (nowCrossNum < 500) {
+            createCrossTransaction(corId, subId1, subId2, ledgerManager, nowCrossNum, newfileName, _injectionTest);
+            nowCrossNum = 0;
+        } else {
+            createCrossTransaction(corId, subId1, subId2, ledgerManager, 500, newfileName, _injectionTest);
+            nowCrossNum -= 500;
+        }
+    }
+}
+
 int main(){
 
-    dev::consensus::SHARDNUM = 9; // 初始化分片数目
+    dev::consensus::SHARDNUM = 13; // 初始化分片数目
     std::cout << "SHARDNUM = " << dev::consensus::SHARDNUM << std::endl;
 
     // 开始增加组间通信同步组
@@ -1402,33 +1452,6 @@ int main(){
     
     // ADD ON 22.11.20
     complete_candidate_tx_messageids = std::make_shared<tbb::concurrent_vector<unsigned long>>(dev::consensus::SHARDNUM);
-
-    /* 以下为测试
-    unsigned long message_id = 1;
-    unsigned long source_shard_id = 3;
-    for (unsigned long i = 1; i <= dev::consensus::SHARDNUM; i++) {
-        cout << i << " : " << latest_candidate_tx_messageids->at(i - 1) << endl;
-        if (message_id == latest_candidate_tx_messageids->at(i - 1) + 1) {
-            cout << i << " is OK" << endl;
-        }
-    }
-    cout << "测试cached_cs_tx: " << (cached_cs_tx->count("attempt_key") != 0) << endl;
-    cout << "测试candidate_tx_queues: " << candidate_tx_queues->count("readwriteset") << endl;
-    cout << "测试locking_key: " << locking_key->count("readwriteset") << endl;
-    cout << "测试locking_key insert: " << locking_key->insert(std::make_pair("readwriteset", 1)).second << endl; 
-    cout << "测试candidate_tx_queue insert: " << endl;
-    unsigned long i = 0;
-    dev::eth::Transaction::Ptr tx;
-    dev::blockverifier::ExecutiveContext::Ptr executiveContext;
-    dev::executive::Executive::Ptr executive; 
-    dev::eth::Block block = dev::eth::Block();
-
-    std::queue<executableTransaction> queue = std::queue<executableTransaction>();
-    candidate_tx_queue _candidate_tx_queue { "readwriteset", queue };
-    _candidate_tx_queue.queue.push(executableTransaction{i, tx, executiveContext, executive, block});
-    candidate_tx_queues->insert(std::make_pair("readwriteset", _candidate_tx_queue));
-
-    测试结束*/
 
     // 对dev::consensus::latest_commit_cs_tx进行初始化
     for(int i = 0; i < dev::consensus::SHARDNUM; i++)
@@ -1568,54 +1591,100 @@ int main(){
     */
 
     std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+    // 测试不同跨片交易比例下系统整体吞吐延迟
 // dev::consensus::SHARDNUM
-    for (int i = 1; i <= dev::consensus::SHARDNUM; i++) {
-        string intrashardworkload = "./intrashardworkload.json";
-        string intershardworkload = "./intershardworkload.json";
-        string crosslayerworkload = "./crosslayerworkload.json";
-        // dev::consensus::internal_groupId == i
-        // (7 == i || i <= 3 )
-        if(dev::consensus::internal_groupId == i && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(i - 1))) {
-            PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
-            transactionInjectionTest _injectionTest(rpcService, i, ledgerManager);
+    // for (int i = 1; i <= dev::consensus::SHARDNUM; i++) {
+    //     string intrashardworkload = "./intrashardworkload.json";
+    //     string intershardworkload = "./intershardworkload.json";
+    //     string crosslayerworkload = "./crosslayerworkload.json";
+    //     // dev::consensus::internal_groupId == i
+    //     // (7 == i || i <= 3 )
+    //     if(dev::consensus::internal_groupId == i && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(i - 1))) {
+    //         PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
+    //         transactionInjectionTest _injectionTest(rpcService, i, ledgerManager);
 
-            if (i <= 6) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-                // 100
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 0, 0, 0);
-                // 80
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 2000, 0, 0);
-                // 50
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 5000, 0, 0);
-                // 20
-                _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 8000, 0, 0);
-                // 10
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 9000, 0, 0);
-                // 5
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 9500, 0, 0);
-            } else if (i <= 8) {
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 0, 20000, 0);
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 2000, 27360, 0);
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 5000, 17100, 0);
-                _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 8000, 6840, 0);
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 9000, 3420, 0);
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 9500, 1710, 0);
-            } else {
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 0, 10000, 2500);
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 2000, 13680, 2000);
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 5000, 8550, 1250);
-                _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 8000, 3420, 500);
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 9000, 1710, 250);
-                // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 9500, 855, 125);
-            }
+    //         if (i <= 6) {
+    //             // std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    //             // 100
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 0, 0, 0);
+    //             // 80
+    //             _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 2000, 0, 0);
+    //             // 50
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 5000, 0, 0);
+    //             // 20
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 8000, 0, 0);
+    //             // 10
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 9000, 0, 0);
+    //             // 5
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 9500, 0, 0);
+                
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 50000, 0, 0);
+    //         } else if (i <= 8) {
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 0, 20000, 0);
 
-            // _injectionTest.injectionTransactions("./workload0.json", i);
-            // _injectionTest.injectionTransactions("./workload1.json", i);
-            // _injectionTest.injectionTransactions("./workload2.json", i);
-            // _injectionTest.injectionTransactions("./workload3.json", i);
-            // _injectionTest.injectionTransactions("./workload4.json", i);
+    //             _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 2000, 27360, 0);
+
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 5000, 17100, 0);
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 8000, 6840, 0);
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 9000, 3420, 0);
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 9500, 1710, 0);
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 50000, 0, 0);
+    //         } else {
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 0, 10000, 2500);
+
+    //             _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 2000, 13680, 2000);
+
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 5000, 8550, 1250);
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 8000, 3420, 500);
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 9000, 1710, 250);
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 9500, 855, 125);
+                
+    //             // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 50000, 0, 0);
+    //         }
+
+    //         // _injectionTest.injectionTransactions("./workload0.json", i);
+    //         // _injectionTest.injectionTransactions("./workload1.json", i);
+    //         // _injectionTest.injectionTransactions("./workload2.json", i);
+    //         // _injectionTest.injectionTransactions("./workload3.json", i);
+    //         // _injectionTest.injectionTransactions("./workload4.json", i);
+    //     }
+    // }
+
+
+    // 测试不同发送速率下，系统的延时吞吐变化（20%跨片和80%跨片）
+    string intrashardworkload = "./intrashardworkload.json";
+    string intershardworkload = "./intershardworkload.json";
+    string crosslayerworkload = "./crosslayerworkload.json";
+
+    if(nodeIdStr == toHex(dev::consensus::forwardNodeId.at(internal_groupId - 1))) {
+        PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
+        transactionInjectionTest _injectionTest(rpcService, internal_groupId, ledgerManager);
+        
+        if (internal_groupId <= 6) {
+            // 20%
+            _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 32000, 0, 0);
+            // 80%
+            // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 8000, 0, 0);
+        } else if (internal_groupId <= 8) {
+            // 20%
+            _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 32000, 27360, 0);
+            // 80%
+            // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 8000, 100000, 0);
+        } else {
+            // 20%
+            _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 32000, 13680, 2000);
+            // 80%
+            // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 8000, 54720, 8000);
         }
+        
     }
+
+    
+    // if(internal_groupId <= 8 && nodeIdStr == toHex(forwardNodeId.at(internal_groupId - 1))) {
+    //     PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
+    //     transactionInjectionTest _injectionTest(rpcService, internal_groupId, ledgerManager);
+    //     _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 50000, 0, 0);
+    // }
 
     // createDataSet(3, 1, 2, ledgerManager, 150000, 20, rpcService);
     // createDataSet(3, 1, 2, ledgerManager, 150000, 80, rpcService);
@@ -1647,11 +1716,17 @@ int main(){
     // }
 
     // 生成局部性负载
+    // 当前节点为头节点 生成交易
+    // if(nodeIdStr == toHex(dev::consensus::forwardNodeId.at(dev::consensus::internal_groupId - 1))) {
+    //     createIntrashardDataSet(ledgerManager, 100000, rpcService);
+    // }
+
     // if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0))) {
     //     // createLocalityDataSet(ledgerManager, 63000, 0, rpcService);
     //     createIntrashardDataSet(ledgerManager, 100000, rpcService);
-    //     createIntershardDataSet(ledgerManager, 100000, rpcService);
-    //     createCrossLayerDataSet(ledgerManager, 100000, rpcService);
+    //     // createIntershardDataSet(ledgerManager, 100000, rpcService);
+    //     // createCrossLayerDataSet(ledgerManager, 100000, rpcService);
+    //     // createCrossshardDataSet(ledgerManager, 100000, rpcService);
     // }
     
 
