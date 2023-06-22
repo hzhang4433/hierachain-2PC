@@ -67,7 +67,8 @@ protected:
         "getTransactionByHashWithProof", "getTransactionReceiptByHashWithProof",
         "sendRawTransactionAndGetProof", "getBlockHeaderByNumber", "getBlockHeaderByHash",
         "startGroup", "stopGroup", "removeGroup", "recoverGroup", "queryGroupStatus",
-        "getBatchReceiptsByBlockNumberAndRange", "getBatchReceiptsByBlockHashAndRange"};
+        "getBatchReceiptsByBlockNumberAndRange", "getBatchReceiptsByBlockHashAndRange",
+        "sendInterTransactions"};
 
     // RPC interface without restrictions
     std::set<std::string> const m_noRestrictRpcMethodSet = {"getClientVersion"};

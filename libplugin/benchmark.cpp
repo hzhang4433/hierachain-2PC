@@ -281,16 +281,19 @@ void transactionInjectionTest::injectionTransactions(std::string filename, int32
 }
 
 void transactionInjectionTest::injectionTransactions(string& intrashardworkload_filename, string& intershardworkload_filename, string& crosslayerworkload_filename
-                                                    , int intratxNum, int intertxNum, int crosslayerNum)
+                                                    , int intratxNum, int intertxNum, int crosslayerNum, int threadId)
 {
-    int SPEED=1000;
+    int SPEED = 5000;
+    int baseNum = (threadId - 1) * 50000;
     
     // 只导入片内交易(只需转发节点负责)
     if(intratxNum != 0 && intertxNum == 0 && crosslayerNum == 0){
         vector<string> txids;
         vector<string> txRLPS;
         int inputTxsize = intratxNum;
-        PLUGIN_LOG(INFO) << LOG_KV("即将导入的片内交易总数", intratxNum);
+        PLUGIN_LOG(INFO) << LOG_DESC("开始导入交易....")
+                         << LOG_KV("即将导入的'片内交易'总数", intratxNum);
+                        //  << LOG_KV("threadId", threadId);
 
         ifstream infile(intrashardworkload_filename, ios::binary); // signedtxs.json
         Json::Reader reader;
@@ -298,7 +301,7 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
 
         // 加载交易
         if(reader.parse(infile, root)) {
-            for(int i = 0; i < inputTxsize; i++) {
+            for(int i = baseNum; i < inputTxsize + baseNum; i++) {
                 string txrlp = root[i].asString();
                 txRLPS.push_back(txrlp);
 
@@ -334,7 +337,8 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
         vector<string> txids;
         vector<string> txRLPS;
         int inputTxsize = intertxNum + crosslayerNum;
-        PLUGIN_LOG(INFO) << LOG_KV("即将导入的跨片交易总数", intertxNum + crosslayerNum);
+        PLUGIN_LOG(INFO) << LOG_DESC("开始导入交易....")
+                         << LOG_KV("即将导入的'跨片交易'总数", intertxNum + crosslayerNum);
         if (intertxNum != 0) {
             ifstream infile(intershardworkload_filename, ios::binary); // signedtxs.json
             Json::Reader reader;
@@ -342,7 +346,7 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
 
             // 加载交易
             if(reader.parse(infile, root)) {
-                for(int i = 0; i < intertxNum; i++) {
+                for(int i = baseNum; i < intertxNum + baseNum; i++) {
                     string txrlp = root[i].asString();
                     txRLPS.push_back(txrlp);
 
@@ -367,7 +371,7 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
 
             // 加载交易
             if(reader.parse(infile, root)) {
-                for(int i = 0; i < crosslayerNum; i++) {
+                for(int i = baseNum; i < crosslayerNum + baseNum; i++) {
                     string txrlp = root[i].asString();
                     txRLPS.push_back(txrlp);
 
@@ -391,6 +395,7 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
                 std::this_thread::sleep_for(std::chrono::seconds(1)); // 暂停1秒
             }
             m_rpcService->sendRawTransaction(dev::consensus::internal_groupId, txRLPS.at(i));
+            // PLUGIN_LOG(INFO) << LOG_KV("已经导入的跨片交易总数", i);
             string txid = txids.at(i);
             struct timeval tv;
             gettimeofday(&tv, NULL);
@@ -403,7 +408,8 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
         vector<string> txids;
         vector<string> txRLPS;
         int inputTxsize = intratxNum+intertxNum+crosslayerNum;
-        PLUGIN_LOG(INFO) << LOG_KV("即将导入的 片内+跨片 交易总数", inputTxsize);
+        PLUGIN_LOG(INFO) << LOG_DESC("开始导入交易....")
+                         << LOG_KV("即将导入的 '片内+跨片' 交易总数", inputTxsize);
 
         // 导入片内交易
         ifstream infile1(intrashardworkload_filename, ios::binary);
@@ -411,7 +417,7 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
         Json::Value root;
         // 加载交易
         if(reader.parse(infile1, root)) {
-            for(int i = 0; i < intratxNum; i++) {
+            for(int i = baseNum; i < intratxNum + baseNum; i++) {
                 string txrlp = root[i].asString();
                 txRLPS.push_back(txrlp);
             }
@@ -423,7 +429,7 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
             ifstream infile2(intershardworkload_filename, ios::binary);
             // 加载交易
             if(reader.parse(infile2, root)) {
-                for(int i = 0; i < intertxNum; i++) {
+                for(int i = baseNum; i < intertxNum + baseNum; i++) {
                     string txrlp = root[i].asString();
                     txRLPS.push_back(txrlp);
                 }
@@ -434,7 +440,7 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
             ifstream infile2(crosslayerworkload_filename, ios::binary);
             // 加载交易
             if(reader.parse(infile2, root)) {
-                for(int i = 0; i < crosslayerNum; i++) {
+                for(int i = baseNum; i < crosslayerNum + baseNum; i++) {
                     string txrlp = root[i].asString();
                     txRLPS.push_back(txrlp);
                 }
@@ -542,6 +548,7 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
     std::string requestLabel = "0x111222333";
     std::string flag = "|";
     std::string txid = "C" + to_string(global_txId++);
+    // std::string txid = "L" + to_string(global_txId++);
     // std::string stateAddress = "state1";
     // srand((unsigned)time(0));
 

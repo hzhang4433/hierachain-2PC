@@ -151,6 +151,11 @@ public:
                                    jsonrpc::JSON_INTEGER, "param2", jsonrpc::JSON_STRING, NULL),
             &dev::rpc::RpcFace::sendRawTransactionAndGetProofI);
 
+        this->bindAndAddMethod(jsonrpc::Procedure(
+            "sendInterTransactions", jsonrpc::PARAMS_BY_POSITION, jsonrpc::JSON_STRING,
+                              "param1", jsonrpc::JSON_INTEGER, NULL),
+            &dev::rpc::RpcFace::sendInterTransactionsI);
+
         this->bindAndAddMethod(
             jsonrpc::Procedure("getCode", jsonrpc::PARAMS_BY_POSITION, jsonrpc::JSON_OBJECT,
                 "param1", jsonrpc::JSON_INTEGER, "param2", jsonrpc::JSON_STRING, NULL),
@@ -207,7 +212,7 @@ public:
                 jsonrpc::JSON_OBJECT, "param1", jsonrpc::JSON_INTEGER, "param2",
                 jsonrpc::JSON_STRING, "param3", jsonrpc::JSON_STRING, "param4",
                 jsonrpc::JSON_STRING, "param5", jsonrpc::JSON_BOOLEAN, NULL),
-            &dev::rpc::RpcFace::getBatchReceiptsByBlockHashAndRangeI);
+            &dev::rpc::RpcFace::getBatchReceiptsByBlockHashAndRangeI);  
     }
 
     inline virtual void getSystemConfigByKeyI(const Json::Value& request, Json::Value& response)
@@ -357,6 +362,13 @@ public:
             boost::lexical_cast<int>(request[0u].asString()), request[1u].asString());
     }
 
+    inline virtual void sendInterTransactionsI(
+        const Json::Value& request, Json::Value& response)
+    {
+        response = this->sendInterTransactions(
+            boost::lexical_cast<int>(request[0u].asString()));
+    }
+
     inline virtual void getTransactionByHashWithProofI(
         const Json::Value& request, Json::Value& response)
     {
@@ -477,6 +489,8 @@ public:
     virtual std::string sendRawTransaction(int param1, const std::string& param2) = 0;
     
     virtual std::string sendRawTransactionAndGetProof(int _groupID, const std::string& rlp) = 0;
+    virtual std::string sendInterTransactions(int _num) = 0;
+
     // Get merkle transaction with proof by hash
     virtual Json::Value getTransactionByHashWithProof(int param1, const std::string& param2) = 0;
     // Get receipt with merkle proof by hash
@@ -497,6 +511,7 @@ public:
     virtual Json::Value getBatchReceiptsByBlockHashAndRange(int _groupID,
         const std::string& _blockHash, std::string const& _from, std::string const& _count,
         bool compress = true) = 0;
+        
 };
 
 }  // namespace rpc

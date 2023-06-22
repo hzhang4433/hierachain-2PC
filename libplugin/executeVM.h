@@ -11,7 +11,7 @@ namespace dev
 {
     namespace plugin
     {
-        #define PLUGIN_LOG(LEVEL) LOG(LEVEL) << LOG_BADGE("PLUGIN") << LOG_BADGE("PLUGIN")
+        #define PLUGIN_LOG(LEVEL) LOG(LEVEL) << LOG_BADGE("PLUGIN")
         extern std::shared_ptr<dev::eth::EVMInterface> m_vminstance; // 执行时候使用的VM
 
         class ExecuteVMTestFixture : public std::enable_shared_from_this<ExecuteVMTestFixture>

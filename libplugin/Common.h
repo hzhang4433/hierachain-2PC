@@ -17,7 +17,7 @@ namespace plugin {
 class ExecuteVMTestFixture;
 
 // #define PLUGIN_LOG(LEVEL) LOG(LEVEL) << LOG_BADGE("PLGIN")
-#define PLUGIN_LOG(LEVEL) LOG(LEVEL) << LOG_BADGE("PLUGIN") << LOG_BADGE("PLUGIN")
+#define PLUGIN_LOG(LEVEL) LOG(LEVEL) << LOG_BADGE("PLUGIN")
 
     // struct transaction
     // {
@@ -174,7 +174,7 @@ class ExecuteVMTestFixture;
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<std::string>>> crossTx2ReceivedMsg;
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> crossTx2CommitMsg;
     extern std::shared_ptr<tbb::concurrent_unordered_map<std::string, std::vector<int>>> crossTx2ReceivedCommitMsg;
-	extern dev::PROTOCOL_ID group_protocolID;
+	  extern dev::PROTOCOL_ID group_protocolID;
     extern std::shared_ptr<dev::p2p::Service> group_p2p_service;
     extern dev::blockverifier::BlockVerifierInterface::Ptr groupVerifier;
     extern std::string nodeIdStr;

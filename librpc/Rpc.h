@@ -133,6 +133,11 @@ public:
     Json::Value call(int _groupID, const Json::Value& request) override;
     std::string sendRawTransaction(int _groupID, const std::string& _rlp) override;
     std::string sendRawTransactionAndGetProof(int _groupID, const std::string& _rlp) override;
+
+    std::string sendInterTransactions(int _num) override;
+
+    dev::eth::Transaction::Ptr generateInterTransaction(std::string& requestLabel, std::string& stateAddress1, std::string& stateAddress2, int32_t shardId, std::string txid);
+
     // std::string sendSubCsRawTransaction(int _groupID, const std::string& _rlp, int _iscrosstx); // ADD BY THB, 节点重载一个rpc接口用于接收跨片子交易
 
     // Get transaction with merkle proof by hash
@@ -153,7 +158,6 @@ public:
         std::string const& _from, std::string const& _count, bool compress = true) override;
     Json::Value getBatchReceiptsByBlockHashAndRange(int _groupID, const std::string& _blockHash,
         std::string const& _from, std::string const& _count, bool compress = true) override;
-
 
     void setCurrentTransactionCallback(
         std::function<void(const std::string& receiptContext, GROUP_ID _groupId)>* _callback,

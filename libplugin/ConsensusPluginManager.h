@@ -25,17 +25,7 @@ namespace dev {
                     m_rpc_service = _service;
                     m_deterministExecute = std::make_shared<dev::plugin::deterministExecute>();
                 }
-                void processReceivedWriteSet(protos::TxWithReadSet _rs);
-                void processReceivedTx(protos::Transaction _tx);
 
-                // void processReceivedDisTx(protos::RLPWithReadSet _txrlp);
-                void processReceivedDisTx(protos::SubCrossShardTx _txrlp);
-
-                void processReceivedPreCommitedTx(protos::SubPreCommitedDisTx _txrlp);
-
-                void processReceivedCommitedTx(protos::CommittedRLPWithReadSet _txrlp);
-
-                // ADD BY ZH
                 void processReceivedCrossTx(protos::SubCrossShardTx _txrlp);
                 void processReceivedCrossTxReply(protos::SubCrossShardTxReply _txrlp);
                 void processReceivedCrossTxCommit(protos::SubCrossShardTxCommit _txrlp);
@@ -43,18 +33,19 @@ namespace dev {
                 void processReceivedAbortMessage(protos::AbortMsg _txrlp);
                 void sendCommitPacket(protos::SubCrossShardTxReply _txrlp);
                 void sendCommitPacketToShard(protos::SubCrossShardTxReply _txrlp, unsigned long shardID);
+                void replyToCoordinatorCommitOK(protos::SubCrossShardTxCommit _txrlp);
                 int getRand(int a, int b);
                 
             
 
-                int numOfNotFinishedDAGs();
-                int addNotFinishedDAGs(int _num);
+                // int numOfNotFinishedDAGs();
+                // int addNotFinishedDAGs(int _num);
 
-                u256 getLatestState(std::string _addr);
+                // u256 getLatestState(std::string _addr);
                 
-                void updateNotLatest(std::string const _state);
-                void removeNotLatest(std::string const _state);
-                bool isLatest(std::string const _state);
+                // void updateNotLatest(std::string const _state);
+                // void removeNotLatest(std::string const _state);
+                // bool isLatest(std::string const _state);
                 h512 getNodeId(int _index);
                 void setAttribute(std::shared_ptr<dev::blockchain::BlockChainInterface> _blockchainManager, std::shared_ptr<dev::rpc::Rpc> _service);
 

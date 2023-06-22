@@ -47,7 +47,7 @@ void BlockingTxQueue::insertTx(shared_ptr<transaction> tx) // 后面建议做bat
         stateSet.insert(localrwkeyItems.at(i));
     }
 
-    PLUGIN_LOG(INFO) << LOG_DESC("插入交易");
+    // PLUGIN_LOG(INFO) << LOG_DESC("插入交易");
     for (set<string>::iterator it = stateSet.begin(); it != stateSet.end(); it++) {
         string key = *it;
         // PLUGIN_LOG(INFO) << LOG_KV("key", key);

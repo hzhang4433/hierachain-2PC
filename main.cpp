@@ -43,6 +43,7 @@
 #include <unistd.h>
 #include <thread>
 #include <libplugin/benchmark.h>
+#include <libplugin/InjectThreadMaster.h>
 
 using namespace std;
 using namespace dev;
@@ -122,7 +123,7 @@ namespace dev {
         std::mutex m_doneCrossTxMutex;
         
         // 包含所有节点的protocol ID
-		dev::PROTOCOL_ID group_protocolID;
+		    dev::PROTOCOL_ID group_protocolID;
         // 所有节点的p2p通信服务
         std::shared_ptr<dev::p2p::Service> group_p2p_service;
         // 保存分片的blockerverifier变量
@@ -322,182 +323,182 @@ private:
 };
 
 
-class CrossShardTest
-{
-    private:
-        std::vector<std::string> m_transactionsRLP;
-        std::string m_contractStr;
+// class CrossShardTest
+// {
+//     private:
+//         std::vector<std::string> m_transactionsRLP;
+//         std::string m_contractStr;
 
-        std::shared_ptr<dev::rpc::Rpc> m_rpcService;
-        shared_ptr<SyncThreadMaster> m_syncs;
-        int32_t m_groupId;
+//         std::shared_ptr<dev::rpc::Rpc> m_rpcService;
+//         shared_ptr<SyncThreadMaster> m_syncs;
+//         int32_t m_groupId;
 
-    public:
-        CrossShardTest(std::shared_ptr<dev::rpc::Rpc> _rpcService, int32_t _groupId, shared_ptr<SyncThreadMaster> _syncs)
-        {
-            m_rpcService = _rpcService;
-            m_groupId = _groupId;
-            m_syncs = _syncs;
-        }
+//     public:
+//         CrossShardTest(std::shared_ptr<dev::rpc::Rpc> _rpcService, int32_t _groupId, shared_ptr<SyncThreadMaster> _syncs)
+//         {
+//             m_rpcService = _rpcService;
+//             m_groupId = _groupId;
+//             m_syncs = _syncs;
+//         }
 
-        void sendTx()
-        {
-            for(int i = 0; i < m_transactionsRLP.size(); i++)
-            {
-                std::string txrlpstr = m_transactionsRLP.at(i);
+//         void sendTx()
+//         {
+//             for(int i = 0; i < m_transactionsRLP.size(); i++)
+//             {
+//                 std::string txrlpstr = m_transactionsRLP.at(i);
 
-                dev::plugin::coordinatorRlp.push_back(txrlpstr); // 协调者记录自己发送的跨片交易请求
-                std::string response = m_rpcService->sendRawTransaction(1, txrlpstr); // 通过一个节点将交易发送给协调者中的所有节点，共识、出块
-                std::cout << "用户向协调者分片发送了一笔交易请求..." << std::endl;
-            }
-        }
+//                 dev::plugin::coordinatorRlp.push_back(txrlpstr); // 协调者记录自己发送的跨片交易请求
+//                 std::string response = m_rpcService->sendRawTransaction(1, txrlpstr); // 通过一个节点将交易发送给协调者中的所有节点，共识、出块
+//                 std::cout << "用户向协调者分片发送了一笔交易请求..." << std::endl;
+//             }
+//         }
 
-        void start()
-        {
-            if(m_groupId == 4)
-            {
-                m_syncs->startThread();
-            }
-        }
+//         void start()
+//         {
+//             if(m_groupId == 4)
+//             {
+//                 m_syncs->startThread();
+//             }
+//         }
 
-        void deployContract()
-        {
-            ifstream infile("./deploy.json", ios::binary);
-            assert(infile.is_open());
-            Json::Reader reader;
-            Json::Value root;
+//         void deployContract()
+//         {
+//             ifstream infile("./deploy.json", ios::binary);
+//             assert(infile.is_open());
+//             Json::Reader reader;
+//             Json::Value root;
 
-            if(reader.parse(infile, root))
-            {
-                m_contractStr = root[0].asString();
-            }
-            infile.close();
-            //std::string response = m_rpcService->sendRawTransaction(1, m_contractStr);
-            std::cout<<" 合约部署结束 " <<std::endl;
-        }
+//             if(reader.parse(infile, root))
+//             {
+//                 m_contractStr = root[0].asString();
+//             }
+//             infile.close();
+//             //std::string response = m_rpcService->sendRawTransaction(1, m_contractStr);
+//             std::cout<<" 合约部署结束 " <<std::endl;
+//         }
 
-        void InjectTxRLP()
-        {
-            ifstream infile("./signedtxs.json", ios::binary);
-            assert(infile.is_open());
-            Json::Reader reader;
-            Json::Value root;
-            int64_t number = 0;
-            std::string _transactionRLP = "";
+//         void InjectTxRLP()
+//         {
+//             ifstream infile("./signedtxs.json", ios::binary);
+//             assert(infile.is_open());
+//             Json::Reader reader;
+//             Json::Value root;
+//             int64_t number = 0;
+//             std::string _transactionRLP = "";
 
-            if(reader.parse(infile, root))
-            {
-                number = root.size();
-                for(int i = 0; i < number; i++)
-                {
-                    _transactionRLP = root[i].asString();
-                    m_transactionsRLP.push_back(_transactionRLP);
-                }
-            }
-            infile.close();
-            ifstream infile2("./resendTx.json", ios::binary);
-            assert(infile2.is_open());
-            number = 0;
-            std::string address = "";
+//             if(reader.parse(infile, root))
+//             {
+//                 number = root.size();
+//                 for(int i = 0; i < number; i++)
+//                 {
+//                     _transactionRLP = root[i].asString();
+//                     m_transactionsRLP.push_back(_transactionRLP);
+//                 }
+//             }
+//             infile.close();
+//             ifstream infile2("./resendTx.json", ios::binary);
+//             assert(infile2.is_open());
+//             number = 0;
+//             std::string address = "";
 
-            if(reader.parse(infile2, root))
-            {
-                number = root.size();
-                for(int i = 0; i < number; i++)
-                {
-                    address = root[i][0].asString();
-                    std::vector<std::string> resendTx;
-                    for(int j = 1; j < root[i].size(); j++)
-                    {
-                        resendTx.push_back(root[i][j].asString());
-                    }
-                    dev::plugin::resendTxs.insert(pair<std::string, std::vector<std::string>>(address, resendTx));
-                }
-            }
-            infile2.close();
-            // std::cout<<"测试交易导入成功..." <<std::endl;
-        }
+//             if(reader.parse(infile2, root))
+//             {
+//                 number = root.size();
+//                 for(int i = 0; i < number; i++)
+//                 {
+//                     address = root[i][0].asString();
+//                     std::vector<std::string> resendTx;
+//                     for(int j = 1; j < root[i].size(); j++)
+//                     {
+//                         resendTx.push_back(root[i][j].asString());
+//                     }
+//                     dev::plugin::resendTxs.insert(pair<std::string, std::vector<std::string>>(address, resendTx));
+//                 }
+//             }
+//             infile2.close();
+//             // std::cout<<"测试交易导入成功..." <<std::endl;
+//         }
 
-        void InjextConAddress2txrlps()
-        {
-            ifstream infile("./conAddress2txrlps.json", ios::binary);
-            assert(infile.is_open());
-            Json::Reader reader;
-            Json::Value root;
-            int64_t number = 0;
+//         void InjextConAddress2txrlps()
+//         {
+//             ifstream infile("./conAddress2txrlps.json", ios::binary);
+//             assert(infile.is_open());
+//             Json::Reader reader;
+//             Json::Value root;
+//             int64_t number = 0;
 
-            if(reader.parse(infile, root))
-            {
-                number = root.size();
-                if(number != 0)
-                {
-                    for(int i = 0; i < number; i++)
-                    {
-                        std::string conAddress = root[i][0].asString();
-                        std::vector<std::string> subtxrlps;
+//             if(reader.parse(infile, root))
+//             {
+//                 number = root.size();
+//                 if(number != 0)
+//                 {
+//                     for(int i = 0; i < number; i++)
+//                     {
+//                         std::string conAddress = root[i][0].asString();
+//                         std::vector<std::string> subtxrlps;
 
-                        int txNum = root[i].size() - 1;
-                        dev::plugin::subTxNum.insert(pair<std::string, int>(conAddress, txNum));
-                        for(int j = 1; j < root[i].size(); j++)
-                        {
-                            std::string item = root[i][j].asString();
-                            subtxrlps.push_back(item);
-                        }
-                        dev::plugin::conAddress2txrlps.insert(pair<std::string, std::vector<std::string>>(conAddress, subtxrlps));
-                    }
-                }
-            }
-            infile.close();
-            // std::cout<<"跨片子交易信息，以及子交易数目导入成功！" <<std::endl;
-        }
+//                         int txNum = root[i].size() - 1;
+//                         dev::plugin::subTxNum.insert(pair<std::string, int>(conAddress, txNum));
+//                         for(int j = 1; j < root[i].size(); j++)
+//                         {
+//                             std::string item = root[i][j].asString();
+//                             subtxrlps.push_back(item);
+//                         }
+//                         dev::plugin::conAddress2txrlps.insert(pair<std::string, std::vector<std::string>>(conAddress, subtxrlps));
+//                     }
+//                 }
+//             }
+//             infile.close();
+//             // std::cout<<"跨片子交易信息，以及子交易数目导入成功！" <<std::endl;
+//         }
 
-        void InjectTxRead_Write_Sets()
-        {
-            ifstream infile("./read_write_sets.json");
-            // assert(infile.is_open());
+//         void InjectTxRead_Write_Sets()
+//         {
+//             ifstream infile("./read_write_sets.json");
+//             // assert(infile.is_open());
 
-            Json::Reader reader;
-            Json::Value root;
-            int64_t number = 0;
-            std::string _txRlp = "";
-            std::string _readWriteSet = "";
-            std::map <std::string, std::string> txRead_Write_Set_Map;
+//             Json::Reader reader;
+//             Json::Value root;
+//             int64_t number = 0;
+//             std::string _txRlp = "";
+//             std::string _readWriteSet = "";
+//             std::map <std::string, std::string> txRead_Write_Set_Map;
 
-            if(reader.parse(infile, root))
-            {
-                number = root.size();
-                for(int i = 0; i < number; i++)
-                {
-                    _txRlp = root[i][0].asString();
-                    _readWriteSet = root[i][1].asString();
-                    dev::plugin::txRWSet.insert(pair<std::string, std::string>(_txRlp, _readWriteSet));               
-                }
-            }
-            infile.close();
-            // std::cout<<"交易读写集导入成功..." <<std::endl;
-        }
+//             if(reader.parse(infile, root))
+//             {
+//                 number = root.size();
+//                 for(int i = 0; i < number; i++)
+//                 {
+//                     _txRlp = root[i][0].asString();
+//                     _readWriteSet = root[i][1].asString();
+//                     dev::plugin::txRWSet.insert(pair<std::string, std::string>(_txRlp, _readWriteSet));               
+//                 }
+//             }
+//             infile.close();
+//             // std::cout<<"交易读写集导入成功..." <<std::endl;
+//         }
 
-        void InjectTxDAddr()
-        {
-            ifstream infile("./txDAddress.json", ios::binary);
-            assert(infile.is_open());
-            Json::Reader reader;
-            Json::Value root;
-            int64_t number = 0;
+//         void InjectTxDAddr()
+//         {
+//             ifstream infile("./txDAddress.json", ios::binary);
+//             assert(infile.is_open());
+//             Json::Reader reader;
+//             Json::Value root;
+//             int64_t number = 0;
 
-            if(reader.parse(infile, root))
-            {
-                number = root.size();
-                for(int i = 0; i < number; i++)
-                {
-                    std::string conAddress = root[i].asString();
-                    dev::plugin::disTxDepositAddrs.push_back(conAddress);                    
-                }
-            }
-            infile.close();
-            // std::cout<< "跨片交易存证地址导入成功！" <<std::endl;
-        }
-};
+//             if(reader.parse(infile, root))
+//             {
+//                 number = root.size();
+//                 for(int i = 0; i < number; i++)
+//                 {
+//                     std::string conAddress = root[i].asString();
+//                     dev::plugin::disTxDepositAddrs.push_back(conAddress);                    
+//                 }
+//             }
+//             infile.close();
+//             // std::cout<< "跨片交易存证地址导入成功！" <<std::endl;
+//         }
+// };
 
 /*
 status:
@@ -1238,6 +1239,85 @@ void createLocalityDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerMan
 }
 
 // 生成纯跨层交易
+// 9分片
+// void createCrossLayerDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerManager, int txNum, std::shared_ptr<dev::rpc::Rpc> rpcService) {
+//     // 计算跨片交易及各分片的片内交易数
+//     string fileName, newfileName;
+//     int shardsNum = dev::consensus::SHARDNUM;
+//     transactionInjectionTest _injectionTest(rpcService, 1);
+    
+//     fileName = "crosslayerworkload.json";
+
+//     // 生成跨层交易
+//     int nowCrossNum = txNum;
+//     std::cout << "开始生成跨层级交易：" << std::endl;
+//     while(nowCrossNum != 0) {
+//         // 生成随机两个子分片ID 范围:[1,9]
+//         // 默认各个节点生成的随机数顺序一致
+//         int subId1 = (rand() % shardsNum) + 1;
+//         int subId2 = createCrossId(subId1);
+//         if (subId1 > subId2) {
+//             swap(subId1, subId2);
+//         }
+
+//         // 查找最近公共祖先
+//         int corId = 9;
+//         std::cout << corId << ":" << subId1 << "-" << subId2 << std::endl;
+//         // 生成交易
+//         newfileName = "../node" + to_string((corId-1)*4) + "/" + fileName;
+//         if (nowCrossNum < 500) {
+//             createCrossTransaction(corId, subId1, subId2, ledgerManager, nowCrossNum, newfileName, _injectionTest);
+//             nowCrossNum = 0;
+//         } else {
+//             createCrossTransaction(corId, subId1, subId2, ledgerManager, 500, newfileName, _injectionTest);
+//             nowCrossNum -= 500;
+//         }
+//     }
+// }
+
+int createCrossId_13(int id) {
+    srand((unsigned)time(NULL));
+    int newId = 0;
+
+    if (id <= 3) {
+        // 范围:[4-9, 11-12]
+        newId = (rand() % 8) + 4;
+        if (newId >= 10) {
+            newId++;
+        }
+    } else if (id <= 6) {
+        // 范围:[1-3, 7-9, 10, 12]
+        newId = (rand() % 8) + 1;
+        if (newId == 4) {
+            newId = 10;
+        } else if (newId ==5) {
+            newId = 11;
+        } else if (newId >= 6) {
+            newId++;
+        }
+    } else if (id <= 9) {
+        // 范围:[1-6, 10-11]
+        newId = (rand() % 8) + 1;
+        if (newId >= 7) {
+            newId += 3;
+        }
+    } else if (id == 10) {
+        // 范围:[4-9]
+        newId = (rand() % 6) + 4;
+    } else if (id == 11) {
+        // 范围:[1-3, 7-9]
+        newId = (rand() % 6) + 1;
+        if (newId >= 4) {
+            newId += 3;
+        }
+    } else if (id == 12) {
+        // 范围:[1-6]
+        newId = (rand() % 6) + 1;
+    }
+    return newId;
+}
+
+// 13分片 
 void createCrossLayerDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerManager, int txNum, std::shared_ptr<dev::rpc::Rpc> rpcService) {
     // 计算跨片交易及各分片的片内交易数
     string fileName, newfileName;
@@ -1250,16 +1330,16 @@ void createCrossLayerDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerM
     int nowCrossNum = txNum;
     std::cout << "开始生成跨层级交易：" << std::endl;
     while(nowCrossNum != 0) {
-        // 生成随机两个子分片ID 范围:[1,9]
+        // 生成随机两个子分片ID 范围:[1,12]
         // 默认各个节点生成的随机数顺序一致
-        int subId1 = (rand() % shardsNum) + 1;
-        int subId2 = createCrossId(subId1);
+        int subId1 = (rand() % 12) + 1;
+        int subId2 = createCrossId_13(subId1);
         if (subId1 > subId2) {
             swap(subId1, subId2);
         }
 
         // 查找最近公共祖先
-        int corId = 9;
+        int corId = 13;
         std::cout << corId << ":" << subId1 << "-" << subId2 << std::endl;
         // 生成交易
         newfileName = "../node" + to_string((corId-1)*4) + "/" + fileName;
@@ -1299,30 +1379,30 @@ void createIntrashardDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerM
 // }
 
 // 生成纯局部性负载
+// 3分片
 void createIntershardDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerManager, int txNum, std::shared_ptr<dev::rpc::Rpc> rpcService) {
-    // 计算跨片交易及各分片的片内交易数
     string fileName, newfileName;
     int shardsNum = dev::consensus::SHARDNUM;
     transactionInjectionTest _injectionTest(rpcService, 1);
     fileName = "intershardworkload.json";
     
-    // 生成局部性交易
-    srand((unsigned)time(NULL));
+    // 生成跨片交易
+    std::cout << "开始生成跨片交易：" << std::endl;
+    
     int nowCrossNum = txNum;
-    std::cout << "开始生成上层局部性交易：" << std::endl;
     while(nowCrossNum != 0) {
-        // 生成随机两个子分片ID 范围:[7,9]
+        // 生成随机两个子分片ID 范围:[1,3]
         // 默认各个节点生成的随机数顺序一致
-        int subId1 = (rand() % (9 - 7 + 1)) + 7;
-        int subId2 = (rand() % (9 - 7 + 1)) + 7;
+        int subId1 = (rand() % 3) + 1;
+        int subId2 = (rand() % 3) + 1;
         while (subId2 == subId1) {
-            subId2 = (rand() % (9 - 7 + 1)) + 7;
+            subId2 = (rand() % 3) + 1;
         }
         if (subId1 > subId2) {
             swap(subId1, subId2);
         }
-        // 查找最近公共祖先
-        int corId = 9;
+        int corId = 3;
+        
         std::cout << corId << ":" << subId1 << "-" << subId2 << std::endl;
         // 生成交易
         newfileName = "../node" + to_string((corId-1)*4) + "/" + fileName;
@@ -1334,50 +1414,165 @@ void createIntershardDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerM
             nowCrossNum -= 500;
         }
     }
-
-    std::cout << "开始生成下层局部性交易：" << std::endl;
-    for (int i = 1; i < 7; i += 3) {
-        nowCrossNum = txNum;
-        while(nowCrossNum != 0) {
-            // 生成随机两个子分片ID 范围:[1,4] / [4,7] == [i, i+3]
-            // 默认各个节点生成的随机数顺序一致
-            int subId1 = (rand() % 4) + i;
-            int subId2 = (rand() % 4) + i;
-            while (subId2 == subId1) {
-                subId2 = (rand() % 4) + i;
-            }
-
-            if (subId1 > subId2) {
-                swap(subId1, subId2);
-            }
-
-            if (i == 1 && subId2 == 4) {
-                subId2 = 7;
-            } else if (i == 2 && subId2 == 7) {
-                subId2 = 8;
-            }
-
-            int corId;
-            if (i == 1) {
-                corId = 7;
-            } else if (i == 4) {
-                corId = 8;
-            }
-            
-            std::cout << corId << ":" << subId1 << "-" << subId2 << std::endl;
-            // 生成交易
-            newfileName = "../node" + to_string((corId-1)*4) + "/" + fileName;
-            if (nowCrossNum < 500) {
-                createCrossTransaction(corId, subId1, subId2, ledgerManager, nowCrossNum, newfileName, _injectionTest);
-                nowCrossNum = 0;
-            } else {
-                createCrossTransaction(corId, subId1, subId2, ledgerManager, 500, newfileName, _injectionTest);
-                nowCrossNum -= 500;
-            }
-        }
-    }
-
 }
+
+
+// 9分片
+// void createIntershardDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerManager, int txNum, std::shared_ptr<dev::rpc::Rpc> rpcService) {
+//     // 计算跨片交易及各分片的片内交易数
+//     string fileName, newfileName;
+//     int shardsNum = dev::consensus::SHARDNUM;
+//     transactionInjectionTest _injectionTest(rpcService, 1);
+//     fileName = "intershardworkload.json";
+    
+//     // 生成局部性交易
+//     srand((unsigned)time(NULL));
+//     int nowCrossNum = txNum;
+//     std::cout << "开始生成上层局部性交易：" << std::endl;
+//     while(nowCrossNum != 0) {
+//         // 生成随机两个子分片ID 范围:[7,9]
+//         // 默认各个节点生成的随机数顺序一致
+//         int subId1 = (rand() % (9 - 7 + 1)) + 7;
+//         int subId2 = (rand() % (9 - 7 + 1)) + 7;
+//         while (subId2 == subId1) {
+//             subId2 = (rand() % (9 - 7 + 1)) + 7;
+//         }
+//         if (subId1 > subId2) {
+//             swap(subId1, subId2);
+//         }
+//         // 查找最近公共祖先
+//         int corId = 9;
+//         std::cout << corId << ":" << subId1 << "-" << subId2 << std::endl;
+//         // 生成交易
+//         newfileName = "../node" + to_string((corId-1)*4) + "/" + fileName;
+//         if (nowCrossNum < 500) {
+//             createCrossTransaction(corId, subId1, subId2, ledgerManager, nowCrossNum, newfileName, _injectionTest);
+//             nowCrossNum = 0;
+//         } else {
+//             createCrossTransaction(corId, subId1, subId2, ledgerManager, 500, newfileName, _injectionTest);
+//             nowCrossNum -= 500;
+//         }
+//     }
+
+//     std::cout << "开始生成下层局部性交易：" << std::endl;
+//     for (int i = 1; i < 7; i += 3) {
+//         nowCrossNum = txNum;
+//         while(nowCrossNum != 0) {
+//             // 生成随机两个子分片ID 范围:[1,4] / [4,7] == [i, i+3]
+//             // 默认各个节点生成的随机数顺序一致
+//             int subId1 = (rand() % 4) + i;
+//             int subId2 = (rand() % 4) + i;
+//             while (subId2 == subId1) {
+//                 subId2 = (rand() % 4) + i;
+//             }
+
+//             if (subId1 > subId2) {
+//                 swap(subId1, subId2);
+//             }
+
+//             if (i == 1 && subId2 == 4) {
+//                 subId2 = 7;
+//             } else if (i == 2 && subId2 == 7) {
+//                 subId2 = 8;
+//             }
+
+//             int corId;
+//             if (i == 1) {
+//                 corId = 7;
+//             } else if (i == 4) {
+//                 corId = 8;
+//             }
+            
+//             std::cout << corId << ":" << subId1 << "-" << subId2 << std::endl;
+//             // 生成交易
+//             newfileName = "../node" + to_string((corId-1)*4) + "/" + fileName;
+//             if (nowCrossNum < 500) {
+//                 createCrossTransaction(corId, subId1, subId2, ledgerManager, nowCrossNum, newfileName, _injectionTest);
+//                 nowCrossNum = 0;
+//             } else {
+//                 createCrossTransaction(corId, subId1, subId2, ledgerManager, 500, newfileName, _injectionTest);
+//                 nowCrossNum -= 500;
+//             }
+//         }
+//     }
+
+// }
+
+// 13分片
+// void createIntershardDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerManager, int txNum, std::shared_ptr<dev::rpc::Rpc> rpcService) {
+//     // 计算跨片交易及各分片的片内交易数
+//     string fileName, newfileName;
+//     int shardsNum = dev::consensus::SHARDNUM;
+//     transactionInjectionTest _injectionTest(rpcService, 1);
+//     fileName = "intershardworkload.json";
+    
+//     // 生成局部性交易
+//     srand((unsigned)time(NULL));
+//     int nowCrossNum = txNum;
+//     std::cout << "开始生成上层局部性交易：" << std::endl;
+//     while(nowCrossNum != 0) {
+//         // 生成随机两个子分片ID 范围:[10,12]
+//         // 默认各个节点生成的随机数顺序一致
+//         int subId1 = (rand() % 3) + 10;
+//         int subId2 = (rand() % 3) + 10;
+//         while (subId2 == subId1) {
+//             subId2 = (rand() % 3) + 10;
+//         }
+//         if (subId1 > subId2) {
+//             swap(subId1, subId2);
+//         }
+//         // 查找最近公共祖先
+//         int corId = 13;
+//         std::cout << corId << ":" << subId1 << "-" << subId2 << std::endl;
+//         // 生成交易
+//         newfileName = "../node" + to_string((corId-1)*4) + "/" + fileName;
+//         if (nowCrossNum < 500) {
+//             createCrossTransaction(corId, subId1, subId2, ledgerManager, nowCrossNum, newfileName, _injectionTest);
+//             nowCrossNum = 0;
+//         } else {
+//             createCrossTransaction(corId, subId1, subId2, ledgerManager, 500, newfileName, _injectionTest);
+//             nowCrossNum -= 500;
+//         }
+//     }
+
+//     std::cout << "开始生成下层局部性交易：" << std::endl;
+//     for (int i = 1; i < 10; i += 3) {
+//         nowCrossNum = txNum;
+//         while(nowCrossNum != 0) {
+//             // 生成随机两个子分片ID 范围:[1,3] / [4,6] / [7,9] == [i, i+3]
+//             // 默认各个节点生成的随机数顺序一致
+//             int subId1 = (rand() % 3) + i;
+//             int subId2 = (rand() % 3) + i;
+//             while (subId2 == subId1) {
+//                 subId2 = (rand() % 3) + i;
+//             }
+
+//             if (subId1 > subId2) {
+//                 swap(subId1, subId2);
+//             }
+
+//             int corId;
+//             if (i == 1) {
+//                 corId = 10;
+//             } else if (i == 4) {
+//                 corId = 11;
+//             } else if (i == 7) {
+//                 corId = 12;
+//             }
+            
+//             std::cout << corId << ":" << subId1 << "-" << subId2 << std::endl;
+//             // 生成交易
+//             newfileName = "../node" + to_string((corId-1)*4) + "/" + fileName;
+//             if (nowCrossNum < 500) {
+//                 createCrossTransaction(corId, subId1, subId2, ledgerManager, nowCrossNum, newfileName, _injectionTest);
+//                 nowCrossNum = 0;
+//             } else {
+//                 createCrossTransaction(corId, subId1, subId2, ledgerManager, 500, newfileName, _injectionTest);
+//                 nowCrossNum -= 500;
+//             }
+//         }
+//     }
+// }
 
 // 生成AHL跨片交易-9为协调者
 void createCrossshardDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerManager, int txNum, std::shared_ptr<dev::rpc::Rpc> rpcService) {
@@ -1421,7 +1616,7 @@ void createCrossshardDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerM
 
 int main(){
 
-    dev::consensus::SHARDNUM = 13; // 初始化分片数目
+    dev::consensus::SHARDNUM = 3; // 初始化分片数目
     std::cout << "SHARDNUM = " << dev::consensus::SHARDNUM << std::endl;
 
     // 开始增加组间通信同步组
@@ -1508,95 +1703,27 @@ int main(){
     
     syncs->setAttribute(blockchainManager);
     syncs->setAttribute(consensusPluginManager);
-    
-    // std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
-    /* 
-    // 测试发送交易（分片1的node1向本分片1发送一笔片内交易
-    if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0)))
-    {
-        PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
-        transactionInjectionTest _injectionTest(rpcService, 1, ledgerManager);
-        // _injectionTest.deployContractTransaction("./deploy.json", 1);
-        std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        // _injectionTest.injectionTransactions("./workload1.json", 1);
-        // _injectionTest.injectionTransactions("./workload2.json", 1);
-        // _injectionTest.injectionTransactions("./workload3.json", 1);
-    }
-
-    if(dev::consensus::internal_groupId == 2 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(1)))
-    {
-        PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
-        transactionInjectionTest _injectionTest(rpcService, 2, ledgerManager);
-        // _injectionTest.deployContractTransaction("./deploy.json", 2);
-        std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        // _injectionTest.injectionTransactions("./workload1.json", 2);
-        // _injectionTest.injectionTransactions("./workload2.json", 2);
-        // _injectionTest.injectionTransactions("./workload3.json", 2);
-    }
-
-    if(dev::consensus::internal_groupId == 3 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(2)))
-    {
-        PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
-        transactionInjectionTest _injectionTest(rpcService, 3, ledgerManager);
-        std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        // _injectionTest.injectionTransactions("./workload1.json", 3);
-        // _injectionTest.injectionTransactions("./workload2.json", 3);
-        // _injectionTest.injectionTransactions("./workload3.json", 3);
-    }
-
-    if(dev::consensus::internal_groupId == 7 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(6)))
-    {
-        PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
-        transactionInjectionTest _injectionTest(rpcService, 7, ledgerManager);
-        // _injectionTest.deployContractTransaction("./deploy.json", 7);
-        std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        // _injectionTest.injectionTransactions("./workload1.json", 7);
-        // _injectionTest.injectionTransactions("./workload2.json", 7);
-        // _injectionTest.injectionTransactions("./workload3.json", 7);
-    }
-
-    if(dev::consensus::internal_groupId == 8 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(7)))
-    {
-        PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
-        transactionInjectionTest _injectionTest(rpcService, 8, ledgerManager);
-        // _injectionTest.deployContractTransaction("./deploy.json", 8);
-        // std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        // _injectionTest.injectionTransactions("./workload1.json", 8);
-        // _injectionTest.injectionTransactions("./workload2.json", 8);
-        // _injectionTest.injectionTransactions("./workload3.json", 8);
-        
-        // 测试文件覆盖功能
-        // ofstream out;
-        // out.open("test.json", ios::in|ios::out|ios::app);
-        // if (out.is_open()) {
-        //     out << "[\"dfada\"]";
-        //     out.close();
-        // }
-        // out.open("test.json", ios::binary | ios::out | ios::in);
-        // if (out.is_open()) {
-        //     out.seekp(-1, ios::end);
-        //     out << "123";
-        //     out.close();
-        // }
-
-        // fstream fout;
-        // fout.open("test.json", fstream::binary | fstream::out | fstream::in);
-        // fout.tellp();
-        // fout.seekp(-1, ios::end);
-        // fout.write(",####]",4);
-        // // fout << "123";
-        // fout.close();
-    }
-    */
+    // shared_ptr<InjectThreadMaster> inject = make_shared<InjectThreadMaster>(rpcService, ledgerManager, 1000, 50, 50);
+    // shared_ptr<InjectThreadMaster> inject = make_shared<InjectThreadMaster>(rpcService, ledgerManager, 0, 100, 0);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+
+    // 测试不同发送速率下 系统的延时吞吐变化（20%跨片）
+    // if(nodeIdStr == toHex(dev::consensus::forwardNodeId.at(internal_groupId - 1))) {
+    //     inject->startInjectThreads(1); // 启动负载导入线程
+    // }
+
+
+
     // 测试不同跨片交易比例下系统整体吞吐延迟
-// dev::consensus::SHARDNUM
+    // dev::consensus::SHARDNUM
+
+    // string intrashardworkload = "./intrashardworkload.json";
+    // string intershardworkload = "./intershardworkload.json";
+    // string crosslayerworkload = "./crosslayerworkload.json";
+
     // for (int i = 1; i <= dev::consensus::SHARDNUM; i++) {
-    //     string intrashardworkload = "./intrashardworkload.json";
-    //     string intershardworkload = "./intershardworkload.json";
-    //     string crosslayerworkload = "./crosslayerworkload.json";
     //     // dev::consensus::internal_groupId == i
     //     // (7 == i || i <= 3 )
     //     if(dev::consensus::internal_groupId == i && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(i - 1))) {
@@ -1651,33 +1778,47 @@ int main(){
     // }
 
 
-    // 测试不同发送速率下，系统的延时吞吐变化（20%跨片和80%跨片）
-    string intrashardworkload = "./intrashardworkload.json";
-    string intershardworkload = "./intershardworkload.json";
-    string crosslayerworkload = "./crosslayerworkload.json";
+    // if(nodeIdStr == toHex(dev::consensus::forwardNodeId.at(internal_groupId - 1))) {
+    //     PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
+    //     transactionInjectionTest _injectionTest(rpcService, internal_groupId, ledgerManager);
+        
+    //     // 测试4分片 系统的延时吞吐变化（20%跨片）
+    //     // if (internal_groupId <= 3) {
+    //     //     // 20%
+    //     //     _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 10000, 0, 0, 1);
+    //     // } else if (internal_groupId == 7) {
+    //     //     // 20%
+    //     //     _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 10000, 10000, 0, 1);
+    //     // }
 
-    if(nodeIdStr == toHex(dev::consensus::forwardNodeId.at(internal_groupId - 1))) {
-        PLUGIN_LOG(INFO) << LOG_DESC("准备发送交易...")<< LOG_KV("nodeIdStr", nodeIdStr);
-        transactionInjectionTest _injectionTest(rpcService, internal_groupId, ledgerManager);
-        
-        if (internal_groupId <= 6) {
-            // 20%
-            _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 32000, 0, 0);
-            // 80%
-            // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 8000, 0, 0);
-        } else if (internal_groupId <= 8) {
-            // 20%
-            _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 32000, 27360, 0);
-            // 80%
-            // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 8000, 100000, 0);
-        } else {
-            // 20%
-            _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 32000, 13680, 2000);
-            // 80%
-            // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 8000, 54720, 8000);
-        }
-        
-    }
+    //     // 测试9分片 系统的延时吞吐变化（20%跨片）
+    //     // if (internal_groupId <= 6) {
+    //     //     // 20%
+    //     //     _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 32000, 0, 0);
+    //     //     // 80%
+    //     //     // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 8000, 0, 0);
+    //     // } else if (internal_groupId <= 8) {
+    //     //     // 20%
+    //     //     _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 32000, 27360, 0);
+    //     //     // 80%
+    //     //     // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 8000, 100000, 0);
+    //     // } else {
+    //     //     // 20%
+    //     //     _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 32000, 13680, 2000);
+    //     //     // 80%
+    //     //     // _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 8000, 54720, 8000);
+    //     // }
+
+    //     // 测试13分片 系统的延时吞吐变化（20%跨片）
+    //     if (internal_groupId <= 9) {
+    //         _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 16000, 0, 0, 1);
+    //     } else if (internal_groupId <= 12) {
+    //         _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 16000, 12350, 0, 1);
+    //     } else {
+    //         _injectionTest.injectionTransactions(intrashardworkload, intershardworkload, crosslayerworkload, 16000, 12350, 2600, 1);
+    //     }
+
+    // }
 
     
     // if(internal_groupId <= 8 && nodeIdStr == toHex(forwardNodeId.at(internal_groupId - 1))) {
@@ -1716,15 +1857,15 @@ int main(){
     // }
 
     // 生成局部性负载
-    // 当前节点为头节点 生成交易
-    // if(nodeIdStr == toHex(dev::consensus::forwardNodeId.at(dev::consensus::internal_groupId - 1))) {
+    // 当前节点为头节点 各分片生成各自片内交易
+    // if(nodeIdStr == toHex(forwardNodeId.at(internal_groupId - 1))) {
     //     createIntrashardDataSet(ledgerManager, 100000, rpcService);
     // }
 
     // if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0))) {
     //     // createLocalityDataSet(ledgerManager, 63000, 0, rpcService);
-    //     createIntrashardDataSet(ledgerManager, 100000, rpcService);
-    //     // createIntershardDataSet(ledgerManager, 100000, rpcService);
+    //     // createIntrashardDataSet(ledgerManager, 100000, rpcService);
+    //     createIntershardDataSet(ledgerManager, 100000, rpcService);
     //     // createCrossLayerDataSet(ledgerManager, 100000, rpcService);
     //     // createCrossshardDataSet(ledgerManager, 100000, rpcService);
     // }
@@ -1753,7 +1894,7 @@ int main(){
     auto deterministExecute = consensusPluginManager->m_deterministExecute;
     while (true)
     {
-        deterministExecute->average_latency();
+        // deterministExecute->average_latency();
         std::this_thread::sleep_for(std::chrono::seconds(1));
         // std::this_thread::sleep_for(std::chrono::milliseconds(1000000));
     }

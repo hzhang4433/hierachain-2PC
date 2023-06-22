@@ -37,6 +37,9 @@
 #include <boost/algorithm/hex.hpp>
 #include <csignal>
 #include <sstream>
+#include <string>
+#include "libethcore/ABI.h"
+
 
 using namespace jsonrpc;
 using namespace dev::rpc;
@@ -44,6 +47,7 @@ using namespace dev::sync;
 using namespace dev::ledger;
 using namespace dev::precompiled;
 using namespace dev::initializer;
+using namespace std;
 
 static const int64_t maxTransactionGasLimit = 0x7fffffffffffffff;
 static const int64_t gasPrice = 1;
@@ -1245,124 +1249,170 @@ std::string Rpc::sendRawTransaction(int _groupID, const std::string& _rlp)
             boost::placeholders::_3, boost::placeholders::_4));
 }
 
-// ADD BY THB —— 子分片收到协调者的跨片交易后调用该接口发起跨片交易的片内共识
-// std::string Rpc::sendSubCsRawTransaction(int _groupID, const std::string& _rlp, int _iscrosstx)
-// {
-//     // RPC_LOG(INFO) << LOG_DESC("进入函数Rpc::sendSubCsRawTransaction")
-//     //               << LOG_KV("_iscrosstx", _iscrosstx);
-//     return sendRawTransaction(_groupID, _rlp, _iscrosstx, 
-//         boost::bind(&Rpc::notifyReceipt, this, boost::placeholders::_1, boost::placeholders::_2,
-//             boost::placeholders::_3, boost::placeholders::_4));
-// }
 
-/*
-std::string Rpc::sendRawTransaction(int _groupID, const std::string& _rlp, int _iscrosstx,
-    std::function<std::shared_ptr<Json::Value>(
-        std::weak_ptr<dev::blockchain::BlockChainInterface> _blockChain,
-        LocalisedTransactionReceipt::Ptr receipt, dev::bytesConstRef input,
-        dev::eth::Block::Ptr _blockPtr)>
-        _notifyCallback)
+std::string Rpc::sendInterTransactions(int _num)
 {
-    try
+    int _groupID = 3;
+    ///此处添加发送批量交易接口
+    auto txPool = ledgerManager()->txPool(_groupID);
+    // only check txPool here
+    if (!txPool)
     {
-#if 0
-        RPC_LOG(TRACE) << LOG_BADGE("sendRawTransaction") << LOG_DESC("request")
-                       << LOG_KV("groupID", _groupID) << LOG_KV("rlp", _rlp);
-#endif
-
-        RPC_LOG(INFO) << LOG_DESC("Rpc::sendRawTransaction(int _groupID, const std::string& _rlp, int _iscrosstx, _notifyCallback")
-                      << LOG_KV("_iscrosstx", _iscrosstx)
-                      << LOG_KV("_rlp", _rlp);
-
-
-        auto txPool = ledgerManager()->txPool(_groupID);
-        // only check txPool here
-        if (!txPool)
-        {
-            BOOST_THROW_EXCEPTION(
-                JsonRpcException(RPCExceptionType::GroupID, RPCMsg[RPCExceptionType::GroupID]));
-        }
-        auto blockChain = ledgerManager()->blockChain(_groupID);
-        Transaction::Ptr tx = std::make_shared<Transaction>(
-            jsToBytes(_rlp, OnFailed::Throw), CheckTransaction::Everything);
-        // receive transaction from channel or rpc
-        tx->setRpcTx(true);
-        auto currentTransactionCallback = m_currentTransactionCallback.get();
-
-        uint32_t clientProtocolversion = ProtocolVersion::v1;
-        if (currentTransactionCallback)
-        {
-            auto transactionCallback = *currentTransactionCallback;
-            clientProtocolversion = (*m_transactionCallbackVersion)();
-            std::weak_ptr<dev::blockchain::BlockChainInterface> weakedBlockChain(blockChain);
-            // Note: Since blockChain has a transaction cache, that is,
-            //       BlockChain holds transactions, in order to prevent circular references,
-            //       the callback of the transaction cannot hold the blockChain of shared_ptr,
-            //       must be weak_ptr
-            tx->setRpcCallback(
-                [weakedBlockChain, _notifyCallback, transactionCallback, clientProtocolversion,
-                    _groupID](LocalisedTransactionReceipt::Ptr receipt, dev::bytesConstRef input,
-                    dev::eth::Block::Ptr _blockPtr) {
-                    std::shared_ptr<Json::Value> response = std::make_shared<Json::Value>();
-                    if (clientProtocolversion > 0)
-                    {
-                        response = _notifyCallback(weakedBlockChain, receipt, input, _blockPtr);
-                    }
-
-                    auto receiptContent = response->toStyledString();
-                    transactionCallback(receiptContent, _groupID);
-                });
-        }
-        // calculate the keccak256 before submit into the transaction pool
-        tx->hash();
-
-        RPC_LOG(INFO) << LOG_DESC("将**跨片子交易**投递到交易池")
-            << LOG_KV("signedData", _rlp)
-            << LOG_KV("txhash", tx->hash());
-
-        // subCrossTxsHash.push_back(tx->hash());
-
-        std::pair<h256, Address> ret;
-        switch (clientProtocolversion)
-        {
-        // the oldest SDK: submit transactions sync
-        case ProtocolVersion::v1:
-        case ProtocolVersion::v2:
-            checkRequest(_groupID);
-            checkSyncStatus(_groupID);
-            ret = txPool->submitTransactions(tx);
-            break;
-        // the v2 submit transactions sync
-        // and v3 submit transactions async
-        case ProtocolVersion::v3:
-            ret = txPool->submit(tx);
-            break;
-        // default submit transactions sync
-        default:
-            checkRequest(_groupID);
-            checkSyncStatus(_groupID);
-            ret = txPool->submitTransactions(tx);
-            break;
-        }
-        return toJS(ret.first);
-    }
-    catch (JsonRpcException& e)
-    {
-        RPC_LOG(WARNING) << LOG_BADGE("sendRawTransaction") << LOG_DESC("response")
-                         << LOG_KV("groupID", _groupID) << LOG_KV("errorCode", e.GetCode())
-                         << LOG_KV("errorMessage", e.GetMessage());
-        throw e;
-    }
-    catch (std::exception& e)
-    {
-        RPC_LOG(ERROR) << LOG_DESC("sendRawTransaction exceptioned") << LOG_KV("groupID", _groupID)
-                       << LOG_KV("errorMessage", boost::diagnostic_information(e));
         BOOST_THROW_EXCEPTION(
-            JsonRpcException(Errors::ERROR_RPC_INTERNAL_ERROR, boost::diagnostic_information(e)));
+            JsonRpcException(RPCExceptionType::GroupID, RPCMsg[RPCExceptionType::GroupID]));
     }
-}
-*/
+    auto blockChain = ledgerManager()->blockChain(_groupID);
 
+    // 确定发送交易数
+    int num_tx = _num;
+
+    
+    srand(time(0));
+    for(int j = 1; j <= num_tx; j++) {
+
+        
+      /******* 生成跨片交易 *******/
+      std::string txid = "C" + std::to_string(j);
+      
+      // 生成两个不同的随机数
+      int state_id1 = rand() % 1000; //分片1的state
+      int state_id2 = rand() % 1000 + 1000; //分片2的state
+      
+      string stateAddress1 = "state" + to_string(state_id1); // 分片1被访问的状态
+      string stateAddress2 = "state" + to_string(state_id2); // 分片2被访问的状态
+      string requestLabel = "0x111222333";
+
+      Transaction::Ptr tx = generateInterTransaction(requestLabel, stateAddress1, stateAddress2, _groupID, txid);
+
+
+      
+      /****** 发送跨片交易 *******/
+      tx->setRpcTx(true);
+      auto currentTransactionCallback = m_currentTransactionCallback.get();
+
+      uint32_t clientProtocolversion = ProtocolVersion::v1;
+      if (currentTransactionCallback)
+      {
+            auto _notifyCallback= boost::bind(&Rpc::notifyReceiptWithProof, this, boost::placeholders::_1,
+            boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4);
+          auto transactionCallback = *currentTransactionCallback;
+          clientProtocolversion = (*m_transactionCallbackVersion)();
+          std::weak_ptr<dev::blockchain::BlockChainInterface> weakedBlockChain(blockChain);
+
+          tx->setRpcCallback(
+              [weakedBlockChain, _notifyCallback, transactionCallback, clientProtocolversion,
+                  _groupID](LocalisedTransactionReceipt::Ptr receipt, dev::bytesConstRef input,
+                  dev::eth::Block::Ptr _blockPtr) {
+                  std::shared_ptr<Json::Value> response = std::make_shared<Json::Value>();
+                  if (clientProtocolversion > 0)
+                  {
+                      response = _notifyCallback(weakedBlockChain, receipt, input, _blockPtr);
+                  }
+
+                  auto receiptContent = response->toStyledString();
+                  transactionCallback(receiptContent, _groupID);
+              });
+      }
+
+      std::pair<h256, Address> ret;
+      switch (clientProtocolversion)
+      {
+      // the oldest SDK: submit transactions sync
+      case ProtocolVersion::v1:
+      case ProtocolVersion::v2:
+          checkRequest(_groupID);
+          checkSyncStatus(_groupID);
+          // RPC_LOG(INFO)<<LOG_DESC("投递交易1");
+          ret = txPool->submitTransactions(tx);
+          // RPC_LOG(INFO)<<LOG_DESC("交易投递结束1");
+          break;
+      // the v2 submit transactions sync
+      // and v3 submit transactions async
+      case ProtocolVersion::v3:
+          //RPC_LOG(INFO)<<LOG_DESC("投递交易2");
+          ret = txPool->submit(tx);
+          //RPC_LOG(INFO)<<LOG_DESC("交易投递结束2") << LOG_KV("toJS(ret.first)", ret.first) << LOG_KV("toJS(ret.second)", ret.second);
+          break;
+      // default submit transactions sync
+      default:
+          checkRequest(_groupID);
+          checkSyncStatus(_groupID);
+          //RPC_LOG(INFO)<<LOG_DESC("投递交易3");
+          ret = txPool->submitTransactions(tx);
+          //RPC_LOG(INFO)<<LOG_DESC("交易投递结束3");
+          break;
+      }
+
+    }
+    
+    return "send transactions succeed!";
+}
+
+dev::eth::Transaction::Ptr Rpc::generateInterTransaction(std::string& requestLabel, std::string& stateAddress1, std::string& stateAddress2, int32_t shardId, std::string txid)
+{
+    auto keyPair = KeyPair::create();
+    string flag = "|";
+    // string hex_m_data_str = requestLabel + flag + stateAddress + flag + txid;
+
+    // 生成分片1的子交易
+    string contract_address1 = "0x93911693669c9a4b83f702838bc3294e95951438";
+    dev::Address subAddress1(contract_address1);
+    dev::eth::ContractABI abi;
+    bytes data = abi.abiIn("add(string)");  // add
+    // bytes data = [];
+
+    Transaction subTx1(0, 1000, 0, subAddress1, data);
+    subTx1.setNonce(subTx1.nonce() + u256(h256::random()));
+    subTx1.setGroupId(1);
+    subTx1.setBlockLimit(u256(m_ledgerManager->blockChain(shardId)->number()) + 500);
+
+    auto subSig1 = dev::crypto::Sign(keyPair, subTx1.hash(WithoutSignature));
+    subTx1.updateSignature(subSig1);
+
+    auto subrlp1 = subTx1.rlp();
+    std::string signTx1 = toHex(subrlp1);
+
+    // 生成分片2的子交易
+    string contract_address2 = "0x1d89f9c61addceff5d8cae494c3439667b657deb";
+    dev::Address subAddress2(contract_address2);
+    // dev::eth::ContractABI abi;
+    data = abi.abiIn("add(string)");  // sub
+    // bytes data = [];
+
+    Transaction subTx2(0, 1000, 0, subAddress2, data);
+    subTx2.setNonce(subTx2.nonce() + u256(h256::random()));
+    subTx2.setGroupId(2);
+    subTx2.setBlockLimit(u256(m_ledgerManager->blockChain(shardId)->number()) + 500);
+
+    auto subSig2 = dev::crypto::Sign(keyPair, subTx2.hash(WithoutSignature));
+    subTx2.updateSignature(subSig2);
+
+    auto subrlp = subTx2.rlp();
+    std::string signTx2 = toHex(subrlp);
+
+    // 生成跨片交易
+    std::string hex_m_data_str = requestLabel
+                                + flag + std::to_string(1) + flag + signTx1 + flag + stateAddress1 
+                                + flag + std::to_string(2) + flag + signTx2 + flag + stateAddress2
+                                + flag + txid
+                                + flag;
+
+    string str_address = "0x2fa6307e464428209f02702f65180ad663aa4fd9";
+    dev::Address crossAddress(str_address);
+    // dev::eth::ContractABI abi;
+    data = abi.abiIn("set(string)", hex_m_data_str);  // set
+    // bytes data = [];
+
+    dev::eth::Transaction::Ptr interTx = std::make_shared<dev::eth::Transaction>(0, 1000, 0, crossAddress, data);
+    interTx->setNonce(interTx->nonce() + u256(h256::random()));
+    interTx->setGroupId(3);
+    interTx->setBlockLimit(500);
+
+    auto sig = dev::crypto::Sign(keyPair, interTx->hash(WithoutSignature));
+    interTx->updateSignature(sig);
+    
+    return interTx;
+}
 
 std::string Rpc::sendRawTransaction(int _groupID, const std::string& _rlp,
     std::function<std::shared_ptr<Json::Value>(
