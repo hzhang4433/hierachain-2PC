@@ -20,6 +20,7 @@ void ex_SyncMsgEngine::stop()
 
 void ex_SyncMsgEngine::messageHandler(dev::p2p::NetworkException _e, std::shared_ptr <dev::p2p::P2PSession> _session, dev::p2p::P2PMessage::Ptr _msg)
 {
+    // std::this_thread::sleep_for(std::chrono::milliseconds(50));
     try
     {
         SyncMsgPacket::Ptr packet = std::make_shared<SyncMsgPacket>();
@@ -35,6 +36,8 @@ void ex_SyncMsgEngine::messageHandler(dev::p2p::NetworkException _e, std::shared
         }
 
         if(packet->packetType == CrossTxPacket){ // 若是跨片交易包
+            // std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            
             RLP const& rlps = (*packet).rlp();
             bool size = rlps.isNull();
             // std::cout << "DistributedTxPacket" << std::endl;
@@ -52,7 +55,7 @@ void ex_SyncMsgEngine::messageHandler(dev::p2p::NetworkException _e, std::shared
                     protos::SubCrossShardTx msg_rs;
                     msg_rs.ParseFromString(str);
 
-                    m_pluginManager->processReceivedCrossTx(msg_rs); // 存交易
+                    m_pluginManager->pushReceivedCrossTx(msg_rs); // 存交易
                 }
                 catch(const std::exception& e)
                 {
@@ -74,19 +77,19 @@ void ex_SyncMsgEngine::messageHandler(dev::p2p::NetworkException _e, std::shared
                 {
                     PLUGIN_LOG(INFO) << LOG_DESC("开始对收到的 '跨片交易回执'消息包 进行处理");
 
-                     // 若非主节点，则将消息转发至主节点
-                    if (nodeIdStr != toHex(forwardNodeId.at(internal_groupId - 1))) {
-                      PLUGIN_LOG(INFO) << LOG_DESC("当前节点非主节点, 转发'跨片交易回执'消息包至主节点");
-                      group_p2p_service->asyncSendMessageByNodeID(forwardNodeId.at(internal_groupId - 1), _msg, CallbackFuncWithSession(), dev::network::Options());
-                      return;
-                    }
+                    // 若非主节点，则将消息转发至主节点 one for all
+                    // if (nodeIdStr != toHex(forwardNodeId.at(internal_groupId - 1))) {
+                    //   PLUGIN_LOG(INFO) << LOG_DESC("当前节点非主节点, 转发'跨片交易回执'消息包至主节点");
+                    //   group_p2p_service->asyncSendMessageByNodeID(forwardNodeId.at(internal_groupId - 1), _msg, CallbackFuncWithSession(), dev::network::Options());
+                    //   return;
+                    // }
 
                     std::string str = rlps[0].toString();
                     
                     protos::SubCrossShardTxReply msg_rs;
                     msg_rs.ParseFromString(str);
 
-                    m_pluginManager->processReceivedCrossTxReply(msg_rs); // 收集并检查包的数量
+                    m_pluginManager->pushReceivedCrossTxReply(msg_rs); // 收集并检查包的数量
                 }
                 catch(const std::exception& e)
                 {
@@ -112,7 +115,7 @@ void ex_SyncMsgEngine::messageHandler(dev::p2p::NetworkException _e, std::shared
                     protos::SubCrossShardTxCommit msg_rs;
                     msg_rs.ParseFromString(str);
 
-                    m_pluginManager->processReceivedCrossTxCommit(msg_rs); // 收集并检查包的数量
+                    m_pluginManager->pushReceivedCrossTxCommit(msg_rs); // 收集并检查包的数量
                 }
                 catch(const std::exception& e)
                 {
@@ -138,7 +141,7 @@ void ex_SyncMsgEngine::messageHandler(dev::p2p::NetworkException _e, std::shared
                     protos::SubCrossShardTxCommitReply msg_rs;
                     msg_rs.ParseFromString(str);
 
-                    m_pluginManager->processReceivedCrossTxCommitReply(msg_rs); // 收集并检查包的数量
+                    m_pluginManager->pushReceivedCrossTxCommitReply(msg_rs); // 收集并检查包的数量
                 }
                 catch(const std::exception& e)
                 {

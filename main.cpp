@@ -1574,25 +1574,25 @@ void createIntershardDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerM
 //     }
 // }
 
-// 生成AHL跨片交易-9为协调者
+// 生成AHL跨片交易-shardsNum为协调者
 void createCrossshardDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerManager, int txNum, std::shared_ptr<dev::rpc::Rpc> rpcService) {
     // 计算跨片交易及各分片的片内交易数
     string fileName, newfileName;
     int shardsNum = dev::consensus::SHARDNUM;
     transactionInjectionTest _injectionTest(rpcService, 1);
     
-    fileName = "crossshardworkload.json";
+    fileName = "intershardworkload.json";
 
     // 生成跨层交易
     int nowCrossNum = txNum;
     std::cout << "开始生成AHL跨片交易：" << std::endl;
     while(nowCrossNum != 0) {
-        // 生成随机两个子分片ID 范围:[1,9]
+        // 生成随机两个子分片ID 范围:[1, shardsNum-1]
         // 默认各个节点生成的随机数顺序一致
-        int subId1 = (rand() % shardsNum) + 1;
-        int subId2 = (rand() % shardsNum) + 1;
+        int subId1 = (rand() % (shardsNum - 1)) + 1;
+        int subId2 = (rand() % (shardsNum - 1)) + 1;
         while (subId1 == subId2) {
-            subId2 = (rand() % shardsNum) + 1;
+            subId2 = (rand() % (shardsNum - 1)) + 1;
         }
 
         if (subId1 > subId2) {
@@ -1600,7 +1600,7 @@ void createCrossshardDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerM
         }
 
         // 查找最近公共祖先
-        int corId = 9;
+        int corId = shardsNum;
         std::cout << corId << ":" << subId1 << "-" << subId2 << std::endl;
         // 生成交易
         newfileName = "../node" + to_string((corId-1)*4) + "/" + fileName;
@@ -1616,7 +1616,7 @@ void createCrossshardDataSet(std::shared_ptr<dev::ledger::LedgerManager> ledgerM
 
 int main(){
 
-    dev::consensus::SHARDNUM = 3; // 初始化分片数目
+    dev::consensus::SHARDNUM = 9; // 初始化分片数目
     std::cout << "SHARDNUM = " << dev::consensus::SHARDNUM << std::endl;
 
     // 开始增加组间通信同步组
@@ -1700,19 +1700,23 @@ int main(){
     
     std::thread executetxsThread(&dev::plugin::deterministExecute::deterministExecuteTx, consensusPluginManager->m_deterministExecute);
     executetxsThread.detach();
+
+    std::thread msgHandlerThread(&dev::plugin::ConsensusPluginManager::receiveRemoteMsgWorker, consensusPluginManager);
+    msgHandlerThread.detach();
+    
     
     syncs->setAttribute(blockchainManager);
     syncs->setAttribute(consensusPluginManager);
 
-    // shared_ptr<InjectThreadMaster> inject = make_shared<InjectThreadMaster>(rpcService, ledgerManager, 1000, 50, 50);
+    shared_ptr<InjectThreadMaster> inject = make_shared<InjectThreadMaster>(rpcService, ledgerManager, 10000, 10, 90);
     // shared_ptr<InjectThreadMaster> inject = make_shared<InjectThreadMaster>(rpcService, ledgerManager, 0, 100, 0);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
     // 测试不同发送速率下 系统的延时吞吐变化（20%跨片）
-    // if(nodeIdStr == toHex(dev::consensus::forwardNodeId.at(internal_groupId - 1))) {
-    //     inject->startInjectThreads(1); // 启动负载导入线程
-    // }
+    if(nodeIdStr == toHex(dev::consensus::forwardNodeId.at(internal_groupId - 1))) {
+        inject->startInjectThreads(1); // 启动负载导入线程
+    }
 
 
 
@@ -1865,10 +1869,11 @@ int main(){
     // if(dev::consensus::internal_groupId == 1 && nodeIdStr == toHex(dev::consensus::forwardNodeId.at(0))) {
     //     // createLocalityDataSet(ledgerManager, 63000, 0, rpcService);
     //     // createIntrashardDataSet(ledgerManager, 100000, rpcService);
-    //     createIntershardDataSet(ledgerManager, 100000, rpcService);
+    //     // createIntershardDataSet(ledgerManager, 100000, rpcService);
     //     // createCrossLayerDataSet(ledgerManager, 100000, rpcService);
-    //     // createCrossshardDataSet(ledgerManager, 100000, rpcService);
+    //     createCrossshardDataSet(ledgerManager, 100000, rpcService);
     // }
+
     
 
     std::cout << "node " + jsonrpc_listen_ip + ":" + jsonrpc_listen_port + " start success." << std::endl;
@@ -1894,7 +1899,7 @@ int main(){
     auto deterministExecute = consensusPluginManager->m_deterministExecute;
     while (true)
     {
-        // deterministExecute->average_latency();
+        deterministExecute->average_latency();
         std::this_thread::sleep_for(std::chrono::seconds(1));
         // std::this_thread::sleep_for(std::chrono::milliseconds(1000000));
     }

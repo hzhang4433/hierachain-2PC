@@ -283,7 +283,12 @@ void transactionInjectionTest::injectionTransactions(std::string filename, int32
 void transactionInjectionTest::injectionTransactions(string& intrashardworkload_filename, string& intershardworkload_filename, string& crosslayerworkload_filename
                                                     , int intratxNum, int intertxNum, int crosslayerNum, int threadId)
 {
-    int SPEED = 5000;
+    int SPEED;
+    if (dev::consensus::internal_groupId == 9) {
+      SPEED = 1000;
+    } else  {
+      SPEED = 5000;
+    }
     int baseNum = (threadId - 1) * 50000;
     
     // 只导入片内交易(只需转发节点负责)

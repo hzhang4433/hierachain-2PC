@@ -88,11 +88,11 @@ namespace dev
 
             //data
             //片内交易数量
-            int  intraTx4Three=0;
+            int intraTx4Three=0;
             //跨片交易/片内交易
             double rate_cross=0;
             //纯跨片是注入交易量
-            int max_txnum=5000;
+            int max_txnum=50000;
         };
 
         //初始化时输入底层片内交易数量、跨片数/片内数 

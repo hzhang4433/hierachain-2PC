@@ -15,16 +15,24 @@ namespace dev {
         class ConsensusPluginManager:public std::enable_shared_from_this<ConsensusPluginManager>{
             public:
                 ConsensusPluginManager(std::shared_ptr<dev::rpc::Rpc> _service){
-                    readSetQueue = new tbb::concurrent_queue<protos::TxWithReadSet>();
-                    txs = new tbb::concurrent_queue<protos::Transaction>();
-                    // distxs = new tbb::concurrent_queue<protos::RLPWithReadSet>();
-                    distxs = new tbb::concurrent_queue<protos::SubCrossShardTx>();
-                    precommit_txs = new tbb::concurrent_queue<protos::SubPreCommitedDisTx>();
-                    commit_txs = new tbb::concurrent_queue<protos::CommittedRLPWithReadSet>();
-                    notFinishedDAG = 0;
+                    crossTxs = new tbb::concurrent_queue<protos::SubCrossShardTx>();
+                    crossTxReplys = new tbb::concurrent_queue<protos::SubCrossShardTxReply>();
+                    commitTxs =  new tbb::concurrent_queue<protos::SubCrossShardTxCommit>();
+                    commitTxReplys = new tbb::concurrent_queue<protos::SubCrossShardTxCommitReply>();
+                    abortTxs = new tbb::concurrent_queue<protos::AbortMsg>();
+
+
                     m_rpc_service = _service;
                     m_deterministExecute = std::make_shared<dev::plugin::deterministExecute>();
                 }
+
+                void pushReceivedCrossTx(protos::SubCrossShardTx _txrlp);
+                void pushReceivedCrossTxReply(protos::SubCrossShardTxReply _txrlp);
+                void pushReceivedCrossTxCommit(protos::SubCrossShardTxCommit _txrlp);
+                void pushReceivedCrossTxCommitReply(protos::SubCrossShardTxCommitReply _txrlp);
+                void pushReceivedAbortMessage(protos::AbortMsg _txrlp);
+
+                void receiveRemoteMsgWorker();
 
                 void processReceivedCrossTx(protos::SubCrossShardTx _txrlp);
                 void processReceivedCrossTxReply(protos::SubCrossShardTxReply _txrlp);
@@ -49,40 +57,23 @@ namespace dev {
                 h512 getNodeId(int _index);
                 void setAttribute(std::shared_ptr<dev::blockchain::BlockChainInterface> _blockchainManager, std::shared_ptr<dev::rpc::Rpc> _service);
 
+                // receive crossTxs from coordinator
+                tbb::concurrent_queue<protos::SubCrossShardTx> *crossTxs;
 
-                /// record already send DAG(wait exnode) key: dagId value: waitStateNum
-                tbb::concurrent_unordered_map<int, int> DAGMap;
+                // receive crossTxReplys from participant
+                tbb::concurrent_queue<protos::SubCrossShardTxReply> *crossTxReplys;
 
-                /// record wait DAG key:dagId value:DAG
-                std::map<int,protos::DAGWithReadSet> m_DAGWaitValue;
+                // receive commitTxs from coordinator
+                tbb::concurrent_queue<protos::SubCrossShardTxCommit> *commitTxs;
 
-                /// record wait State
-                std::map<std::string,std::queue<int>> m_waitValueQueue;
+                // receive commitTxReplys from participant
+                tbb::concurrent_queue<protos::SubCrossShardTxCommitReply> *commitTxReplys;
 
-                tbb::concurrent_unordered_map<std::string,u256>testMap;
+                // receive abortTxs
+                tbb::concurrent_queue<protos::AbortMsg> *abortTxs;
 
-                /// receive writeResult from exnode
-                tbb::concurrent_queue<protos::TxWithReadSet> *readSetQueue;
 
-                // receive txs from leader
-                tbb::concurrent_queue<protos::Transaction> *txs;
 
-                // receive dis_txs from leader
-                tbb::concurrent_queue<protos::SubCrossShardTx> *distxs;
-
-                // receive precommit_txs from participant
-                tbb::concurrent_queue<protos::SubPreCommitedDisTx> *precommit_txs;
-
-                // receive precommit_txs from participant
-                tbb::concurrent_queue<protos::CommittedRLPWithReadSet> *commit_txs;
-
-                /// no need so much mutex delete later
-                std::mutex x_latest_Mutex;
-                std::mutex x_wait_Mutex;
-                std::mutex x_snapshot_Mutex;
-                std::mutex x_map_Mutex;
-
-                std::atomic<int> notFinishedDAG;
                 std::shared_ptr<dev::rpc::Rpc> m_rpc_service;
                 std::shared_ptr<dev::plugin::deterministExecute> m_deterministExecute;
 

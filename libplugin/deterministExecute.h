@@ -79,6 +79,7 @@ namespace dev{
                 int foundInnerTx = 0;
                 int executedTx = 0;
                 int consensusTx = 0;
+                int blockedInnerTx = 0;
 
                 std::shared_ptr <dev::blockchain::BlockChainInterface> m_blockchainManager;
                 std::shared_ptr<dev::rpc::Rpc> m_rpc_service;

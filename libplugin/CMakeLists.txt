@@ -5,5 +5,6 @@ file(GLOB HEADERS "*.h")
 
 add_library(plugin ${SRC_LIST} ${HEADERS})
 
-target_compile_options(plugin PRIVATE -Wno-unused-variable -Wno-unused-parameter -Wno-comment -Wno-sign-compare -Wno-pedantic -Wno-return-type -Wno-pmf-conversions)
+# target_compile_options(plugin PRIVATE -Wno-unused-variable -Wno-unused-parameter -Wno-comment -Wno-sign-compare -Wno-pedantic -Wno-return-type -Wno-pmf-conversions)
+target_compile_options(plugin PRIVATE -Wno-unused-variable -Wno-unused-parameter -Wno-comment -Wno-sign-compare -Wno-pedantic -Wno-return-type)
 target_link_libraries(plugin PUBLIC channelserver rpc ledger TBB devcore protobasic)

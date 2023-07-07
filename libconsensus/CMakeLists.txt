@@ -16,5 +16,6 @@ include_directories(./rotating_pbft/vrf_rpbft)
 
 add_library(consensus ${SRC_LIST} ${HEADERS})
 
-target_compile_options(consensus PRIVATE -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-pedantic -Wno-return-type -Wno-pmf-conversions)
+# target_compile_options(consensus PRIVATE -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-pedantic -Wno-return-type -Wno-pmf-conversions)
+target_compile_options(consensus PRIVATE -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-pedantic -Wno-return-type)
 target_link_libraries(consensus PUBLIC sync blockverifier p2p VRF security RocksDB)
