@@ -38,7 +38,7 @@ namespace consensus
 {
     // // ADD BY THB
     extern int internal_groupId; // 当前分片所在的groupID
-    extern int SHARDNUM; // 分片总数
+    extern int hiera_shard_number; // 分片总数
     extern int NODENUM; // 所有节点数目
     extern std::vector<dev::h512>forwardNodeId;
     extern std::vector<dev::h512>shardNodeId;

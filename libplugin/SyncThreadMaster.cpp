@@ -12,197 +12,197 @@ using namespace dev::plugin;
 void SyncThreadMaster::listenWorker()
 {
     // listen latest block to send to group nodes
-    int blockId = 0; // block that has been discovered
-    int disTxID = 0; // 跨片交易 ID
-    while(true)
-    {
-        int currentBlockNum = m_blockchainManager->number(); // 当前块高
-        if(currentBlockNum > blockId)
-        {
-            blockId++;
-            int txIndex = 0;
-            std::shared_ptr<dev::eth::Block> currentBlock = m_blockchainManager->getBlockByNumber(blockId);
+    // int blockId = 0; // block that has been discovered
+    // int disTxID = 0; // 跨片交易 ID
+    // while(true)
+    // {
+    //     int currentBlockNum = m_blockchainManager->number(); // 当前块高
+    //     if(currentBlockNum > blockId)
+    //     {
+    //         blockId++;
+    //         int txIndex = 0;
+    //         std::shared_ptr<dev::eth::Block> currentBlock = m_blockchainManager->getBlockByNumber(blockId);
 
-            for(size_t i = 0; i < currentBlock->getTransactionSize(); i++)
-            {
-                txIndex++;
-                auto currentTx = (*currentBlock->transactions())[i];
-                auto fromHex = currentTx->sender().hex();
-                auto recAddr = currentTx->receiveAddress().hex();
-                recAddr = "0x" + recAddr;
-                auto rlp = currentTx->rlp();
-                auto data = currentTx->data();
+    //         for(size_t i = 0; i < currentBlock->getTransactionSize(); i++)
+    //         {
+    //             txIndex++;
+    //             auto currentTx = (*currentBlock->transactions())[i];
+    //             auto fromHex = currentTx->sender().hex();
+    //             auto recAddr = currentTx->receiveAddress().hex();
+    //             recAddr = "0x" + recAddr;
+    //             auto rlp = currentTx->rlp();
+    //             auto data = currentTx->data();
 
-                // std::cout << "合约调用地址为:" << recAddr << std::endl;
-                // std::cout << "块中的交易为:" << rlp << std::endl;
+    //             // std::cout << "合约调用地址为:" << recAddr << std::endl;
+    //             // std::cout << "块中的交易为:" << rlp << std::endl;
 
-                bool isTxD = false;
-                bool isDisTxRequest = false;
-                bool isPreCommitted = false;
-                bool isCommitted = false;
+    //             bool isTxD = false;
+    //             bool isDisTxRequest = false;
+    //             bool isPreCommitted = false;
+    //             bool isCommitted = false;
 
-                // 将rlp转为string类型
-                int len = rlp.size();
-                unsigned char txrlpchar[len];
-                for(int i = 0; i < len; i++)
-                {
-                    txrlpchar[i] = rlp.at(i);
-                }
+    //             // 将rlp转为string类型
+    //             int len = rlp.size();
+    //             unsigned char txrlpchar[len];
+    //             for(int i = 0; i < len; i++)
+    //             {
+    //                 txrlpchar[i] = rlp.at(i);
+    //             }
 
-                std::string rlpstr;
-                rlpstr.resize(len * 2);
-                dev::plugin::transform trans;
-                trans.hexstring_from_data(txrlpchar, len, &rlpstr[0]);    // unsigned char *data, int len, char *output
-                rlpstr = "0x" + rlpstr;
+    //             std::string rlpstr;
+    //             rlpstr.resize(len * 2);
+    //             dev::plugin::transform trans;
+    //             trans.hexstring_from_data(txrlpchar, len, &rlpstr[0]);    // unsigned char *data, int len, char *output
+    //             rlpstr = "0x" + rlpstr;
 
-                // 根据合约地址判断是否为跨片交易存证合约
-                if(std::find(dev::plugin::disTxDepositAddrs.begin(), dev::plugin::disTxDepositAddrs.end(), recAddr) != dev::plugin::disTxDepositAddrs.end())
-                {
-                    // std::cout<< "协调者准备发起跨片交易" <<std::endl;
-                    isTxD = true;
-                }
-                else
-                {
-                    std::cout<< "协调者发起的是片内交易" <<std::endl;
-                }
+    //             // 根据合约地址判断是否为跨片交易存证合约
+    //             if(std::find(dev::plugin::disTxDepositAddrs.begin(), dev::plugin::disTxDepositAddrs.end(), recAddr) != dev::plugin::disTxDepositAddrs.end())
+    //             {
+    //                 // std::cout<< "协调者准备发起跨片交易" <<std::endl;
+    //                 isTxD = true;
+    //             }
+    //             else
+    //             {
+    //                 std::cout<< "协调者发起的是片内交易" <<std::endl;
+    //             }
 
-                if(isTxD == true) // 若是跨片交易
-                {
-                    // 若协调者收齐了当前跨片交易所有 precommit 消息，检查当前交易的rlp是否在 committedDisTxRlp 中
-                    if(std::find(dev::plugin::committedDisTxRlp.begin(), dev::plugin::committedDisTxRlp.end(), rlpstr) != dev::plugin::committedDisTxRlp.end())
-                    {
-                        isCommitted = true; // 当前分片应向所有参与者发送committed消息
-                    }
-                    else if(std::find(dev::plugin::preCommittedDisTxRlp.begin(), dev::plugin::preCommittedDisTxRlp.end(), rlpstr) != dev::plugin::preCommittedDisTxRlp.end())
-                    {
-                        isPreCommitted = true; // 当前分片应该向协调者回复precommitted消息
-                    }
-                    else
-                    {
-                        isDisTxRequest = true; // 当前分片应向所有参与者发送原始跨片交易请求
-                    }
+    //             if(isTxD == true) // 若是跨片交易
+    //             {
+    //                 // 若协调者收齐了当前跨片交易所有 precommit 消息，检查当前交易的rlp是否在 committedDisTxRlp 中
+    //                 if(std::find(dev::plugin::committedDisTxRlp.begin(), dev::plugin::committedDisTxRlp.end(), rlpstr) != dev::plugin::committedDisTxRlp.end())
+    //                 {
+    //                     isCommitted = true; // 当前分片应向所有参与者发送committed消息
+    //                 }
+    //                 else if(std::find(dev::plugin::preCommittedDisTxRlp.begin(), dev::plugin::preCommittedDisTxRlp.end(), rlpstr) != dev::plugin::preCommittedDisTxRlp.end())
+    //                 {
+    //                     isPreCommitted = true; // 当前分片应该向协调者回复precommitted消息
+    //                 }
+    //                 else
+    //                 {
+    //                     isDisTxRequest = true; // 当前分片应向所有参与者发送原始跨片交易请求
+    //                 }
 
-                    if(isPreCommitted)
-                    {
-                        // std::cout << "当前应向协调者发送 precommitted 消息" << std::endl;
-                        //根据 preCommittedDisTxRlp 获取 precommitted 消息中的 合约地址
-                        recAddr = dev::plugin::txRlp2ConAddress[rlpstr];
-                        // 开始获取所有跨片子交易
-                        // 准备将交易发送给相应的参与者
-                        protos::SubPreCommitedDisTx subPreCommitedDisTx;
-                        subPreCommitedDisTx.set_subtxrlp(rlpstr);
-                        subPreCommitedDisTx.set_contractaddress(recAddr);
+    //                 if(isPreCommitted)
+    //                 {
+    //                     // std::cout << "当前应向协调者发送 precommitted 消息" << std::endl;
+    //                     //根据 preCommittedDisTxRlp 获取 precommitted 消息中的 合约地址
+    //                     recAddr = dev::plugin::txRlp2ConAddress[rlpstr];
+    //                     // 开始获取所有跨片子交易
+    //                     // 准备将交易发送给相应的参与者
+    //                     protos::SubPreCommitedDisTx subPreCommitedDisTx;
+    //                     subPreCommitedDisTx.set_subtxrlp(rlpstr);
+    //                     subPreCommitedDisTx.set_contractaddress(recAddr);
 
-                        std::string serializedPCDT_str;
-                        subPreCommitedDisTx.SerializeToString(&serializedPCDT_str);
-                        auto txByte = asBytes(serializedPCDT_str);
+    //                     std::string serializedPCDT_str;
+    //                     subPreCommitedDisTx.SerializeToString(&serializedPCDT_str);
+    //                     auto txByte = asBytes(serializedPCDT_str);
 
-                        SyncPreCommittedTxPacket retPacket;
-                        retPacket.encode(txByte);
-                        auto msg = retPacket.toMessage(m_protocolId);
-                        m_service->asyncSendMessageByNodeID(m_pluginManager->getNodeId(0), msg, CallbackFuncWithSession(), dev::network::Options());
-                        std::cout << "向协调者发送preCommitt消息..." << std::endl;
-                    }
+    //                     SyncPreCommittedTxPacket retPacket;
+    //                     retPacket.encode(txByte);
+    //                     auto msg = retPacket.toMessage(m_protocolId);
+    //                     m_service->asyncSendMessageByNodeID(m_pluginManager->getNodeId(0), msg, CallbackFuncWithSession(), dev::network::Options());
+    //                     std::cout << "向协调者发送preCommitt消息..." << std::endl;
+    //                 }
 
-                    if(isDisTxRequest)
-                    {
-                        // std::cout << "当前交易是原始跨片请求" << std::endl;
-                        // 开始获取所有跨片子交易
-                        disTxID++;
+    //                 if(isDisTxRequest)
+    //                 {
+    //                     // std::cout << "当前交易是原始跨片请求" << std::endl;
+    //                     // 开始获取所有跨片子交易
+    //                     disTxID++;
 
-                        std::vector<std::string> subTxRlps = dev::plugin::conAddress2txrlps[recAddr];
-                        for(int i = 0; i < subTxRlps.size(); i++ )
-                        {
-                            std::string subTx = subTxRlps.at(i);
-                            std::string destGroupId = subTx.substr(0, 1);
-                            std::string subTxRlp = subTx.substr(1, subTx.length());
-                            std::string readset = dev::plugin::txRWSet[subTxRlp];
+    //                     std::vector<std::string> subTxRlps = dev::plugin::conAddress2txrlps[recAddr];
+    //                     for(int i = 0; i < subTxRlps.size(); i++ )
+    //                     {
+    //                         std::string subTx = subTxRlps.at(i);
+    //                         std::string destGroupId = subTx.substr(0, 1);
+    //                         std::string subTxRlp = subTx.substr(1, subTx.length());
+    //                         std::string readset = dev::plugin::txRWSet[subTxRlp];
 
-                            // std::cout << "交易rlp = " << subTxRlp << std::endl;
-                            // std::cout << "交易readset = " << readset << std::endl;
+    //                         // std::cout << "交易rlp = " << subTxRlp << std::endl;
+    //                         // std::cout << "交易readset = " << readset << std::endl;
 
-                            // 协调者将子交易在本地存档，用于收票
-                            if(dev::plugin::processingTxD.count(disTxID) == 0)
-                            {
-                                std::vector<std::string> txrlps;
-                                txrlps.push_back(subTxRlp);
-                                dev::plugin::processingTxD.insert(std::make_pair(disTxID, txrlps));
-                            }
-                            else
-                            {
-                                std::vector<std::string> txrlps = dev::plugin::processingTxD[disTxID];
-                                txrlps.push_back(subTxRlp);
-                                dev::plugin::processingTxD.insert(std::make_pair(disTxID, txrlps));
-                            }
+    //                         // 协调者将子交易在本地存档，用于收票
+    //                         if(dev::plugin::processingTxD.count(disTxID) == 0)
+    //                         {
+    //                             std::vector<std::string> txrlps;
+    //                             txrlps.push_back(subTxRlp);
+    //                             dev::plugin::processingTxD.insert(std::make_pair(disTxID, txrlps));
+    //                         }
+    //                         else
+    //                         {
+    //                             std::vector<std::string> txrlps = dev::plugin::processingTxD[disTxID];
+    //                             txrlps.push_back(subTxRlp);
+    //                             dev::plugin::processingTxD.insert(std::make_pair(disTxID, txrlps));
+    //                         }
 
-                            dev::plugin::subTxRlp2ID.insert(std::make_pair(subTxRlp, disTxID)); // subTxRlp --> disTxID
+    //                         dev::plugin::subTxRlp2ID.insert(std::make_pair(subTxRlp, disTxID)); // subTxRlp --> disTxID
 
-                            // 准备将交易发送给相应的参与者
-                            protos::RLPWithReadSet txWithReadset;
-                            txWithReadset.set_subtxrlp(subTxRlp);
-                            txWithReadset.set_readset(readset);
-                            txWithReadset.set_contractaddress(recAddr);
+    //                         // 准备将交易发送给相应的参与者
+    //                         protos::RLPWithReadSet txWithReadset;
+    //                         txWithReadset.set_subtxrlp(subTxRlp);
+    //                         txWithReadset.set_readset(readset);
+    //                         txWithReadset.set_contractaddress(recAddr);
 
-                            std::string serializedTWRS_str;
-                            txWithReadset.SerializeToString(&serializedTWRS_str);
-                            auto txByte = asBytes(serializedTWRS_str);
+    //                         std::string serializedTWRS_str;
+    //                         txWithReadset.SerializeToString(&serializedTWRS_str);
+    //                         auto txByte = asBytes(serializedTWRS_str);
 
-                            SyncDistributedTxPacket retPacket;
-                            retPacket.encode(txByte);
-                            auto msg = retPacket.toMessage(m_protocolId);
-                            m_service->asyncSendMessageByNodeID(m_pluginManager->getNodeId(atoi(destGroupId.c_str())), msg, CallbackFuncWithSession(), dev::network::Options());
-                            std::cout << "协调者向所有参与者发送了跨片子交易..." << std::endl;
-                        }
-                    }
+    //                         SyncDistributedTxPacket retPacket;
+    //                         retPacket.encode(txByte);
+    //                         auto msg = retPacket.toMessage(m_protocolId);
+    //                         m_service->asyncSendMessageByNodeID(m_pluginManager->getNodeId(atoi(destGroupId.c_str())), msg, CallbackFuncWithSession(), dev::network::Options());
+    //                         std::cout << "协调者向所有参与者发送了跨片子交易..." << std::endl;
+    //                     }
+    //                 }
 
-                    if(isCommitted)
-                    {
-                        std::cout << "当前交易应该committed" << std::endl;
-                        // 从 committedDisTxRlp 中将 rlpstr 删除掉
-                        auto iter = dev::plugin::committedDisTxRlp.begin();
-                        size_t index = 0;
-                        while (iter!= dev::plugin::committedDisTxRlp.end())
-                        {
-                            if(*iter == rlpstr) { break;}
-                            else {iter++; index++;}
-                        }
-                        dev::plugin::committedDisTxRlp.erase(dev::plugin::committedDisTxRlp.begin() + index);
+    //                 if(isCommitted)
+    //                 {
+    //                     std::cout << "当前交易应该committed" << std::endl;
+    //                     // 从 committedDisTxRlp 中将 rlpstr 删除掉
+    //                     auto iter = dev::plugin::committedDisTxRlp.begin();
+    //                     size_t index = 0;
+    //                     while (iter!= dev::plugin::committedDisTxRlp.end())
+    //                     {
+    //                         if(*iter == rlpstr) { break;}
+    //                         else {iter++; index++;}
+    //                     }
+    //                     dev::plugin::committedDisTxRlp.erase(dev::plugin::committedDisTxRlp.begin() + index);
 
-                        // 开始获取所有跨片子交易
-                        std::vector<std::string> subTxRlps = dev::plugin::conAddress2txrlps[recAddr];
-                        for(int i = 0; i < subTxRlps.size(); i++)
-                        {
-                            std::string subTx = subTxRlps.at(i);
-                            std::string destGroupId = subTx.substr(0, 1);
-                            std::string subTxRlp = subTx.substr(1, subTx.length());
-                            std::string readset = dev::plugin::txRWSet[subTxRlp];
+    //                     // 开始获取所有跨片子交易
+    //                     std::vector<std::string> subTxRlps = dev::plugin::conAddress2txrlps[recAddr];
+    //                     for(int i = 0; i < subTxRlps.size(); i++)
+    //                     {
+    //                         std::string subTx = subTxRlps.at(i);
+    //                         std::string destGroupId = subTx.substr(0, 1);
+    //                         std::string subTxRlp = subTx.substr(1, subTx.length());
+    //                         std::string readset = dev::plugin::txRWSet[subTxRlp];
 
-                            // std::cout << "交易rlp = " << subTxRlp << std::endl;
-                            // std::cout << "交易readset = " << readset << std::endl;
+    //                         // std::cout << "交易rlp = " << subTxRlp << std::endl;
+    //                         // std::cout << "交易readset = " << readset << std::endl;
 
-                            // dev::plugin::subTxRlp2ID.insert(std::make_pair(subTxRlp, disTxID)); // subTxRlp --> disTxID
+    //                         // dev::plugin::subTxRlp2ID.insert(std::make_pair(subTxRlp, disTxID)); // subTxRlp --> disTxID
 
-                            std::cout << "协调者再次共识成功, 准备发送Commit消息给所有参与者..." << std::endl;
-                            protos::CommittedRLPWithReadSet committedRLPWithReadSet;
-                            committedRLPWithReadSet.set_subtxrlp(subTxRlp);
-                            committedRLPWithReadSet.set_readset(readset);
-                            committedRLPWithReadSet.set_contractaddress(recAddr);
+    //                         std::cout << "协调者再次共识成功, 准备发送Commit消息给所有参与者..." << std::endl;
+    //                         protos::CommittedRLPWithReadSet committedRLPWithReadSet;
+    //                         committedRLPWithReadSet.set_subtxrlp(subTxRlp);
+    //                         committedRLPWithReadSet.set_readset(readset);
+    //                         committedRLPWithReadSet.set_contractaddress(recAddr);
 
-                            std::string serializedCRWRS_str;
-                            committedRLPWithReadSet.SerializeToString(&serializedCRWRS_str);
-                            auto txByte = asBytes(serializedCRWRS_str);
+    //                         std::string serializedCRWRS_str;
+    //                         committedRLPWithReadSet.SerializeToString(&serializedCRWRS_str);
+    //                         auto txByte = asBytes(serializedCRWRS_str);
 
-                            SyncCommittedTxPacket retPacket;
-                            retPacket.encode(txByte);
-                            auto msg = retPacket.toMessage(m_protocolId);
-                            m_service->asyncSendMessageByNodeID(m_pluginManager->getNodeId(atoi(destGroupId.c_str())), msg, CallbackFuncWithSession(), dev::network::Options());
-                            std::cout << "协调者Committed消息发送完毕..." << std::endl;
-                        }
-                    }
-                }
-            }
-        }
-    }
+    //                         SyncCommittedTxPacket retPacket;
+    //                         retPacket.encode(txByte);
+    //                         auto msg = retPacket.toMessage(m_protocolId);
+    //                         m_service->asyncSendMessageByNodeID(m_pluginManager->getNodeId(atoi(destGroupId.c_str())), msg, CallbackFuncWithSession(), dev::network::Options());
+    //                         std::cout << "协调者Committed消息发送完毕..." << std::endl;
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 

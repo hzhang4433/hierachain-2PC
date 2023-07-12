@@ -1,6 +1,7 @@
 #include "Common.h"
 #include "libdevcore/CommonIO.h"
 #include "libdevcore/Log.h"
+#include "libplugin/benchmark.h"
 #include "libprotobasic/shard.pb.h"
 #include "libsync/SyncMsgPacket.h"
 #include <libplugin/deterministExecute.h>
@@ -102,9 +103,8 @@ void deterministExecute::replyToCoordinator(shared_ptr<dev::plugin::transaction>
                      << LOG_KV("sourceId", source_shard_id)
                      << LOG_KV("messageId", messageID);
                     //  << LOG_KV("crossTxNum", txNum);
-
-    // std::this_thread::sleep_for(std::chrono::milliseconds(50));
     
+    // h512s nodeIDs = dev::plugin::hieraShardTree->get_nodeIDs(source_shard_id);
     for(size_t j = 0; j < 4; j++)  // 给所有协调者分片所有节点发
     {
         PLUGIN_LOG(INFO) << LOG_DESC("发送交易中...")
@@ -183,8 +183,7 @@ void deterministExecute::replyToCoordinatorCommitOK(shared_ptr<dev::plugin::tran
 
     PLUGIN_LOG(INFO) << LOG_DESC("跨片交易执行完成, 开始向协调者分片发送commitOK消息包....");
 
-    // std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    
+    // h512s nodeIDs = dev::plugin::hieraShardTree->get_nodeIDs(source_shard_id);
     for(size_t j = 0; j < 4; j++)  // 给所有协调者分片所有节点发
     {
         // PLUGIN_LOG(INFO) << LOG_KV("正在发送给", shardNodeId.at((source_shard_id-1)*4 + j));
@@ -231,6 +230,7 @@ void deterministExecute::sendCommitPacket(shared_ptr<dev::plugin::transaction> t
         auto msg = crossTxCommitPacket.toMessage(group_protocolID);
 
         // 向子分片的每个节点发送交易
+        // h512s nodeIDs = dev::plugin::hieraShardTree->get_nodeIDs(destinShardID);
         for(size_t j = 0; j < 4; j++)  // 给所有节点发
         {
             // PLUGIN_LOG(INFO) << LOG_KV("正在发送给", shardNodeId.at((destinShardID - 1) * 4 + j));
@@ -1017,7 +1017,7 @@ void deterministExecute::sendAbortPacket(shared_ptr<transaction> txInfo) {
         PLUGIN_LOG(INFO) << LOG_DESC("向协调者分片节点发送abort包完毕...")
                          << LOG_KV("corId", source_shard_id)
                          << LOG_KV("subIds", subShardIds);
-    } else if (nodeIdStr == toHex(forwardNodeId.at(source_shard_id - 1))) { 
+    } else if (hieraShardTree->is_forward_node(source_shard_id, nodeIdStr)) { //nodeIdStr == toHex(forwardNodeId.at(source_shard_id - 1))
         //若是协调者分片发起的abort，主节点需要过段时间重新发送交易
         // 1. 停随机一段时间 -- [0,100)ms
         int randomTime = getRand(0, 10) * 10;
@@ -1061,7 +1061,7 @@ void deterministExecute::processSubShardTx(std::shared_ptr<dev::eth::Transaction
         // 此节点为协调者头节点 nodeIdStr == toHex(forwardNodeId.at(internal_groupId - 1))
         // 该条交易的其它子分片的reply消息包已经处理过 ==> 直接发commit消息包
         if (source_shard_id == internal_groupId &&
-            nodeIdStr == toHex(forwardNodeId.at(internal_groupId - 1)) && 
+            hieraShardTree->is_forward_node(internal_groupId, nodeIdStr) && 
             lateReplyMessageId->find(message_id) != lateReplyMessageId->end()) {
             // 发送commit消息包
             sendCommitPacket(txInfo);
@@ -1071,7 +1071,7 @@ void deterministExecute::processSubShardTx(std::shared_ptr<dev::eth::Transaction
         }
 
         // 由头节点发送reply包 one2all
-        if (nodeIdStr == toHex(forwardNodeId.at(dev::consensus::internal_groupId - 1))) {
+        if (hieraShardTree->is_forward_node(internal_groupId, nodeIdStr)) {
             replyToCoordinator(txInfo, group_protocolID, group_p2p_service);
         }
 
@@ -1087,7 +1087,7 @@ void deterministExecute::processSubShardTx(std::shared_ptr<dev::eth::Transaction
                              << LOG_KV("shardIds", shardIds)
                              << LOG_KV("messageIds", messageIds)
                              << LOG_KV("abortKey", abortKey);
-            if (nodeIdStr == toHex(forwardNodeId.at(dev::consensus::internal_groupId - 1))) {
+            if (hieraShardTree->is_forward_node(internal_groupId, nodeIdStr)) {
                 sendAbortPacket(txInfo);
             }
         } else { // 之前收到过
@@ -1347,7 +1347,7 @@ void deterministExecute::executeCrossTx(unsigned long coorId, unsigned long mess
     // m_lockKeyMutex.unlock();
 
     // 仅让头节点发送成功回执
-    if (nodeIdStr == toHex(forwardNodeId.at(dev::consensus::internal_groupId - 1))) {
+    if (hieraShardTree->is_forward_node(internal_groupId, nodeIdStr)) {
         replyToCoordinatorCommitOK(txInfo);
     }
 

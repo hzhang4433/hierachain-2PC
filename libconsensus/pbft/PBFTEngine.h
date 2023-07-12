@@ -365,7 +365,7 @@ public:
         return dev::consensus::forwardNodeId[_index];
     }
 
-    // size_t messageIDs[SHARDNUM] = {0}; // ADD BY THB
+    // size_t messageIDs[hiera_shard_number] = {0}; // ADD BY THB
 
 
 protected:

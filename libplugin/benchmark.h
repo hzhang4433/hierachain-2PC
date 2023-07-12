@@ -4,6 +4,7 @@
 #include <string>
 #include <json/json.h>
 #include <librpc/Rpc.h>
+#include "hieraShardTree.h"
 #include <time.h>
 
 using namespace std;
@@ -13,6 +14,9 @@ namespace dev
     namespace plugin
     {
         #define PLUGIN_LOG(LEVEL) LOG(LEVEL) << LOG_BADGE("PLUGIN")
+        extern shared_ptr<dev::plugin::HieraShardTree> hieraShardTree;
+        extern int injectSpeed;
+        extern int total_injectNum;
         class transactionInjectionTest
         {
             private:
@@ -48,13 +52,19 @@ namespace dev
                 void injectionTransactions(string& intrashardworkload_filename, string& intershardworkload_filename, int intratxNum, int intertxNum);
                 void injectionTransactions(string& intrashardworkload_filename, string& intershardworkload_filename, string& crosslayerworkload_filename, int intratxNum, int intertxNum, int crosslayerNum, int threadId);
                 int getRand(int a, int b);
-                string createInnerTransactions(int32_t _groupId, shared_ptr<dev::ledger::LedgerManager> ledgerManager);
-                string createCrossTransactions(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, shared_ptr<dev::ledger::LedgerManager> ledgerManager);
-                string createCrossTransactions(int32_t coorGroupId, vector<int>& shardIds, shared_ptr<dev::ledger::LedgerManager> ledgerManager);
+                // string createInnerTransactions(int32_t _groupId, shared_ptr<dev::ledger::LedgerManager> ledgerManager);
+                string createInnerTransactions(int32_t _groupId);
+                // string createCrossTransactions(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, shared_ptr<dev::ledger::LedgerManager> ledgerManager);
+                string createCrossTransactions(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2);
+                // string createCrossTransactions(int32_t coorGroupId, vector<int>& shardIds, shared_ptr<dev::ledger::LedgerManager> ledgerManager);
+                string createCrossTransactions(int32_t coorGroupId, vector<int>& shardIds);
                 string createCrossTransactions_HB(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, int32_t squId);
                 string dataToHexString(bytes data);
-                string createSpecialInnerTransactions(int32_t _groupId, shared_ptr<dev::ledger::LedgerManager> ledgerManager, string state1, string state2);
-                string createSpecialCrossTransactions(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, shared_ptr<dev::ledger::LedgerManager> ledgerManager, string state1, string state2);
+                // string createSpecialInnerTransactions(int32_t _groupId, shared_ptr<dev::ledger::LedgerManager> ledgerManager, string state1, string state2);
+                string createSpecialInnerTransactions(int32_t _groupId, string state1, string state2);
+                // string createSpecialCrossTransactions(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, shared_ptr<dev::ledger::LedgerManager> ledgerManager, string state1, string state2);
+                string createSpecialCrossTransactions(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, string state1, string state2);
+                void generateIntraShardWorkLoad(int32_t groupId, string fileName, int txNum);
 
         };
 
@@ -211,8 +221,44 @@ namespace dev
 
         };
 
-
-
+        class Test_shard 
+        {
+            private:
+                int  totalTxNumber=0;  //交易总数量
+                // double rate_cross=0; //跨片交易与片内交易数量比例
+                int rate_cross = 0; // 跨片比0~100
+                int max_txnum=50000; // 最大值
+                double rate_cross_area=0.05; //跨层比例
+            public:
+                Test_shard();
+                Test_shard(int num_shard_intra, int crossRate) {
+                    totalTxNumber = num_shard_intra;
+                    rate_cross = crossRate;
+                }
+                tuple<int, int, int> get_txNumber(int internal_groupId) {
+                    cout << "totalTxNumber = " << totalTxNumber << endl;
+                    cout << "cross Rate = " << rate_cross << endl;
+                    int interTxNumber = 1.0 * totalTxNumber * (float(rate_cross) / 100);
+                    int intraTxNumber = totalTxNumber - interTxNumber;
+                    cout << "inter Tx Number:" << interTxNumber << endl;
+                    cout << "intra Tx Number:" << intraTxNumber << endl;
+                    int each_shard_intraTxNumber = min(int(1.0 * intraTxNumber / float(dev::consensus::hiera_shard_number)), max_txnum);
+                    int inter_tx_number = interTxNumber * (1 - rate_cross_area) * float(1 / float(dev::plugin::hieraShardTree->get_inter_shard_number()));
+                    int cross_tx_number = interTxNumber * rate_cross_area * float(1 / float(dev::plugin::hieraShardTree->get_cross_layer_shard_number()));
+                    // 仅仅有片内交易
+                    if (dev::plugin::hieraShardTree->is_leaf(internal_groupId)) {
+                        return make_tuple(each_shard_intraTxNumber, 0, 0);
+                    }
+                    // 仅仅有局部性跨片交易
+                    else if (dev::plugin::hieraShardTree->is_inter(internal_groupId) && ! dev::plugin::hieraShardTree->is_cross_layer(internal_groupId)) {
+                        return make_tuple(each_shard_intraTxNumber, min(max_txnum, inter_tx_number), 0);
+                    } 
+                    else {
+                    // 有跨层跨片交易，那么一定有局部跨片交易
+                        return make_tuple(each_shard_intraTxNumber, min(inter_tx_number, max_txnum), min(cross_tx_number, max_txnum));
+                  }
+                }
+        };
 
 
 

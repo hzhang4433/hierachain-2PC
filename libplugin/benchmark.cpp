@@ -287,7 +287,7 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
     if (dev::consensus::internal_groupId == 9) {
       SPEED = 1000;
     } else  {
-      SPEED = 5000;
+      SPEED = dev::plugin::injectSpeed;
     }
     int baseNum = (threadId - 1) * 50000;
     
@@ -492,7 +492,45 @@ void transactionInjectionTest::injectionTransactions(string& intrashardworkload_
     }
 }
 
-std::string transactionInjectionTest::createInnerTransactions(int32_t _groupId, std::shared_ptr<dev::ledger::LedgerManager> ledgerManager) {
+/**
+ * NOTES: 生成分片片内交易负载
+ * */
+void transactionInjectionTest::generateIntraShardWorkLoad(int32_t groupId, string fileName, int txNum)
+{
+    PLUGIN_LOG(INFO) << LOG_KV("txNum", txNum);
+
+    std::string res;
+    for (int i =0 ; i < txNum; i++) {
+        auto tx = createInnerTransactions(groupId);
+        if (i % 1000 == 0) { // 1000笔写一次文件
+            if (i == 0) {
+                res = "[\"" + tx + "\"";
+            } else {
+                ofstream out;
+                out.open(fileName, ios::in|ios::out|ios::app);
+                if (out.is_open()) {
+                    out << res;
+                    out.close();
+                    res = "";
+                }
+                res = ",\"" + tx + "\"";
+            }
+        } else {
+            res = res + ",\"" + tx + "\"";
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds((1)));
+    }
+    
+    ofstream out;
+    out.open(fileName, ios::in|ios::out|ios::app);
+    if (out.is_open()) {
+        res += "]";
+        out << res;
+        out.close();
+    }
+}
+
+std::string transactionInjectionTest::createInnerTransactions(int32_t _groupId) {
     
     std::string requestLabel = "0x444555666";
     std::string flag = "|";
@@ -531,7 +569,7 @@ std::string transactionInjectionTest::createInnerTransactions(int32_t _groupId, 
     Transaction tx(0, 1000, 0, contactAddress, data);
     tx.setNonce(tx.nonce() + u256(utcTime()));
     tx.setGroupId(_groupId);
-    // tx.setBlockLimit(u256(ledgerManager->blockChain(_groupId)->number()) + 500);
+    // tx.setBlockLimit(u256(m_ledgerManager->blockChain(_groupId)->number()) + 500);
     tx.setBlockLimit(500);
     
     auto keyPair = KeyPair::create();
@@ -548,8 +586,7 @@ std::string transactionInjectionTest::createInnerTransactions(int32_t _groupId, 
     return toHex(rlp);
 }
 
-std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2, 
-                        std::shared_ptr<dev::ledger::LedgerManager> ledgerManager) {
+std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupId, int32_t subGroupId1, int32_t subGroupId2) {
     std::string requestLabel = "0x111222333";
     std::string flag = "|";
     std::string txid = "C" + to_string(global_txId++);
@@ -587,7 +624,7 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
     Transaction subTx1(0, 1000, 0, subAddress1, data);
     subTx1.setNonce(subTx1.nonce() + u256(utcTime()));
     subTx1.setGroupId(subGroupId1);
-    subTx1.setBlockLimit(u256(ledgerManager->blockChain(dev::consensus::internal_groupId)->number()) + 500);
+    subTx1.setBlockLimit(u256(m_ledgerManager->blockChain(dev::consensus::internal_groupId)->number()) + 500);
 
     
     auto subSig1 = dev::crypto::Sign(keyPair, subTx1.hash(WithoutSignature));
@@ -614,7 +651,7 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
     Transaction subTx2(0, 1000, 0, subAddress2, data);
     subTx2.setNonce(subTx2.nonce() + u256(utcTime()));
     subTx2.setGroupId(subGroupId2);
-    subTx2.setBlockLimit(u256(ledgerManager->blockChain(dev::consensus::internal_groupId)->number()) + 500);
+    subTx2.setBlockLimit(u256(m_ledgerManager->blockChain(dev::consensus::internal_groupId)->number()) + 500);
 
     
     // auto keyPair = KeyPair::create();
@@ -657,8 +694,7 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
     return toHex(rlp);
 }
 
-std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupId, vector<int>& shardIds, 
-                        std::shared_ptr<dev::ledger::LedgerManager> ledgerManager) {
+std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupId, vector<int>& shardIds) {
     std::string requestLabel = "0x111222333";
     std::string flag = "|";
     // std::string stateAddress = "state1";
@@ -696,7 +732,7 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
         Transaction subTx(0, 1000, 0, subAddress, data);
         subTx.setNonce(subTx.nonce() + u256(utcTime()));
         subTx.setGroupId(subId);
-        subTx.setBlockLimit(u256(ledgerManager->blockChain(dev::consensus::internal_groupId)->number()) + 500);
+        subTx.setBlockLimit(u256(m_ledgerManager->blockChain(dev::consensus::internal_groupId)->number()) + 500);
 
         auto subSig = dev::crypto::Sign(keyPair, subTx.hash(WithoutSignature));
         subTx.updateSignature(subSig);
@@ -718,7 +754,7 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
     Transaction tx(0, 1000, 0, crossAddress, data);
     tx.setNonce(tx.nonce() + u256(utcTime()));
     tx.setGroupId(coorGroupId);
-    tx.setBlockLimit(u256(ledgerManager->blockChain(coorGroupId)->number()) + 500);
+    tx.setBlockLimit(u256(m_ledgerManager->blockChain(coorGroupId)->number()) + 500);
 
     auto sig = dev::crypto::Sign(keyPair, tx.hash(WithoutSignature));
     tx.updateSignature(sig);
@@ -733,9 +769,7 @@ std::string transactionInjectionTest::createCrossTransactions(int32_t coorGroupI
     return toHex(rlp);
 }
 
-std::string transactionInjectionTest::createSpecialInnerTransactions(int32_t _groupId, 
-                                                    std::shared_ptr<dev::ledger::LedgerManager> ledgerManager,
-                                                    std::string state1, std::string state2) {
+std::string transactionInjectionTest::createSpecialInnerTransactions(int32_t _groupId, std::string state1, std::string state2) {
     
     std::string requestLabel = "0x444555666";
     std::string flag = "|";
@@ -769,7 +803,7 @@ std::string transactionInjectionTest::createSpecialInnerTransactions(int32_t _gr
     Transaction tx(0, 1000, 0, contactAddress, data);
     tx.setNonce(tx.nonce() + u256(utcTime()));
     tx.setGroupId(_groupId);
-    tx.setBlockLimit(u256(ledgerManager->blockChain(_groupId)->number()) + 500);
+    tx.setBlockLimit(u256(m_ledgerManager->blockChain(_groupId)->number()) + 500);
     
     auto keyPair = KeyPair::create();
     auto sig = dev::crypto::Sign(keyPair, tx.hash(WithoutSignature));
@@ -787,7 +821,6 @@ std::string transactionInjectionTest::createSpecialInnerTransactions(int32_t _gr
 
 std::string transactionInjectionTest::createSpecialCrossTransactions(int32_t coorGroupId, 
                                                     int32_t subGroupId1, int32_t subGroupId2, 
-                                                    std::shared_ptr<dev::ledger::LedgerManager> ledgerManager,
                                                     std::string state1, std::string state2) {
     std::string requestLabel = "0x111222333";
     std::string flag = "|";
@@ -821,7 +854,7 @@ std::string transactionInjectionTest::createSpecialCrossTransactions(int32_t coo
     Transaction subTx1(0, 1000, 0, subAddress1, data);
     subTx1.setNonce(subTx1.nonce() + u256(utcTime()));
     subTx1.setGroupId(subGroupId1);
-    subTx1.setBlockLimit(u256(ledgerManager->blockChain(dev::consensus::internal_groupId)->number()) + 500);
+    subTx1.setBlockLimit(u256(m_ledgerManager->blockChain(dev::consensus::internal_groupId)->number()) + 500);
 
     
     auto subSig1 = dev::crypto::Sign(keyPair, subTx1.hash(WithoutSignature));
@@ -846,7 +879,7 @@ std::string transactionInjectionTest::createSpecialCrossTransactions(int32_t coo
     Transaction subTx2(0, 1000, 0, subAddress2, data);
     subTx2.setNonce(subTx2.nonce() + u256(utcTime()));
     subTx2.setGroupId(subGroupId2);
-    subTx2.setBlockLimit(u256(ledgerManager->blockChain(dev::consensus::internal_groupId)->number()) + 500);
+    subTx2.setBlockLimit(u256(m_ledgerManager->blockChain(dev::consensus::internal_groupId)->number()) + 500);
 
     
     // auto keyPair = KeyPair::create();
@@ -871,7 +904,7 @@ std::string transactionInjectionTest::createSpecialCrossTransactions(int32_t coo
     Transaction tx(0, 1000, 0, crossAddress, data);
     tx.setNonce(tx.nonce() + u256(utcTime()));
     tx.setGroupId(coorGroupId);
-    tx.setBlockLimit(u256(ledgerManager->blockChain(coorGroupId)->number()) + 500);
+    tx.setBlockLimit(u256(m_ledgerManager->blockChain(coorGroupId)->number()) + 500);
 
     
     // auto keyPair = KeyPair::create();

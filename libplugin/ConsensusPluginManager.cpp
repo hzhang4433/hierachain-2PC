@@ -2,6 +2,7 @@
 #include "libdevcore/CommonIO.h"
 #include "libdevcore/Log.h"
 #include "libplugin/Common.h"
+#include "libplugin/benchmark.h"
 #include <libplugin/ConsensusPluginManager.h>
 #include <libethcore/CommonJS.h>
 #include <libconsensus/pbft/PBFTEngine.h>
@@ -74,6 +75,7 @@ void ConsensusPluginManager::sendCommitPacket(protos::SubCrossShardTxReply _txrl
         auto msg = crossTxCommitPacket.toMessage(group_protocolID);
 
         // 向子分片的每个节点发送交易
+        // h512s nodeIDs = dev::plugin::hieraShardTree->get_nodeIDs(destinShardID);
         for(size_t j = 0; j < 4; j++)  // 给子分片所有节点发
         {
             // PLUGIN_LOG(INFO) << LOG_KV("正在发送给", shardNodeId.at((destinShardID - 1) * 4 + j));
@@ -124,6 +126,7 @@ void ConsensusPluginManager::sendCommitPacketToShard(protos::SubCrossShardTxRepl
                      << LOG_KV("group_protocolID", group_protocolID);
 
     // 向子分片的每个节点发送交易
+    // h512s nodeIDs = dev::plugin::hieraShardTree->get_nodeIDs(shardID);
     for(size_t j = 0; j < 4; j++)  // 给所有节点发
     {
         // PLUGIN_LOG(INFO) << LOG_KV("正在发送给", shardNodeId.at((shardID - 1) * 4 + j));
@@ -171,7 +174,8 @@ void ConsensusPluginManager::replyToCoordinatorCommitOK(protos::SubCrossShardTxC
                      << LOG_KV("messageId", messageId);
 
     // std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    
+
+    // h512s nodeIDs = dev::plugin::hieraShardTree->get_nodeIDs(source_shard_id);
     for(size_t j = 0; j < 4; j++)  // 给所有协调者分片所有节点发
     {
         // PLUGIN_LOG(INFO) << LOG_KV("正在发送给", shardNodeId.at((source_shard_id-1)*4 + j));
@@ -304,8 +308,7 @@ void ConsensusPluginManager::processReceivedCrossTx(protos::SubCrossShardTx _txr
 
     // 判断当前节点是否为头节点
     // PLUGIN_LOG(INFO) << LOG_DESC("当前forwardNodeId为: ") << LOG_DESC(toHex(forwardNodeId.at(i)));
-    
-    if(nodeIdStr == toHex(forwardNodeId.at(dev::consensus::internal_groupId - 1))){
+    if(hieraShardTree->is_forward_node(internal_groupId, nodeIdStr)){
         PLUGIN_LOG(INFO) << LOG_DESC("匹配成功, 当前节点为头节点, 发起该笔跨片交易共识");
                         //  << LOG_KV("messageId", messageId)
                         //  << LOG_KV("sourceShardId", sourceShardId);
@@ -466,7 +469,7 @@ void ConsensusPluginManager::processReceivedCrossTxReply(protos::SubCrossShardTx
     // 集齐 -> 发送commit包
     PLUGIN_LOG(INFO) << LOG_DESC("状态包集齐, 开始发送commit消息包...");
     // 只由头节点发送commit包
-    if (nodeIdStr == toHex(forwardNodeId.at(dev::consensus::internal_groupId - 1))) {
+    if (hieraShardTree->is_forward_node(internal_groupId, nodeIdStr)) {
         sendCommitPacket(_txrlp);
         if (flag) { // 协调者也是参与者，主节点直接进行commit操作
             // auto messageId = messageIDs[internal_groupId];
@@ -616,7 +619,7 @@ void ConsensusPluginManager::processReceivedCrossTxCommit(protos::SubCrossShardT
         }
     
         return;
-    } else if (commitMsgNum == 3 && nodeIdStr == toHex(forwardNodeId.at(internal_groupId - 1))) { // 若包数量大于等于3 则回复commitok消息包
+    } else if (commitMsgNum == 3 && hieraShardTree->is_forward_node(internal_groupId, nodeIdStr)) { // 若包数量大于等于3 则回复commitok消息包
         PLUGIN_LOG(INFO) << LOG_DESC("'跨片交易提交'消息包收齐, 开始执行跨片交易")
                          << LOG_KV("messageId", messageId);
         replyToCoordinatorCommitOK(_txrlp);
@@ -811,7 +814,8 @@ void ConsensusPluginManager::processReceivedAbortMessage(protos::AbortMsg _txrlp
                 break;
             }
         }
-        if (nodeIdStr == toHex(forwardNodeId.at(coorShardId - 1))) {
+        // nodeIdStr == toHex(forwardNodeId.at(coorShardId - 1))
+        if (hieraShardTree->is_forward_node(coorShardId, nodeIdStr)) {
             // 1. 停随机一段时间 -- [0,100)ms
             int randomTime = getRand(0, 10) * 10;
             std::this_thread::sleep_for(std::chrono::milliseconds(randomTime));

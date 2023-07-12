@@ -14,12 +14,14 @@ namespace dev{
            public:
                 InjectThreadMaster(std::shared_ptr<dev::rpc::Rpc> _rpc_service, 
                                     std::shared_ptr<dev::ledger::LedgerManager> ledgerManager,
-                                    int txNum, double interRate, double intraRate) {
+                                    int txNum, int crossRate) {
                     m_rpc_service = _rpc_service;
                     m_ledgerManager = ledgerManager;
-                    m_minitest_3shard = std::make_shared<Test_3shard>(txNum, interRate/intraRate);
-                    m_minitest_9shard = std::make_shared<Test_9shard>(txNum, interRate/intraRate);
-                    m_minitest_13shard = std::make_shared<Test_13shard>(txNum, interRate/intraRate);
+                    m_minitest_shard = std::make_shared<Test_shard>(txNum, crossRate);
+
+                    // m_minitest_3shard = std::make_shared<Test_3shard>(txNum, interRate/intraRate);
+                    // m_minitest_9shard = std::make_shared<Test_9shard>(txNum, interRate/intraRate);
+                    // m_minitest_13shard = std::make_shared<Test_13shard>(txNum, interRate/intraRate);
                 }
 
                 void startInjectThreads(int threadNum);
@@ -32,15 +34,17 @@ namespace dev{
 
             public:
                 // 导入测试负载
-                int intra_shardTxNumber;
-                int inter_shardTxNumber;
-                int cross_layerTxNumber;
+                // int intra_shardTxNumber;
+                // int inter_shardTxNumber;
+                // int cross_layerTxNumber;
 
                 shared_ptr<dev::ledger::LedgerManager> m_ledgerManager;
                 shared_ptr<dev::rpc::Rpc> m_rpc_service;
                 shared_ptr<dev::plugin::Test_3shard> m_minitest_3shard;
                 shared_ptr<dev::plugin::Test_9shard> m_minitest_9shard;
                 shared_ptr<dev::plugin::Test_13shard> m_minitest_13shard;
+                
+                shared_ptr<dev::plugin::Test_shard> m_minitest_shard;
        };
     }
 }
